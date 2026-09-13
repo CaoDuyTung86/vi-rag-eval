@@ -1,16 +1,30 @@
-.PHONY: install test lint eval baseline
+PYTHON ?= python
+
+.PHONY: install test lint eval eval-live baseline export stats
 
 install:
-	python -m pip install -e ".[dev]"
+	$(PYTHON) -m pip install -e ".[dev]"
 
 test:
-	python -m pytest
+	$(PYTHON) -m pytest
 
 lint:
-	python -m ruff check .
+	$(PYTHON) -m ruff check .
 
+# Nhánh từ khoá, không cần API key, có cổng ngưỡng theo ngôn ngữ.
 eval:
-	python -m eval.harness
+	$(PYTHON) -m eval.harness
+
+# Thêm nhánh Vector và Hybrid. Cần GEMINI_API_KEY hoặc EMBEDDING_API_KEY.
+eval-live:
+	$(PYTHON) -m eval.harness --live
 
 baseline:
-	python -m eval.harness --json > baseline.json
+	$(PYTHON) -m eval.harness --json > baseline.json
+
+# Xuất dữ liệu thật từ Neon vào data/private/ (đã gitignore). Cần extra [export].
+export:
+	$(PYTHON) scripts/export_neon.py
+
+stats:
+	$(PYTHON) scripts/stats_private.py

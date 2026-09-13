@@ -1,15 +1,15 @@
-"""Bộ khung chạy đánh giá (eval harness) — chạy được từ dòng lệnh.
+"""Bộ khung chạy đánh giá — bản Python của RagRetrievalQualityTest.
 
-Hạ tầng đã viết sẵn: nạp dữ liệu, dựng chỉ mục, chạy từng nhánh, in bảng, cổng ngưỡng,
-mã thoát. Bạn chỉ cần cài đặt rag/* và eval/metrics.py là nó chạy.
+    python -m eval.harness           # BM25, không cần API key, có cổng ngưỡng theo ngôn ngữ
+    python -m eval.harness --live    # thêm Vector và Hybrid, gọi API embedding
+    python -m eval.harness --json    # in JSON (kèm nDCG@5 và danh sách câu trượt)
 
-    python -m eval.harness
-    python -m eval.harness --branch lexical --min-recall3 0.85 --min-mrr 0.70
-    python -m eval.harness --json > baseline.json
+Cách chấm khớp từng dòng với bản Java để hai bảng đặt cạnh nhau so được: mỗi câu lấy top-5,
+chấm riêng từng ngôn ngữ CÂU HỎI rồi thêm dòng gộp, và mỗi nhánh chạy hai cấu hình — trên
+corpus hỗn hợp, và có lọc theo ngôn ngữ câu hỏi (đường mà lượt chat thật đi qua).
 
-Vì sao là CLI chứ không phải một JUnit test như bản Java: bộ đo chỉ có giá trị khi bạn
-chạy nó thường xuyên, kể cả lúc đang thử một ý tưởng nửa vời. Nấp trong test runner là
-nó chỉ được chạy lúc CI.
+--live không bật mặc định, giống RAG_EVAL_LIVE bên Java: nó ăn vào hạn mức API, và một lệnh
+gõ nhầm không nên làm việc đó.
 """
 
 from __future__ import annotations
@@ -17,149 +17,235 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
+from collections.abc import Sequence
+from dataclasses import asdict
 
 from eval.corpus import check_golden_against_kb, load_golden, load_kb
-from eval.metrics import Metrics, evaluate
+from eval.metrics import ALL_LANGS, Metrics, Retrieve, evaluate_by_lang
 from rag.bm25 import BM25Index
 from rag.embed import EmbeddingClient, EmbeddingError
-from rag.fusion import rrf
+from rag.retriever import HybridRetriever
 from rag.store import VectorStore
 from rag.types import Chunk, GoldenCase
 
-BRANCHES = ("lexical", "semantic", "hybrid")
+# Ngưỡng theo từng ngôn ngữ, khớp MIN_RECALL_AT_3 / MIN_MRR bên Java. Thêm ngôn ngữ mới vào
+# golden.yml mà quên thêm ngưỡng ở đây thì cổng báo hỏng — cố ý, để không ai lỡ thêm câu hỏi
+# mà quên chốt chặn.
+MIN_RECALL_AT_3 = {"vi": 0.85, "en": 0.85, "ja": 0.85, "zh": 0.85}
+MIN_MRR = {"vi": 0.70, "en": 0.70, "ja": 0.70, "zh": 0.70}
+
+EXIT_OK = 0
+EXIT_GATE_FAILED = 1
+EXIT_BAD_DATA = 2
+EXIT_LIVE_FAILED = 3
 
 
-def _fmt(metrics: Metrics) -> str:
-    return (
-        f"{metrics.name:<10} "
-        f"{metrics.precision_at_1 * 100:6.1f}% "
-        f"{metrics.recall_at_3 * 100:8.1f}% "
-        f"{metrics.recall_at_5 * 100:8.1f}% "
-        f"{metrics.precision_at_3:9.3f} "
-        f"{metrics.f1_at_3:7.3f} "
-        f"{metrics.mrr:7.3f}"
+def print_table(results: Sequence[Metrics]) -> None:
+    rule = "-" * 65
+    print()
+    print("==================== CHẤT LƯỢNG TRUY HỒI RAG ====================")
+    print(
+        f"{'Cấu hình':<22} {'Câu':>5} {'P@1':>8} {'R@3':>8} "
+        f"{'R@5':>8} {'P@3':>8} {'F1@3':>8} {'MRR':>8}"
     )
+    print(rule)
+    for m in results:
+        print(
+            f"{m.name:<22} {m.n:>5} {m.precision_at_1 * 100:7.1f}% {m.recall_at_3 * 100:7.1f}% "
+            f"{m.recall_at_5 * 100:7.1f}% {m.precision_at_3:7.3f} {m.f1_at_3:7.3f} {m.mrr:7.3f}"
+        )
+    print(rule)
+    print("P@1 = tỉ lệ kết quả đầu tiên đã đúng (gần nhất với 'accuracy')")
+    print("R@k = tỉ lệ câu hỏi tìm được chunk đúng trong top-k")
+    print("P@3 bị chặn trên ở 0.333 vì hầu hết câu hỏi chỉ có 1 chunk đúng")
+    print("Dòng '· vi', '· en'... chấm theo ngôn ngữ CÂU HỎI; corpus luôn là corpus hỗn hợp")
+    print("'+ lọc lang' = chỉ chấm chunk cùng ngôn ngữ với câu hỏi (đường production đi)")
+    print("=================================================================")
+    for m in results:
+        if m.misses:
+            print(f"\n[{m.name}] {len(m.misses)} câu trượt hoàn toàn (không có trong top-5):")
+            for miss in m.misses:
+                print(miss)
+    print()
 
 
-def _header() -> str:
-    head = (
-        f"{'nhánh':<10} {'P@1':>7} {'R@3':>9} {'R@5':>9} {'P@3':>9} {'F1@3':>7} {'MRR':>7}"
-    )
-    return head + "\n" + "-" * len(head)
+def check_thresholds(
+    by_lang: dict[str, Metrics],
+    min_recall3: float | None = None,
+    min_mrr: float | None = None,
+) -> list[str]:
+    """Danh sách vi phạm ngưỡng; rỗng là đạt. Dòng gộp không bị chấm ngưỡng.
+
+    min_recall3 / min_mrr khác None thì ghi đè ngưỡng cho mọi ngôn ngữ.
+    """
+    failures: list[str] = []
+    for lang, m in by_lang.items():
+        if lang == ALL_LANGS:
+            continue
+        need_r3 = min_recall3 if min_recall3 is not None else MIN_RECALL_AT_3.get(lang)
+        need_mrr = min_mrr if min_mrr is not None else MIN_MRR.get(lang)
+        if need_r3 is None or need_mrr is None:
+            failures.append(
+                f"{m.name}: chưa khai báo ngưỡng cho ngôn ngữ '{lang}' "
+                "trong MIN_RECALL_AT_3/MIN_MRR"
+            )
+            continue
+        if m.recall_at_3 < need_r3:
+            failures.append(f"{m.name}: recall@3 {m.recall_at_3:.3f} < {need_r3}")
+        if m.mrr < need_mrr:
+            failures.append(f"{m.name}: MRR {m.mrr:.3f} < {need_mrr}")
+    return failures
 
 
-def run_branch(
-    branch: str,
-    cases: list[GoldenCase],
+def _doc_ids(chunks: Sequence[Chunk]) -> list[str]:
+    return [chunk.doc_id for chunk in chunks]
+
+
+def run_live(
     chunks: list[Chunk],
+    cases: list[GoldenCase],
     bm25: BM25Index,
-    store: VectorStore,
-    embedder: EmbeddingClient,
-    top_k: int,
+    *,
+    candidates: int,
     min_similarity: float,
-) -> Metrics:
-    """Chạy một nhánh trên toàn bộ câu hỏi vàng và chấm điểm."""
-    results: list[tuple[list[str], list[str]]] = []
+    embedder: EmbeddingClient | None = None,
+) -> tuple[list[Metrics], str | None]:
+    """Đo bốn cấu hình dùng embedding. Trả (kết quả, thông báo lỗi hoặc None)."""
+    embedder = embedder or EmbeddingClient()
+    if not embedder.available:
+        return [], "--live cần GEMINI_API_KEY hoặc EMBEDDING_API_KEY."
 
-    for case in cases:
-        lexical = bm25.search(case.query, top_k) if branch in ("lexical", "hybrid") else []
+    print(
+        f"[Live] Sinh embedding cho {len(chunks)} chunk và {len(cases)} câu hỏi "
+        f"bằng {embedder.model} ({embedder.dimensions} chiều)...",
+        file=sys.stderr,
+    )
+    try:
+        vectors = embedder.embed_all([chunk.embedding_text for chunk in chunks])
+        # Nhúng trước mọi câu hỏi theo lô: vài lời gọi thay vì hơn trăm lời gọi lẻ, và từ đó
+        # cả bốn cấu hình đọc vector câu hỏi từ cache.
+        embedder.embed_all([case.query for case in cases])
+    except EmbeddingError as error:
+        return [], f"Sinh embedding thất bại: {error}"
 
-        semantic = []
-        if branch in ("semantic", "hybrid") and embedder.available and len(store):
-            try:
-                qv = embedder.embed(case.query)
-                semantic = store.search(qv, top_k, min_similarity)
-            except EmbeddingError as e:
-                # Suy giảm êm, giống HybridRetriever.semanticSearch: embedding hỏng thì
-                # nhánh này rỗng, không làm sập cả lượt đo.
-                print(f"  [cảnh báo] embedding hỏng cho {case.query!r}: {e}", file=sys.stderr)
+    store = VectorStore()
+    store.load(chunks, vectors)
+    failures: list[str] = []
+    retriever = HybridRetriever(
+        bm25,
+        store,
+        embedder,
+        candidates_per_branch=candidates,
+        min_similarity=min_similarity,
+        on_embedding_error=lambda query, error: failures.append(f"{query!r}: {error}"),
+    )
 
-        if branch == "lexical":
-            retrieved = [s.chunk.doc_id for s in lexical]
-        elif branch == "semantic":
-            retrieved = [s.chunk.doc_id for s in semantic]
-        else:
-            retrieved = [c.doc_id for c in rrf([lexical, semantic], top_k)]
+    configs: list[tuple[str, Retrieve]] = [
+        ("Vector", lambda c, k: _doc_ids(retriever.retrieve_semantic_only(c.query, k))),
+        (
+            "Vector + lọc lang",
+            lambda c, k: _doc_ids(retriever.retrieve_semantic_only(c.query, k, c.lang)),
+        ),
+        ("Hybrid (RRF)", lambda c, k: _doc_ids(retriever.retrieve(c.query, k))),
+        ("Hybrid + lọc lang", lambda c, k: _doc_ids(retriever.retrieve(c.query, k, c.lang))),
+    ]
+    results: list[Metrics] = []
+    for name, retrieve in configs:
+        results.extend(evaluate_by_lang(name, cases, retrieve).values())
 
-        results.append((retrieved, case.expected))
+    print(
+        f"[Live] Lời gọi API embedding: {embedder.api_calls}, "
+        f"thử lại vì 429: {embedder.rate_limit_retries}, lời gọi hỏng hẳn: {len(failures)}",
+        file=sys.stderr,
+    )
+    if failures:
+        # Chốt chặn quan trọng nhất của chế độ live, giống bản Java: suy giảm êm về BM25 là
+        # hành vi ĐÚNG khi chạy thật, nhưng khi ĐO thì nó biến nhánh Vector thành BM25 trá
+        # hình mà bảng không có dấu hiệu gì. Thà báo hỏng còn hơn in một con số không biết là
+        # của cái gì.
+        return results, (
+            f"{len(failures)} lời gọi embedding hỏng hẳn — số đo Vector/Hybrid KHÔNG dùng được."
+        )
+    return results, None
 
-    return evaluate(branch, results)
 
+def main(argv: Sequence[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
-def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Đo chất lượng truy hồi RAG")
-    parser.add_argument("--branch", choices=(*BRANCHES, "all"), default="all")
-    parser.add_argument("--top-k", type=int, default=5)
-    parser.add_argument("--min-similarity", type=float, default=0.55)
-    parser.add_argument("--lang", default=None, help="Lọc knowledge base theo lang (tuần 8)")
-    parser.add_argument("--min-recall3", type=float, default=None, help="Cổng CI")
-    parser.add_argument("--min-mrr", type=float, default=None, help="Cổng CI")
-    parser.add_argument("--json", action="store_true", help="In JSON thay vì bảng")
+    parser.add_argument("--live", action="store_true", help="đo thêm Vector và Hybrid")
+    parser.add_argument("--json", action="store_true", help="in JSON thay vì bảng")
+    parser.add_argument("--candidates", type=int, default=10, help="ứng viên mỗi nhánh (live)")
+    parser.add_argument("--min-similarity", type=float, default=0.55, help="ngưỡng cosine (live)")
+    parser.add_argument("--min-recall3", type=float, help="ghi đè ngưỡng recall@3 mọi ngôn ngữ")
+    parser.add_argument("--min-mrr", type=float, help="ghi đè ngưỡng MRR mọi ngôn ngữ")
+    parser.add_argument("--no-gate", action="store_true", help="chỉ in số, không áp ngưỡng")
     args = parser.parse_args(argv)
 
-    chunks = load_kb(lang=args.lang)
-    cases = load_golden()
+    info = sys.stderr if args.json else sys.stdout
 
+    chunks = load_kb()
+    cases = load_golden()
     missing = check_golden_against_kb(cases, chunks)
     if missing:
         print("docId trong golden.yml không tồn tại trong knowledge base:", file=sys.stderr)
         for doc_id in missing:
             print(f"  - {doc_id}", file=sys.stderr)
-        return 2
+        return EXIT_BAD_DATA
 
     bm25 = BM25Index()
     bm25.load(chunks)
 
-    store = VectorStore()
-    embedder = EmbeddingClient()
-    if embedder.available:
-        vectors = embedder.embed_all([c.indexed_text for c in chunks])
-        store.load(chunks, vectors)
+    lexical = evaluate_by_lang(
+        "BM25", cases, lambda c, k: [hit.chunk.doc_id for hit in bm25.search(c.query, k)]
+    )
+    lexical_filtered = evaluate_by_lang(
+        "BM25 + lọc lang",
+        cases,
+        lambda c, k: [hit.chunk.doc_id for hit in bm25.search(c.query, k, c.lang)],
+    )
+    results = [*lexical.values(), *lexical_filtered.values()]
+
+    live_error: str | None = None
+    if args.live:
+        live_results, live_error = run_live(
+            chunks,
+            cases,
+            bm25,
+            candidates=args.candidates,
+            min_similarity=args.min_similarity,
+        )
+        results.extend(live_results)
     else:
         print(
-            "[chú ý] Chưa có EMBEDDING_API_KEY — chỉ đo được nhánh từ khoá.\n",
-            file=sys.stderr,
+            "\n[Bỏ qua nhánh ngữ nghĩa] Chạy với --live và đặt GEMINI_API_KEY "
+            "để đo thêm cấu hình Vector và Hybrid.",
+            file=info,
         )
-
-    branches = BRANCHES if args.branch == "all" else (args.branch,)
-    all_metrics: list[Metrics] = []
-
-    started = time.perf_counter()
-    for branch in branches:
-        if branch in ("semantic", "hybrid") and not embedder.available:
-            continue
-        all_metrics.append(
-            run_branch(
-                branch, cases, chunks, bm25, store, embedder, args.top_k, args.min_similarity
-            )
-        )
-    elapsed = time.perf_counter() - started
 
     if args.json:
-        print(json.dumps([m.__dict__ for m in all_metrics], ensure_ascii=False, indent=2))
+        print(json.dumps([asdict(m) for m in results], ensure_ascii=False, indent=2))
     else:
-        print(f"\n{len(chunks)} chunk · {len(cases)} câu hỏi vàng · {elapsed:.1f}s\n")
-        print(_header())
-        for m in all_metrics:
-            print(_fmt(m))
-        print()
+        print_table(results)
 
-    # Cổng chất lượng: áp lên nhánh cuối cùng được chạy (nhánh tốt nhất hiện có).
-    if all_metrics and (args.min_recall3 is not None or args.min_mrr is not None):
-        gate = all_metrics[-1]
-        failed = []
-        if args.min_recall3 is not None and gate.recall_at_3 < args.min_recall3:
-            failed.append(f"recall@3 {gate.recall_at_3:.3f} < {args.min_recall3}")
-        if args.min_mrr is not None and gate.mrr < args.min_mrr:
-            failed.append(f"MRR {gate.mrr:.3f} < {args.min_mrr}")
-        if failed:
-            print(f"CỔNG CHẤT LƯỢNG HỎNG ({gate.name}):", file=sys.stderr)
-            for f in failed:
-                print(f"  - {f}", file=sys.stderr)
-            return 1
+    if live_error:
+        print(f"CHẾ ĐỘ LIVE HỎNG: {live_error}", file=sys.stderr)
+        return EXIT_LIVE_FAILED
 
-    return 0
+    if not args.no_gate:
+        failures = [
+            *check_thresholds(lexical, args.min_recall3, args.min_mrr),
+            *check_thresholds(lexical_filtered, args.min_recall3, args.min_mrr),
+        ]
+        if failures:
+            print("CỔNG CHẤT LƯỢNG HỎNG:", file=sys.stderr)
+            for failure in failures:
+                print(f"  - {failure}", file=sys.stderr)
+            return EXIT_GATE_FAILED
+
+    return EXIT_OK
 
 
 if __name__ == "__main__":

@@ -1,0 +1,504 @@
+# Knowledge base cho chatbot VigoTrip (tiếng Nhật) — bản song hành của faq-vi.yml.
+#
+# docId = docId tiếng Việt + hậu tố "-ja". Xem phần đầu faq-en.yml để biết vì sao hậu
+# tố là bắt buộc: KnowledgeBaseSeeder đối chiếu chunk theo docId, trùng docId là mất bản dịch.
+#
+# CÁCH NHÁNH BM25 NHÌN FILE NÀY: tiếng Nhật không có dấu cách giữa từ, nên
+# TextNormalizer cắt chữ Nhật thành CẶP KÝ TỰ liền nhau (bigram) thay vì tách từ.
+# Hệ quả khi viết nội dung:
+#   - Viết đúng mặt chữ mà khách hay gõ. "手荷物" và "荷物" chung bigram 荷物 nên khớp
+#     được nhau, nhưng "手荷物" và "バッグ" thì không chung ký tự nào — muốn bắt được
+#     cách nói katakana thì phải viết thẳng ra, hoặc khai trong SynonymExpander.
+#   - Số và tên riêng viết Latin (VNPAY, QR, Visa) đi qua nhánh Latin như thường,
+#     nên giữ nguyên cách viết giống bản tiếng Việt.
+#
+# Nội dung phải khớp chính sách với faq-vi.yml. Sửa số liệu ở một file thì phải sửa
+# mọi file còn lại trong cùng lần commit.
+#
+# CẦN NGƯỜI BẢN NGỮ ĐỌC LẠI: bản dịch này chưa qua kiểm tra của người nói tiếng Nhật.
+# Nội dung chính sách thì đã đối chiếu, còn văn phong thì chưa.
+
+- docId: baggage-plane-general-ja
+  title: 飛行機の手荷物規定
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    航空券には機内持ち込み手荷物7kgと預け入れ手荷物20kgが含まれます。
+    機内持ち込みのバッグは頭上の棚か前の座席の下に収まるサイズにしてください。
+    重量を超える荷物は、カウンターで追加の手荷物パックを購入するか、航空会社の超過料金を支払います。
+
+- docId: baggage-bus-general-ja
+  title: バスの手荷物規定
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    バスの乗車券には、お一人様20kgまでの荷物が無料で含まれます。
+    大きなバッグは車体下部のトランクに、小さな荷物は座席までお持ちいただけます。
+    合計20kg以内であれば追加料金はかかりません。
+
+- docId: baggage-train-general-ja
+  title: 列車の手荷物規定
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    列車では、お一人様20kg未満の身の回りの荷物を車内に持ち込めます。
+    バッグは座席上の棚か寝台の下に置いてください。
+    大型の貨物は駅の別の輸送サービスをご利用ください。
+
+- docId: baggage-overweight-fee-ja
+  title: 超過手荷物の料金
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    無料枠を超えた荷物には、超過1kgごとに超過料金がかかります。
+    スーツケースが重すぎる場合の支払額は、何キロ超えたかで決まります。
+    料金はバス会社や航空会社ごとに異なり、チェックインカウンターで直接支払います。
+    出発前に重さを量っておくと想定外の出費を防げます。
+
+- docId: baggage-fragile-ja
+  title: 壊れ物と貴重品
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    壊れ物、パソコンやカメラなどの電子機器、現金、身分証明書は手元に置き、
+    預け入れ手荷物や車体下部のトランクには入れないでください。
+    預け入れ手荷物に入れた貴重品について運送会社は責任を負いません。
+
+- docId: baggage-prohibited-ja
+  title: 持ち込み禁止品
+  category: BAGGAGE
+  lang: ja
+  content: >-
+    爆発物、引火性のもの、武器、有毒な化学薬品、花火、大量のライターなどの禁止品は、
+    どの乗り物にも持ち込めません。飛行機では機内持ち込みの液体が保安規定で制限されます。
+    違反した場合は輸送を断られ、払い戻しもありません。
+
+- docId: cancel-policy-refund-tiers-ja
+  title: キャンセル規定と払い戻し率
+  category: CANCEL
+  lang: ja
+  content: >-
+    出発の24時間より前のキャンセルは、運賃の100パーセントが払い戻されます。
+    出発の4時間前から24時間前までのキャンセルは10パーセントのキャンセル料がかかり、
+    注文金額の90パーセントが戻ります。
+    出発まで4時間を切るとキャンセルも払い戻しもできません。
+    改札済みの乗車券は、出発までどれだけ時間が残っていてもキャンセルできません。
+
+- docId: cancel-how-to-ja
+  title: 予約をキャンセルする方法
+  category: CANCEL
+  lang: ja
+  content: >-
+    キャンセルはログイン後、予約履歴を開き、対象の注文を選んでキャンセルを押します。
+    確定の前に払い戻し額が表示されます。
+    キャンセルできるのは、その予約をしたアカウント本人だけです。
+
+- docId: cancel-missed-trip-ja
+  title: 乗り遅れた場合
+  category: CANCEL
+  lang: ja
+  content: >-
+    バスや列車に乗り遅れた場合、キャンセル受付は出発の4時間前に締め切られているため払い戻しはありません。
+    改札済みの乗車券も払い戻しできません。
+    乗れないと分かった時点で早めにキャンセルするほど、払い戻し率が高くなります。
+    出発の30分前までには乗り場に到着してください。
+
+- docId: cancel-change-ticket-ja
+  title: 別の便への変更
+  category: CANCEL
+  lang: ja
+  content: >-
+    別の便へ直接振り替える機能はまだありません。
+    現在の払い戻し規定で元の乗車券をキャンセルしてから、希望の便を予約し直してください。
+
+- docId: refund-processing-time-ja
+  title: 払い戻しにかかる日数
+  category: REFUND
+  lang: ja
+  content: >-
+    払い戻しが承認されると、支払いに使った方法にそのまま返金されます。
+    口座に届くまでは銀行や電子ウォレットの処理次第で、通常3営業日から7営業日です。
+    進行状況は予約履歴で確認できます。
+
+- docId: refund-status-meaning-ja
+  title: 払い戻しステータスの意味
+  category: REFUND
+  lang: ja
+  content: >-
+    払い戻し申請には主に三つの状態があります。審査中、承認済み、却下です。
+    審査中は運行会社が確認している段階、承認済みは返金が口座へ向かっている状態を指します。
+    却下の場合は提供会社から具体的な理由が示されます。
+
+- docId: refund-partial-ja
+  title: 一部しか返金されない理由
+  category: REFUND
+  lang: ja
+  content: >-
+    返金額はキャンセルの時期で決まります。出発の4時間前から24時間前までのキャンセルには
+    10パーセントのキャンセル料がかかるため、全額ではなく注文金額の90パーセントが戻ります。
+    手数料や利用済みの追加サービスは返金の対象外になることがあります。
+
+- docId: pets-plane-ja
+  title: 飛行機へのペットの持ち込み
+  category: PETS
+  lang: ja
+  content: >-
+    ペット、犬、猫を客室に連れて入ることはできません。
+    動物を輸送する場合は航空会社に直接連絡し、専用の動物輸送サービスを事前に予約のうえ、
+    有効な検疫証明書をご用意ください。
+
+- docId: pets-bus-ja
+  title: バスへのペットの持ち込み
+  category: PETS
+  lang: ja
+  content: >-
+    バスは犬、猫、子犬などの小型のペットを受け入れます。
+    ただし専用のケージに入れ、車体下部のトランクに載せることが条件です。
+    座席の上や車内に放した状態は認められません。
+
+- docId: pets-train-ja
+  title: 列車へのペットの持ち込み
+  category: PETS
+  lang: ja
+  content: >-
+    列車は密閉されたケージに入れたペットのみ、荷物車での輸送として受け入れます。
+    寝台車や座席車への持ち込みはできません。
+    路線ごとの規定は、乗車日の前に駅へお問い合わせください。
+
+- docId: pets-service-animal-ja
+  title: 視覚障害者の盲導犬
+  category: PETS
+  lang: ja
+  content: >-
+    視覚障害のあるお客様に同行する盲導犬は個別に扱われ、通常のペット規定は適用されません。
+    事前に運送会社へ連絡し、訓練された補助犬であることを示す書類をお持ちください。
+
+- docId: children-infant-free-ja
+  title: 2歳未満の幼児の運賃
+  category: CHILDREN
+  lang: ja
+  content: >-
+    2歳未満の幼児は無料で、同行する大人と一緒に座り、専用の座席はありません。
+    大人一人につき2歳未満の幼児一人までです。
+    予約の際には幼児の情報の申告が必要です。
+
+- docId: children-2-to-12-ja
+  title: 2歳から12歳までの小児運賃
+  category: CHILDREN
+  lang: ja
+  content: >-
+    2歳から12歳までの子供は大人運賃の75パーセントで、専用の座席が付きます。
+    予約時に搭乗者の種別を子供にすると、正しい運賃が適用されます。
+
+- docId: children-over-12-ja
+  title: 12歳を超える場合の運賃
+  category: CHILDREN
+  lang: ja
+  content: >-
+    12歳以上のお客様は大人運賃が全額かかり、子供割引の対象外になります。
+
+- docId: children-travel-alone-ja
+  title: 子供だけでの乗車
+  category: CHILDREN
+  lang: ja
+  content: >-
+    12歳未満の子供は大人の同伴が必要です。
+    子供だけで乗車する場合は、バス会社か航空会社に直接連絡して同行サポートの手配をしてください。
+    オンライン予約だけでは対応できません。
+
+- docId: payment-methods-ja
+  title: 利用できる支払い方法
+  category: PAYMENT
+  lang: ja
+  content: >-
+    支払いはVNPAYの決済ゲートウェイを通じたオンライン決済です。
+    国内のATMカード、QRコードの読み取り、VisaとMastercardの国際カード、
+    VNPAYと連携した電子ウォレットに対応しています。
+    車内での現金払いはできません。
+
+- docId: payment-failed-ja
+  title: 支払いが失敗したとき
+  category: PAYMENT
+  lang: ja
+  content: >-
+    支払いが失敗したりエラーで中断したりすると、注文は未払いのままになり、座席は短時間しか確保されません。
+    予約履歴から支払いをやり直すか、新しく注文してください。
+    代金が引き落とされたのに注文が成立しなかった場合は、銀行が自動的に返金します。
+
+- docId: payment-double-charge-ja
+  title: 二重に請求された場合
+  category: PAYMENT
+  lang: ja
+  content: >-
+    同じ注文で二回以上請求された場合は、取引明細のスクリーンショットを用意してサポートへご連絡ください。
+    余分な取引はVNPAYと照合のうえ返金されます。
+
+- docId: payment-hold-time-ja
+  title: 支払いまでの座席確保時間
+  category: PAYMENT
+  lang: ja
+  content: >-
+    選んだ座席は、支払いを終えるまでの短い時間だけ確保されます。
+    その時間を過ぎると未払いの注文は自動的にキャンセルされ、座席は他のお客様に開放されます。
+    座席を選んだらすぐに支払いを済ませてください。
+
+- docId: payment-invoice-ja
+  title: 領収書と請求書の発行
+  category: PAYMENT
+  lang: ja
+  content: >-
+    購入した乗車券の請求書が必要な場合は、注文コードを添えて運送会社へ直接ご連絡ください。
+    予約システムが発行するのは予約確認であり、税務用の請求書ではありません。
+
+- docId: booking-how-to-ja
+  title: 乗車券を予約する手順
+  category: BOOKING
+  lang: ja
+  content: >-
+    初めての方の予約の流れです。出発地、目的地、出発日、人数を選び、一覧から便を選びます。
+    次に座席を選び、搭乗者の情報を入力してVNPAYで支払います。
+    支払いが完了すると、乗車券とQRコードがメールで届きます。
+
+- docId: booking-confirmation-email-ja
+  title: 確認メールが届かない
+  category: BOOKING
+  lang: ja
+  content: >-
+    乗車券が付いた確認メールは、支払い完了から数分で届くのが普通です。
+    支払ったのにメールが届かない場合は、まず迷惑メールフォルダと宣伝フォルダを確認してください。
+    メールが遅れていても、乗車券はアカウントの予約履歴からいつでも見られます。
+
+- docId: booking-check-my-tickets-ja
+  title: 予約した乗車券の確認
+  category: BOOKING
+  lang: ja
+  content: >-
+    ログインして予約履歴を開くと、すべての注文、支払い状況、QRコード、行程の詳細が見られます。
+    乗車券を見られるのはアカウント本人だけです。
+
+- docId: booking-guest-vs-account-ja
+  title: 予約にアカウントは必要か
+  category: BOOKING
+  lang: ja
+  content: >-
+    後から注文を調べたり、QRコードを受け取ったり、払い戻しを申請したりするために、
+    予約の前にアカウント登録をおすすめします。
+    アカウントがないと、後で乗車券を探したりキャンセルしたりするのが難しくなります。
+
+- docId: booking-round-trip-ja
+  title: 往復の予約
+  category: BOOKING
+  lang: ja
+  content: >-
+    往路と復路をまとめて買う往復予約は、現在メンテナンス中です。
+    往路と復路をそれぞれ片道の乗車券として予約してください。
+
+- docId: booking-multiple-passengers-ja
+  title: 複数人分をまとめて予約する
+  category: BOOKING
+  lang: ja
+  content: >-
+    家族やグループで移動する場合は、検索の段階で人数を指定し、その人数分の座席を選んで
+    一人ずつ情報を入力します。
+    すべて一つの注文コードにまとまり、支払いも一回で済みます。
+
+- docId: seat-selection-ja
+  title: 座席の選び方
+  category: SEAT
+  lang: ja
+  content: >-
+    便を選ぶと、空席と販売済みの席が分かる座席表が表示されます。
+    希望の席を直接押して選びます。選ぶ席の数は、申告した人数と一致する必要があります。
+
+- docId: seat-locked-by-others-ja
+  title: 選ぼうとした席が取られた理由
+  category: SEAT
+  lang: ja
+  content: >-
+    座席表は同じ便を見ている全員の間でリアルタイムに同期しています。
+    誰かが席を選ぶと、二重予約を防ぐためにその席は一時的にロックされます。
+    先に取られてしまった場合は、空いている別の席をお選びください。
+
+- docId: seat-change-after-payment-ja
+  title: 支払い後の座席変更
+  category: SEAT
+  lang: ja
+  content: >-
+    支払いが完了すると座席は乗車券に固定され、システム上では変更できません。
+    席を替えたい場合は、出発前に運行会社の係員にご相談ください。
+
+- docId: checkin-qr-usage-ja
+  title: QRコードで乗車する
+  category: CHECKIN
+  lang: ja
+  content: >-
+    乗車券にはそれぞれ専用のQRコードが付いています。
+    乗るときはスマートフォンのQRコードを見せ、乗務員か改札の係員に読み取ってもらいます。
+    紙の乗車券を印刷する必要はありません。
+    QRコードは確認メールと予約履歴にあります。
+
+- docId: checkin-qr-not-working-ja
+  title: QRコードが読み取れない
+  category: CHECKIN
+  lang: ja
+  content: >-
+    QRコードが読み取れないときは、画面の明るさを上げ、画面の汚れを拭き取ってください。
+    それでも駄目な場合は、注文コードを係員に伝えると手作業で照会できます。
+
+- docId: checkin-arrive-early-ja
+  title: 出発の何分前に着けばよいか
+  category: CHECKIN
+  lang: ja
+  content: >-
+    バスと列車は、出発の30分前までには乗り場に到着してください。
+    飛行機は国内線の場合、搭乗手続きと保安検査の時間を見て2時間前には空港へお越しください。
+
+- docId: checkin-already-used-ja
+  title: 改札済みの乗車券は再利用できるか
+  category: CHECKIN
+  lang: ja
+  content: >-
+    乗車券の改札は一回だけです。読み取りに成功すると使用済みになり、二度目は読み取れません。
+    乗車券の使い回しや偽造を防ぐための仕組みです。
+
+- docId: voucher-how-to-use-ja
+  title: 割引コードの使い方
+  category: PROMO
+  lang: ja
+  content: >-
+    割引コード、クーポン、プロモコードは、注文を確定する前の支払い段階で入力します。
+    条件が確認され、合計金額から直接差し引かれます。
+    一つの注文に使える割引コードは一つだけです。
+
+- docId: voucher-conditions-ja
+  title: 割引コードの利用条件
+  category: PROMO
+  lang: ja
+  content: >-
+    割引コードには、最低注文金額、割引上限、有効期限、残りの利用回数といった条件が付くことがあります。
+    期限切れ、回数切れ、最低金額に届かない注文では利用できません。
+
+- docId: voucher-not-working-ja
+  title: 割引コードが無効と表示される
+  category: PROMO
+  lang: ja
+  content: >-
+    無効と表示される主な原因は、期限切れ、利用回数切れ、注文金額が最低額に届いていない、
+    そのコードが特定の運行会社専用である、のいずれかです。
+    条件をもう一度確認するか、まだ有効な別のコードをお使いください。
+
+- docId: voucher-after-payment-ja
+  title: 支払い前に割引コードを入れ忘れた
+  category: PROMO
+  lang: ja
+  content: >-
+    割引コードは支払いを確定する前に入力する必要があります。
+    支払いが済んだ注文に、後から割引コードを適用することはできません。
+
+- docId: account-register-ja
+  title: アカウントの登録
+  category: ACCOUNT
+  lang: ja
+  content: >-
+    メールアドレスとパスワードで登録するか、Googleアカウントですぐにログインできます。
+    メールで登録する場合は、アカウントを有効にするための認証コードが受信箱に届きます。
+
+- docId: account-forgot-password-ja
+  title: パスワードを忘れた
+  category: ACCOUNT
+  lang: ja
+  content: >-
+    ログイン画面のパスワードをお忘れですかを押し、登録したメールアドレスを入力します。
+    そのアドレスにパスワード再設定用のコードが届きます。
+    不正利用を防ぐため、コードの再送には一定時間あたりの回数制限があります。
+
+- docId: account-not-receiving-code-ja
+  title: 認証コードが届かない
+  category: ACCOUNT
+  lang: ja
+  content: >-
+    認証コードは迷惑メールフォルダに入ることがあるため、まず迷惑メールと宣伝フォルダを確認してください。
+    それでも届かない場合は数分待ってから再送を依頼し、入力したメールアドレスに誤りがないか確かめてください。
+
+- docId: account-change-info-ja
+  title: 個人情報の変更
+  category: ACCOUNT
+  lang: ja
+  content: >-
+    アカウントのプロフィール画面から、氏名、電話番号、個人情報を更新できます。
+    発券済みの乗車券に記載された搭乗者情報は、システムからは変更できません。
+
+- docId: account-saved-passengers-ja
+  title: よく一緒に乗る人の情報を保存する
+  category: ACCOUNT
+  lang: ja
+  content: >-
+    よく一緒に移動する人の情報を保存しておけます。
+    次回の予約では入力し直さず、選ぶだけで済みます。
+
+- docId: trip-search-tips-ja
+  title: 希望に合う便の探し方
+  category: TRIP
+  lang: ja
+  content: >-
+    出発地、目的地、出発日を入力すると便の一覧が表示されます。
+    一番安い便を探すときは、出発時間帯、上限運賃、希望の運行会社で絞り込んでください。
+
+- docId: trip-no-results-ja
+  title: 便が見つからない
+  category: TRIP
+  lang: ja
+  content: >-
+    結果が空になるのは、選んだ日がまだ発売前か、その区間に運行している便がないためです。
+    別の日を試すか、運賃や時間帯の絞り込みを外すと候補が増えます。
+
+- docId: trip-vehicle-types-ja
+  title: 取り扱っている交通手段
+  category: TRIP
+  lang: ja
+  content: >-
+    このシステムでは飛行機、列車、バスの三種類の乗車券を販売しています。
+    それぞれ専用の検索画面があり、座席表と手荷物規定もそれに合わせたものになります。
+
+- docId: trip-delay-ja
+  title: 便が遅延または時刻変更になった
+  category: TRIP
+  lang: ja
+  content: >-
+    便が遅延したり時刻が変更になったりすると、登録したメールアドレスに通知が届きます。
+    乗り場へ向かう前に、予約履歴で便の状況を確認してください。
+    運行会社が便を欠航にした場合は、その会社の規定に従って払い戻されます。
+
+- docId: trip-price-difference-ja
+  title: 同じ区間で運賃が違う理由
+  category: TRIP
+  lang: ja
+  content: >-
+    運賃は運行会社、交通手段、座席の等級、出発時刻によって変わります。
+    人気の時間帯や連休などの繁忙期は、通常の日より高くなるのが普通です。
+
+- docId: support-contact-ja
+  title: サポートへの問い合わせ
+  category: SUPPORT
+  lang: ja
+  content: >-
+    電話で直接相談したい場合はホットラインへ、あるいはサイト下部の連絡先からカスタマーサポートへご連絡ください。
+    注文コードを手元に用意しておくと、照会が早く進みます。
+
+- docId: support-complaint-ja
+  title: サービスへの苦情
+  category: SUPPORT
+  lang: ja
+  content: >-
+    乗務員や係員の態度が悪かった場合や、道中のサービスに問題があった場合、
+    苦情は該当するバス会社や運送会社へ伝えられます。
+    注文コード、乗車日、何があったかの具体的な説明を添えてください。
+    終了した行程にはレビューを残すこともできます。
+
+- docId: support-review-ja
+  title: 行程のレビュー
+  category: SUPPORT
+  lang: ja
+  content: >-
+    行程が終わると、予約履歴からその便の評価とレビューを書けます。
+    レビューは他のお客様が運行会社を選ぶときの助けになります。

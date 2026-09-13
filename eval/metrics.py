@@ -1,24 +1,33 @@
-"""Chỉ số đánh giá truy hồi.
+"""Chỉ số đánh giá truy hồi, chấm y hệt RagRetrievalQualityTest bên Java.
 
-TUẦN 3 — bạn viết phần này. Đây là tuần quan trọng nhất của ba tuần đầu: không có
-baseline đóng băng thì mọi thí nghiệm từ tuần 6 trở đi đều vô nghĩa.
+Mỗi câu lấy top-5; recall@k là tỉ lệ câu có ÍT NHẤT một chunk đúng trong top-k (hit rate),
+không phải |đúng ∩ top-k| / |đúng|. Chọn vậy vì với chatbot, bốc được một chunk trả lời đúng
+là đủ để trả lời đúng.
 
-Tham chiếu: .../test/java/com/booking/api/ai/rag/RagRetrievalQualityTest.java
-
-Lưu ý về ngữ nghĩa, khác với sách giáo khoa: phần lớn câu hỏi trong golden.yml chỉ có
-MỘT chunk đúng. Nghĩa là precision@3 bị chặn trên bởi 1/3 ngay cả khi hệ thống hoàn
-hảo. Nó vẫn được tính để đủ bộ, nhưng đừng đọc nó như một tỉ lệ phần trăm chất lượng —
-recall@k và MRR mới là hai con số bạn thật sự nhìn.
+Lưu ý khi đọc P@3: phần lớn câu hỏi chỉ có MỘT chunk đúng, nên P@3 bị chặn trên ở 0.333
+ngay cả khi hệ thống hoàn hảo. Thấp KHÔNG có nghĩa là tệ — recall@k và MRR mới là hai con số
+đáng nhìn.
 """
 
 from __future__ import annotations
 
+import math
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+
+from rag.types import GoldenCase
+
+EVAL_K = 5
+
+# Khoá của dòng chấm gộp mọi ngôn ngữ, cùng nhãn với bảng bên Java.
+ALL_LANGS = "gộp"
+
+Retrieve = Callable[[GoldenCase, int], Sequence[str]]
 
 
 @dataclass(frozen=True, slots=True)
 class Metrics:
-    """Kết quả chấm điểm của MỘT nhánh truy hồi trên toàn bộ câu hỏi vàng."""
+    """Kết quả chấm của MỘT cấu hình truy hồi trên một tập câu hỏi."""
 
     name: str
     n: int
@@ -29,53 +38,129 @@ class Metrics:
     precision_at_3: float
     f1_at_3: float
     mrr: float
-    ndcg_at_5: float = 0.0
+    ndcg_at_5: float
+    misses: tuple[str, ...] = ()
 
 
-def recall_at_k(retrieved: list[str], expected: list[str], k: int) -> float:
-    """1.0 nếu có ÍT NHẤT một docId đúng nằm trong top-k, ngược lại 0.0.
+def recall_at_k(retrieved: Sequence[str], expected: Sequence[str], k: int) -> float:
+    """1.0 nếu có ít nhất một docId đúng trong top-k, ngược lại 0.0."""
+    wanted = set(expected)
+    return 1.0 if any(doc_id in wanted for doc_id in retrieved[:k]) else 0.0
 
-    Đây là recall theo kiểu "hit rate", không phải |đúng ∩ topk| / |đúng|. Chọn như vậy
-    vì với chatbot, bốc được một chunk trả lời đúng là đủ để trả lời đúng — bốc đủ cả
-    ba chunk hợp lệ không tốt hơn.
+
+def precision_at_k(retrieved: Sequence[str], expected: Sequence[str], k: int) -> float:
+    """|đúng ∩ top-k| / k — chia cho k kể cả khi trả về ít hơn k kết quả, như bản Java."""
+    if k <= 0:
+        return 0.0
+    wanted = set(expected)
+    return sum(1 for doc_id in retrieved[:k] if doc_id in wanted) / k
+
+
+def reciprocal_rank(retrieved: Sequence[str], expected: Sequence[str]) -> float:
+    """1 / hạng của kết quả đúng ĐẦU TIÊN (tính từ 1); không có thì 0.0.
+
+    MRR phân biệt được "đúng ở hạng 1" với "đúng ở hạng 3" (1.0 so với 0.33), thứ recall@3
+    không thấy.
     """
-    raise NotImplementedError("Tuần 3")
+    wanted = set(expected)
+    for rank, doc_id in enumerate(retrieved, start=1):
+        if doc_id in wanted:
+            return 1.0 / rank
+    return 0.0
 
 
-def precision_at_k(retrieved: list[str], expected: list[str], k: int) -> float:
-    """|đúng ∩ top-k| / k. Xem lưu ý về trần 1/3 ở docstring đầu file."""
-    raise NotImplementedError("Tuần 3")
+def ndcg_at_k(retrieved: Sequence[str], expected: Sequence[str], k: int) -> float:
+    """nDCG với độ liên quan nhị phân. Không có trong bảng Java — chỉ xuất ra ở JSON.
 
-
-def reciprocal_rank(retrieved: list[str], expected: list[str]) -> float:
-    """1 / (thứ hạng của kết quả đúng ĐẦU TIÊN), hạng tính từ 1. Không có thì 0.0.
-
-    MRR là chỉ số nhạy nhất với việc "đúng nhưng xếp sau". recall@3 không phân biệt
-    được hạng 1 với hạng 3; MRR thì có (1.0 so với 0.33).
+    Khác MRR ở chỗ tính CẢ các kết quả đúng phía sau, có chiết khấu theo log vị trí. Chỉ nói
+    thêm được điều gì khi bộ vàng có nhiều câu mang hơn một đáp án đúng.
     """
-    raise NotImplementedError("Tuần 3")
-
-
-def ndcg_at_k(retrieved: list[str], expected: list[str], k: int) -> float:
-    """Normalized Discounted Cumulative Gain.
-
-    TUẦN 8, không phải tuần 3 — để trống cho tới lúc đó cũng được.
-
-    Khác MRR ở chỗ nó tính CẢ các kết quả đúng phía sau, có chiết khấu theo log vị trí.
-    Chỉ đáng thêm khi bạn đã có nhiều câu hỏi có hơn một đáp án đúng.
-    """
-    raise NotImplementedError("Tuần 8")
+    wanted = set(expected)
+    if not wanted or k <= 0:
+        return 0.0
+    dcg = sum(
+        1.0 / math.log2(rank + 1)
+        for rank, doc_id in enumerate(retrieved[:k], start=1)
+        if doc_id in wanted
+    )
+    ideal = sum(1.0 / math.log2(rank + 1) for rank in range(1, min(len(wanted), k) + 1))
+    return dcg / ideal
 
 
 def f1(precision: float, recall: float) -> float:
-    """Trung bình điều hoà. Trả 0.0 khi cả hai bằng 0 (tránh chia cho 0)."""
-    raise NotImplementedError("Tuần 3")
+    """Trung bình điều hoà; 0.0 khi cả hai bằng 0."""
+    total = precision + recall
+    return 0.0 if total == 0 else 2 * precision * recall / total
 
 
-def evaluate(name: str, results: list[tuple[list[str], list[str]]]) -> Metrics:
-    """Gộp kết quả từng câu thành một bản Metrics.
+def _java_list(items: Sequence[str]) -> str:
+    return "[" + ", ".join(items) + "]"
 
-    results là danh sách (retrieved_doc_ids, expected_doc_ids) theo đúng thứ tự câu hỏi.
-    Mọi chỉ số đều là trung bình cộng trên số câu hỏi.
+
+def evaluate(name: str, cases: Sequence[GoldenCase], retrieve: Retrieve) -> Metrics:
+    """Chấm một cấu hình trên một tập câu hỏi. retrieve nhận (câu hỏi, k) và trả docId đã xếp.
+
+    Nhận cả GoldenCase chứ không chỉ chuỗi câu hỏi, vì cấu hình có lọc ngôn ngữ cần biết câu
+    hỏi thuộc ngôn ngữ nào.
     """
-    raise NotImplementedError("Tuần 3")
+    if not cases:
+        raise ValueError(f"{name}: không có câu hỏi nào để chấm")
+
+    hits_at_1 = hits_at_3 = hits_at_5 = 0
+    rr_sum = precision_at_3_sum = ndcg_sum = 0.0
+    misses: list[str] = []
+
+    for case in cases:
+        top5 = list(retrieve(case, EVAL_K))[:EVAL_K]
+
+        hits_at_1 += bool(top5) and top5[0] in case.expected
+        hits_at_3 += int(recall_at_k(top5, case.expected, 3))
+        hits_at_5 += int(recall_at_k(top5, case.expected, 5))
+        precision_at_3_sum += precision_at_k(top5, case.expected, 3)
+        ndcg_sum += ndcg_at_k(top5, case.expected, EVAL_K)
+
+        rr = reciprocal_rank(top5, case.expected)
+        if rr > 0:
+            rr_sum += rr
+        else:
+            misses.append(
+                f'  "{case.query}" -> mong đợi {_java_list(sorted(case.expected))}, '
+                f"nhận được {_java_list(top5)}"
+            )
+
+    n = len(cases)
+    recall_at_3 = hits_at_3 / n
+    precision_at_3 = precision_at_3_sum / n
+    return Metrics(
+        name=name,
+        n=n,
+        precision_at_1=hits_at_1 / n,
+        recall_at_1=hits_at_1 / n,
+        recall_at_3=recall_at_3,
+        recall_at_5=hits_at_5 / n,
+        precision_at_3=precision_at_3,
+        f1_at_3=f1(precision_at_3, recall_at_3),
+        mrr=rr_sum / n,
+        ndcg_at_5=ndcg_sum / n,
+        misses=tuple(misses),
+    )
+
+
+def evaluate_by_lang(
+    base_name: str, cases: Sequence[GoldenCase], retrieve: Retrieve
+) -> dict[str, Metrics]:
+    """Chấm riêng từng ngôn ngữ CÂU HỎI, rồi thêm một dòng gộp khi có từ hai ngôn ngữ trở lên.
+
+    Chấm riêng vì một con số trung bình sẽ để ngôn ngữ nhiều câu hỏi che cho ngôn ngữ ít câu
+    hỏi tụt hẳn mà bảng vẫn xanh.
+    """
+    langs = sorted({case.lang for case in cases})
+    by_lang = {
+        lang: evaluate(
+            f"{base_name} · {lang}", [case for case in cases if case.lang == lang], retrieve
+        )
+        for lang in langs
+    }
+    if len(langs) > 1:
+        by_lang[ALL_LANGS] = evaluate(f"{base_name} · {ALL_LANGS}", cases, retrieve)
+    return by_lang

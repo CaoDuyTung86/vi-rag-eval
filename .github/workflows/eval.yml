@@ -17,8 +17,8 @@ jobs:
       - run: python -m ruff check .
       - run: python -m pytest
 
-      # Nhánh từ khoá không cần API key nên chạy được trên mọi PR.
-      # Cổng chất lượng: tụt dưới ngưỡng là fail build, giống MIN_RECALL_AT_3
-      # trong RagRetrievalQualityTest của bản Java.
-      - name: Cổng chất lượng truy hồi (chỉ nhánh từ khoá)
-        run: python -m eval.harness --branch lexical --min-recall3 0.85 --min-mrr 0.70
+      # Nhánh từ khoá không cần API key nên chạy được trên mọi PR. Cổng chất lượng áp theo
+      # TỪNG ngôn ngữ (recall@3 >= 0.85, MRR >= 0.70), cho cả hai cấu hình có và không lọc
+      # lang — y hệt assertMeetsThresholds trong RagRetrievalQualityTest bên Java.
+      - name: Cổng chất lượng truy hồi (nhánh từ khoá)
+        run: python -m eval.harness

@@ -1,0 +1,493 @@
+# Knowledge base cho chatbot VigoTrip (tiếng Trung giản thể) — bản song hành của faq-vi.yml.
+#
+# docId = docId tiếng Việt + hậu tố "-zh". Xem phần đầu faq-en.yml để biết vì sao hậu
+# tố là bắt buộc: KnowledgeBaseSeeder đối chiếu chunk theo docId, trùng docId là mất bản dịch.
+#
+# CÁCH NHÁNH BM25 NHÌN FILE NÀY: giống faq-ja.yml, chữ Trung được cắt thành CẶP KÝ TỰ
+# liền nhau (bigram) vì không có dấu cách giữa từ. "行李规定" cho ra 行李, 李规, 规定 —
+# câu hỏi chỉ chứa "行李" vẫn khớp được. Hệ quả khi viết:
+#   - Dùng từ mà khách hay gõ. "行李" và "箱子" không chung ký tự nào, muốn bắt cả hai
+#     thì viết ra hoặc khai trong SynonymExpander.
+#   - Chỉ dùng chữ GIẢN THỂ. Bản phồn thể khác mặt chữ nên không chung bigram,
+#     trộn hai lối viết trong một file sẽ làm loãng chỉ mục.
+#   - Tên riêng và số viết Latin (VNPAY, QR, Visa) đi qua nhánh Latin như thường.
+#
+# Nội dung phải khớp chính sách với faq-vi.yml. Sửa số liệu ở một file thì phải sửa
+# mọi file còn lại trong cùng lần commit.
+#
+# CẦN NGƯỜI BẢN NGỮ ĐỌC LẠI: bản dịch này chưa qua kiểm tra của người nói tiếng Trung.
+
+- docId: baggage-plane-general-zh
+  title: 飞机行李规定
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    标准机票包含7公斤随身行李和20公斤托运行李。
+    随身行李必须能放进头顶行李舱或前排座位下方。
+    行李超过重量限制时，需要在柜台购买额外行李套餐，或者按航空公司标准支付超重费。
+
+- docId: baggage-bus-general-zh
+  title: 客车行李规定
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    客车车票每位乘客免费携带最多20公斤行李。
+    大件行李放在车厢下方的行李舱，小件行李可以随身带到座位上。
+    总重量在20公斤以内不收取额外费用。
+
+- docId: baggage-train-general-zh
+  title: 火车行李规定
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    火车车票允许每位乘客携带20公斤以内的随身行李进入车厢。
+    行李放在座位上方的行李架或卧铺下方。
+    超大件货物需要通过车站单独的货运服务寄送。
+
+- docId: baggage-overweight-fee-zh
+  title: 行李超重怎么收费
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    超出免费额度的行李按每超出一公斤收取超重费。
+    箱子太重时要付多少钱，取决于超出了多少公斤。
+    收费标准由各家客运公司和航空公司自行规定，在值机柜台直接收取。
+    出门前先称一下行李，可以避免临时多花钱。
+
+- docId: baggage-fragile-zh
+  title: 易碎物品和贵重物品
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    易碎物品、电脑相机等电子设备、现金和身份证件请随身携带，
+    不要放进托运行李或车厢下方的行李舱。
+    放在托运行李中的贵重物品，承运方不承担责任。
+
+- docId: baggage-prohibited-zh
+  title: 禁止携带的物品
+  category: BAGGAGE
+  lang: zh
+  content: >-
+    易燃易爆物品、武器、有毒化学品、烟花爆竹、大量打火机等违禁品，任何交通工具都不能携带。
+    乘坐飞机时，随身携带的液体还受到航空安检的容量限制。
+    违反规定将被拒绝运输，并且不予退款。
+
+- docId: cancel-policy-refund-tiers-zh
+  title: 退票规定和退款比例
+  category: CANCEL
+  lang: zh
+  content: >-
+    发车前超过24小时退票，全额退还票价的100个百分点。
+    发车前4小时到24小时之间退票，收取10个百分点的退票手续费，也就是退还订单金额的90个百分点。
+    距离发车不足4小时后，既不能退票也不能退款。
+    已经检票的车票同样不能退，无论距离发车还有多久。
+
+- docId: cancel-how-to-zh
+  title: 如何取消已订的车票
+  category: CANCEL
+  lang: zh
+  content: >-
+    不想去了想退票，需要登录后进入订单历史，选择要取消的订单并点击取消，整个操作都在这里完成。
+    确认之前系统会显示可退金额。
+    只有下单的账户本人才能取消该订单。
+
+- docId: cancel-missed-trip-zh
+  title: 误车或迟到怎么办
+  category: CANCEL
+  lang: zh
+  content: >-
+    没赶上车属于误车，不予退款，因为退票窗口在发车前4小时就已经关闭。
+    已经检票的车票也不能退款。
+    如果知道自己去不了，尽早取消才能拿到更高的退款比例。
+    请至少在发车前30分钟到达车站。
+
+- docId: cancel-change-ticket-zh
+  title: 改签到别的班次
+  category: CANCEL
+  lang: zh
+  content: >-
+    系统暂时不支持直接改签到别的班次。
+    请按现行退款规定取消原车票，再重新预订想要的班次。
+
+- docId: refund-processing-time-zh
+  title: 退款多久到账
+  category: REFUND
+  lang: zh
+  content: >-
+    退款申请通过后，钱会原路退回到付款时使用的方式。
+    到账时间通常是3到7个工作日，具体取决于银行或电子钱包的处理速度。
+    进度可以在订单历史中查看。
+
+- docId: refund-status-meaning-zh
+  title: 退款状态的含义
+  category: REFUND
+  lang: zh
+  content: >-
+    退款申请主要有三种状态：待审核、已通过、已拒绝。
+    待审核表示承运公司还在核实，已通过表示钱正在退回账户的路上。
+    被拒绝时会附上服务商给出的具体理由。
+
+- docId: refund-partial-zh
+  title: 为什么只退了一部分钱
+  category: REFUND
+  lang: zh
+  content: >-
+    退款金额取决于取消时间距离发车有多久。
+    发车前4小时到24小时之间取消要收10个百分点的手续费，所以拿回的是订单金额的90个百分点而不是全款。
+    服务费和已经使用的增值服务可能不在退款范围内。
+
+- docId: pets-plane-zh
+  title: 带宠物乘坐飞机
+  category: PETS
+  lang: zh
+  content: >-
+    宠物、狗和猫都不能带进飞机客舱。
+    需要运输动物请直接联系航空公司，使用他们单独的动物运输服务，提前预订并准备好有效的检疫证明。
+
+- docId: pets-bus-zh
+  title: 带宠物乘坐客车
+  category: PETS
+  lang: zh
+  content: >-
+    客车可以携带狗、猫、小狗等小型宠物，条件是装在专用的航空箱里，放在车厢下方的行李舱。
+    不允许把宠物放在座位上，也不允许在车厢内散放。
+
+- docId: pets-train-zh
+  title: 带宠物乘坐火车
+  category: PETS
+  lang: zh
+  content: >-
+    火车只接受装在封闭笼子里、托运在行李车厢的宠物。
+    不能带进卧铺车厢或座位车厢。
+    出行前请先联系车站，了解具体线路的规定。
+
+- docId: pets-service-animal-zh
+  title: 视障旅客的导盲犬
+  category: PETS
+  lang: zh
+  content: >-
+    陪伴视障旅客的导盲犬单独处理，不适用普通宠物规定。
+    请提前告知承运方，并携带能证明该动物是经过训练的助残犬的材料。
+
+- docId: children-infant-free-zh
+  title: 两岁以下婴儿的车票
+  category: CHILDREN
+  lang: zh
+  content: >-
+    两岁以下的婴儿免票，与同行的成人共用座位，不单独占座。
+    每位成人只能带一名两岁以下的婴儿。
+    预订时仍然需要填写婴儿的信息。
+
+- docId: children-2-to-12-zh
+  title: 两岁到十二岁的儿童票价
+  category: CHILDREN
+  lang: zh
+  content: >-
+    两岁到十二岁的儿童按成人票价的75个百分点计费，并且单独占座。
+    预订时把乘客类型选为儿童，系统才会套用正确的价格。
+
+- docId: children-over-12-zh
+  title: 十二岁以上如何计价
+  category: CHILDREN
+  lang: zh
+  content: >-
+    十二岁及以上的乘客按成人全价计费，不再享受儿童优惠。
+
+- docId: children-travel-alone-zh
+  title: 儿童独自乘车
+  category: CHILDREN
+  lang: zh
+  content: >-
+    十二岁以下的儿童需要成人陪同。
+    儿童独自出行时，请直接联系客运公司或航空公司，办理途中照看服务。
+    在线预订本身无法处理这种情况。
+
+- docId: payment-methods-zh
+  title: 支持的付款方式
+  category: PAYMENT
+  lang: zh
+  content: >-
+    付款通过VNPAY支付网关在线完成，支持国内ATM银行卡、扫描QR二维码、
+    Visa和Mastercard国际信用卡，以及与VNPAY关联的电子钱包。
+    暂不支持上车后付现金。
+
+- docId: payment-failed-zh
+  title: 付款失败怎么办
+  category: PAYMENT
+  lang: zh
+  content: >-
+    付款失败、报错或中途中断时，订单会停留在未付款状态，座位只保留很短的时间。
+    请进入订单历史重新付款，或者重新下单。
+    如果钱被扣了但订单没有成功，银行会自动退回。
+
+- docId: payment-double-charge-zh
+  title: 同一个订单被扣了两次钱
+  category: PAYMENT
+  lang: zh
+  content: >-
+    如果同一个订单被扣款不止一次，请截图保存交易凭证并联系客服。
+    多出来的交易会与VNPAY对账后退回。
+
+- docId: payment-hold-time-zh
+  title: 座位保留多久需要付款
+  category: PAYMENT
+  lang: zh
+  content: >-
+    选好的座位只在很短的时间内为你保留，用来完成付款。
+    超过这个时间，系统会自动取消未付款的订单，并把座位重新开放给其他乘客。
+    所以选好座位后请立刻完成付款。
+
+- docId: payment-invoice-zh
+  title: 索取发票
+  category: PAYMENT
+  lang: zh
+  content: >-
+    需要已购车票的发票，请带上订单号直接联系运输服务商。
+    订票系统出具的是订座确认，不是增值税发票。
+
+- docId: booking-how-to-zh
+  title: 订票的步骤
+  category: BOOKING
+  lang: zh
+  content: >-
+    第一次在这里买票的流程是这样：先选择出发地、目的地、出发日期和乘客人数，再从列表中选择合适的班次。
+    接着选座位、填写乘客信息，然后通过VNPAY付款。
+    付款成功后，车票和QR二维码会发送到邮箱。
+
+- docId: booking-confirmation-email-zh
+  title: 没有收到确认邮件
+  category: BOOKING
+  lang: zh
+  content: >-
+    带有电子车票的确认邮件，通常在付款成功后几分钟内送达。
+    如果付了款却没收到邮件，请先检查垃圾邮件和促销邮件文件夹。
+    即使邮件延迟，车票也始终能在账户的订单历史中看到。
+
+- docId: booking-check-my-tickets-zh
+  title: 查看已订的车票
+  category: BOOKING
+  lang: zh
+  content: >-
+    登录后进入订单历史，可以看到全部订单、付款状态、QR二维码和行程详情。
+    只有账户本人能看到自己的车票。
+
+- docId: booking-guest-vs-account-zh
+  title: 订票需要注册账户吗
+  category: BOOKING
+  lang: zh
+  content: >-
+    建议订票前先注册账户，这样以后才方便查询订单、获取二维码和申请退款。
+    没有账户的话，之后查询和退票都会麻烦很多。
+
+- docId: booking-round-trip-zh
+  title: 预订往返票
+  category: BOOKING
+  lang: zh
+  content: >-
+    一次同时买去程和回程的往返预订功能正在维护中。
+    请分别预订去程和回程两张单程票。
+
+- docId: booking-multiple-passengers-zh
+  title: 一次订多张票
+  category: BOOKING
+  lang: zh
+  content: >-
+    一家人或一群人出行时，在搜索环节就选好乘客人数，然后选择相应数量的座位，逐个填写每个人的信息。
+    这些票同属一个订单号，一次付款即可。
+
+- docId: seat-selection-zh
+  title: 选座位
+  category: SEAT
+  lang: zh
+  content: >-
+    选定班次后，系统会显示座位图，标明空位和已售出的座位。
+    直接点击想要的座位即可。所选座位的数量必须与填写的乘客人数一致。
+
+- docId: seat-locked-by-others-zh
+  title: 正在选的座位为什么被别人占了
+  category: SEAT
+  lang: zh
+  content: >-
+    座位图在所有正在查看同一班次的人之间实时同步。
+    有人选中某个座位时，该座位会被临时锁定，以免重复预订。
+    如果被别人先占了，请另选一个空位。
+
+- docId: seat-change-after-payment-zh
+  title: 付款后还能换座位吗
+  category: SEAT
+  lang: zh
+  content: >-
+    付款成功后，座位就固定在车票上，系统里无法更改。
+    确实需要换座位，请在发车前直接联系运营方的工作人员。
+
+- docId: checkin-qr-usage-zh
+  title: 用二维码上车
+  category: CHECKIN
+  lang: zh
+  content: >-
+    每张车票都有自己的QR二维码。上车时把手机上的二维码举给司机或检票人员扫描即可。
+    不需要打印纸质车票。
+    二维码在确认邮件和订单历史里都能找到。
+
+- docId: checkin-qr-not-working-zh
+  title: 二维码扫不出来
+  category: CHECKIN
+  lang: zh
+  content: >-
+    二维码扫不出来时，请调高屏幕亮度并擦干净手机屏幕。
+    如果还是不行，把订单号念给检票人员，他们可以手动查询。
+
+- docId: checkin-arrive-early-zh
+  title: 需要提前多久到
+  category: CHECKIN
+  lang: zh
+  content: >-
+    乘坐客车和火车，请至少在发车前30分钟到达车站。
+    乘坐飞机，国内航班建议至少提前2小时到机场，以便办理值机和通过安检。
+
+- docId: checkin-already-used-zh
+  title: 已检票的车票还能再用吗
+  category: CHECKIN
+  lang: zh
+  content: >-
+    每张车票只能检票一次。扫描成功后车票转为已使用状态，无法再次扫描。
+    这样可以防止车票被共用或者伪造。
+
+- docId: voucher-how-to-use-zh
+  title: 优惠码怎么用
+  category: PROMO
+  lang: zh
+  content: >-
+    优惠码、折扣码、代金券在付款环节、确认订单之前输入。
+    系统会检查适用条件，并直接从总金额中扣除。
+    每个订单只能使用一个优惠码。
+
+- docId: voucher-conditions-zh
+  title: 优惠码的使用条件
+  category: PROMO
+  lang: zh
+  content: >-
+    优惠码可能带有最低订单金额、最高折扣金额、有效期和剩余使用次数等条件。
+    已过期、次数用完，或者订单没达到最低金额，都用不了。
+
+- docId: voucher-not-working-zh
+  title: 优惠码提示无效
+  category: PROMO
+  lang: zh
+  content: >-
+    提示无效通常是因为已过期、次数已用完、订单金额低于最低要求，或者这个码只适用于某一家运营公司。
+    请再核对一下优惠码的条件，或者换一个仍然有效的码。
+
+- docId: voucher-after-payment-zh
+  title: 付款前忘了输优惠码
+  category: PROMO
+  lang: zh
+  content: >-
+    优惠码必须在确认付款之前输入。
+    订单一旦付款完成，就不能再补用优惠码了。
+
+- docId: account-register-zh
+  title: 注册账户
+  category: ACCOUNT
+  lang: zh
+  content: >-
+    可以用邮箱和密码注册，也可以用Google账户快速登录。
+    用邮箱注册时，系统会发送验证码到邮箱，用来激活账户。
+
+- docId: account-forgot-password-zh
+  title: 忘记密码
+  category: ACCOUNT
+  lang: zh
+  content: >-
+    在登录页点击忘记密码，输入注册时使用的邮箱。
+    系统会把重置密码的验证码发到该邮箱。
+    为了防止滥用，每段时间内请求验证码的次数有限制。
+
+- docId: account-not-receiving-code-zh
+  title: 收不到验证码
+  category: ACCOUNT
+  lang: zh
+  content: >-
+    验证码可能被归到垃圾邮件里，请先检查垃圾邮件和促销邮件。
+    如果仍然没收到，等几分钟后再请求一次，并仔细核对填写的邮箱地址是否正确。
+
+- docId: account-change-info-zh
+  title: 修改个人信息
+  category: ACCOUNT
+  lang: zh
+  content: >-
+    在账户资料页可以更新姓名、电话号码和个人信息。
+    已经出票的车票上的乘客信息，无法通过系统修改。
+
+- docId: account-saved-passengers-zh
+  title: 保存常用乘客信息
+  category: ACCOUNT
+  lang: zh
+  content: >-
+    系统可以保存经常同行的人的信息，下次订票时直接选择，不用重新输入。
+
+- docId: trip-search-tips-zh
+  title: 怎么找到合适的班次
+  category: TRIP
+  lang: zh
+  content: >-
+    输入出发地、目的地和出发日期，就能看到班次列表。
+    想找最便宜的班次，可以按发车时段、最高价格和心仪的运营公司进一步筛选。
+
+- docId: trip-no-results-zh
+  title: 查不到任何班次
+  category: TRIP
+  lang: zh
+  content: >-
+    没有结果通常是因为所选日期还没开售，或者这条线路暂时没有班次运营。
+    换一个日期试试，或者去掉价格和时段的筛选条件，就能看到更多选择。
+
+- docId: trip-vehicle-types-zh
+  title: 支持哪些交通方式
+  category: TRIP
+  lang: zh
+  content: >-
+    系统销售三种交通方式的车票：飞机、火车和客车。
+    每种都有自己的搜索页面，座位图和行李规定也各不相同。
+
+- docId: trip-delay-zh
+  title: 班次延误或改点
+  category: TRIP
+  lang: zh
+  content: >-
+    班次延误或改点时，系统会通知你注册时填写的邮箱。
+    去车站之前，请先在订单历史中确认班次状态。
+    如果运营公司取消了班次，会按该服务商的规定退款。
+
+- docId: trip-price-difference-zh
+  title: 同一条线路价格为什么不一样
+  category: TRIP
+  lang: zh
+  content: >-
+    票价会因运营公司、交通方式、座位等级和发车时间而不同。
+    热门时段和节假日高峰期，价格通常比平日高。
+
+- docId: support-contact-zh
+  title: 联系客服
+  category: SUPPORT
+  lang: zh
+  content: >-
+    想用电话直接沟通，可以拨打热线，或者通过网站底部的联系方式找到客服团队。
+    请提前准备好订单号，这样查询会更快。
+
+- docId: support-complaint-zh
+  title: 投诉服务质量
+  category: SUPPORT
+  lang: zh
+  content: >-
+    如果司机或工作人员态度不好，或者旅途中的服务有问题，投诉会转交给相应的客运公司或承运方。
+    请附上订单号、乘车日期和具体经过的说明。
+    你也可以给已完成的行程留下评价。
+
+- docId: support-review-zh
+  title: 评价行程
+  category: SUPPORT
+  lang: zh
+  content: >-
+    行程结束后，可以在订单历史中给这趟行程打分并写评价。
+    评价能帮助其他乘客挑选合适的运营公司。

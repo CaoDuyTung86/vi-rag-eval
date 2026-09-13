@@ -12,3 +12,9 @@ dist/
 build/
 .idea/
 .vscode/
+
+# Dữ liệu thật xuất từ Neon — chứa nội dung người dùng, không bao giờ commit.
+data/private/
+*.csv
+baseline.json
+.env*

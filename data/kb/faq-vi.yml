@@ -72,8 +72,10 @@
   lang: vi
   content: >-
     Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé.
-    Hủy trong khoảng 12 đến 24 giờ trước giờ khởi hành được hoàn 50 phần trăm.
-    Hủy dưới 12 giờ trước giờ khởi hành sẽ không được hoàn tiền.
+    Hủy trong khoảng 4 đến 24 giờ trước giờ khởi hành chịu phí hủy 10 phần trăm,
+    tức là được hoàn 90 phần trăm giá trị đơn hàng.
+    Khi chỉ còn dưới 4 giờ là tới giờ khởi hành thì không hủy và không hoàn được nữa.
+    Vé đã soát tại bến cũng không hủy hoàn được, dù còn cách giờ khởi hành bao lâu.
 
 - docId: cancel-how-to
   title: Cách hủy vé đã đặt
@@ -89,9 +91,10 @@
   category: CANCEL
   lang: vi
   content: >-
-    Khách đến muộn và lỡ chuyến được xem như hủy vé dưới 12 giờ, tức là không được
-    hoàn tiền. Nếu biết trước mình không đi được, hãy chủ động hủy vé càng sớm càng
-    tốt để hưởng mức hoàn tiền cao hơn. Nên có mặt tại bến trước giờ khởi hành ít nhất 30 phút.
+    Khách đến muộn và lỡ chuyến thì không được hoàn tiền, vì hạn chót hủy vé đã đóng
+    từ lúc còn 4 giờ trước giờ khởi hành. Vé đã soát cũng không hoàn được. Nếu biết
+    trước mình không đi được, hãy chủ động hủy vé càng sớm càng tốt để hưởng mức hoàn
+    tiền cao hơn. Nên có mặt tại bến trước giờ khởi hành ít nhất 30 phút.
 
 - docId: cancel-change-ticket
   title: Đổi vé sang chuyến khác
@@ -124,8 +127,9 @@
   category: REFUND
   lang: vi
   content: >-
-    Số tiền hoàn phụ thuộc thời điểm hủy so với giờ khởi hành. Hủy trong khoảng 12
-    đến 24 giờ trước giờ đi chỉ được hoàn một nửa giá vé. Phần phí dịch vụ và các
+    Số tiền hoàn phụ thuộc thời điểm hủy so với giờ khởi hành. Hủy trong khoảng 4
+    đến 24 giờ trước giờ đi chịu phí hủy 10 phần trăm, nên khách chỉ nhận lại 90 phần
+    trăm giá trị đơn hàng chứ không phải toàn bộ. Phần phí dịch vụ và các
     dịch vụ bổ sung đã sử dụng có thể không nằm trong khoản hoàn.
 
 - docId: pets-plane

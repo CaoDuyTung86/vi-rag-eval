@@ -1,74 +1,191 @@
-# Từ đồng nghĩa mở rộng truy vấn cho nhánh BM25.
+# Từ đồng nghĩa mở rộng truy vấn cho nhánh BM25, mỗi ngôn ngữ một bảng.
 #
-# Tách ra khỏi mã nguồn (bản Java hard-code trong SynonymExpander) vì đây là DỮ LIỆU:
-# nó thay đổi mỗi lần error analysis phát hiện một khoảng trống từ vựng mới, và
-# thay đổi dữ liệu không nên cần biên dịch lại.
+# Tham chiếu: SynonymExpander.java — bản Java hard-code bốn bảng này trong mã nguồn. Ở đây
+# chúng là DỮ LIỆU: đổi mỗi lần error analysis phát hiện một khoảng trống từ vựng mới, và đổi
+# dữ liệu thì không nên phải sửa code.
 #
-# Quy tắc: khoá là cụm từ ĐÃ BỎ DẤU, so khớp bằng "chuỗi con" trên truy vấn đã chuẩn hoá.
-# Giá trị là các token ném thêm vào truy vấn — không thay thế token gốc, chỉ thêm.
+# Vì sao tách bảng theo ngôn ngữ: khi truy hồi lọc theo lang, chỉ mục mà một câu hỏi tiếng Anh
+# được chấm trên đó CHỈ còn chunk tiếng Anh. Ném thêm từ khoá tiếng Việt vào truy vấn đó không
+# khớp được gì, chỉ làm truy vấn dài ra. Chiều ngược lại cũng vậy.
+#
+# Cách so khớp (xem rag/synonyms.py):
+#   - Khoá Latin: ĐÃ BỎ DẤU, khớp theo RANH GIỚI TỪ trên token của truy vấn — "cho" không được
+#     khớp vào "chon" (chọn), "cun" không được khớp vào "cung" (cùng).
+#   - Khoá CJK: khớp CHUỖI CON trên truy vấn đã NFKC, vì tiếng Nhật/Trung không có dấu cách.
+# Giá trị là các cụm từ ném THÊM vào truy vấn (sẽ được tách token), không thay thế token gốc.
+#
+# Mọi khoá đặt trong ngoặc kép: YAML 1.1 đọc no/yes/on/off để trần thành bool.
 
-# --- thú cưng ---
-"thu cung": [thu cung, cho, meo, pet, dong vat, long]
-"cho": [thu cung, cho]
-"meo": [thu cung, meo]
-"cun": [thu cung, cho]
-"poodle": [thu cung, cho]
-"pet": [thu cung]
+vi:
+  # --- thú cưng ---
+  "thu cung": [thu cung, cho, meo, pet, dong vat, long]
+  "cho": [thu cung, cho]
+  "meo": [thu cung, meo]
+  "cun": [thu cung, cho]
+  "poodle": [thu cung, cho]
+  "pet": [thu cung]
 
-# --- huỷ vé, hoàn tiền ---
-"huy ve": [huy ve, hoan tien, hoan ve]
-"tra ve": [huy ve, hoan tien]
-"bung ve": [huy ve, hoan tien]
-"doi ve": [doi ve, huy ve]
-"hoan tien": [hoan tien, huy ve]
-"lay lai tien": [hoan tien, huy ve]
-"lo chuyen": [huy ve, hoan tien, tre gio]
+  # --- huỷ vé, hoàn tiền ---
+  "huy ve": [huy ve, hoan tien, hoan ve]
+  "tra ve": [huy ve, hoan tien]
+  "bung ve": [huy ve, hoan tien]
+  "doi ve": [doi ve, huy ve]
+  "hoan tien": [hoan tien, huy ve]
+  "lay lai tien": [hoan tien, huy ve]
+  "lo chuyen": [huy ve, hoan tien, tre gio]
 
-# --- hành lý ---
-"hanh ly": [hanh ly, vali, ky gui, xach tay, kg]
-"vali": [hanh ly, vali]
-"xach tay": [hanh ly, xach tay]
-"ky gui": [hanh ly, ky gui]
-"may kg": [hanh ly, kg]
-"may can": [hanh ly, kg]
-"luggage": [hanh ly]
-"baggage": [hanh ly]
+  # --- hành lý ---
+  "hanh ly": [hanh ly, vali, ky gui, xach tay, kg]
+  "vali": [hanh ly, vali]
+  "xach tay": [hanh ly, xach tay]
+  "ky gui": [hanh ly, ky gui]
+  "may kg": [hanh ly, kg]
+  "may can": [hanh ly, kg]
 
-# --- trẻ em ---
-"tre em": [tre em, em be, tuoi]
-"em be": [tre em, em be]
-"tre nho": [tre em]
-"baby": [tre em, em be]
+  # --- trẻ em ---
+  "tre em": [tre em, em be, tuoi]
+  "em be": [tre em, em be]
+  "tre nho": [tre em]
 
-# --- thanh toán ---
-"thanh toan": [thanh toan, vnpay, the, vi dien tu]
-"chuyen khoan": [thanh toan, vnpay]
-"vnpay": [thanh toan, vnpay]
-"tra tien": [thanh toan]
+  # --- thanh toán ---
+  "thanh toan": [thanh toan, vnpay, the, vi dien tu]
+  "chuyen khoan": [thanh toan, vnpay]
+  "vnpay": [thanh toan, vnpay]
+  "tra tien": [thanh toan]
 
-# --- khuyến mãi ---
-"khuyen mai": [khuyen mai, voucher, giam gia, uu dai]
-"giam gia": [khuyen mai, voucher, giam gia]
-"voucher": [khuyen mai, voucher]
-"uu dai": [khuyen mai, voucher]
-"re hon": [khuyen mai, giam gia]
+  # --- khuyến mãi ---
+  "khuyen mai": [khuyen mai, voucher, giam gia, uu dai]
+  "giam gia": [khuyen mai, voucher, giam gia]
+  "voucher": [khuyen mai, voucher]
+  "uu dai": [khuyen mai, voucher]
+  "re hon": [khuyen mai, giam gia]
 
-# --- check-in ---
-"check in": [check in, qr, soat ve, len xe]
-"qr": [check in, qr, soat ve]
-"ma vach": [check in, qr, soat ve]
-"soat ve": [check in, qr]
+  # --- check-in ---
+  "check in": [check in, qr, soat ve, len xe]
+  "qr": [check in, qr, soat ve]
+  "ma vach": [check in, qr, soat ve]
+  "soat ve": [check in, qr]
 
-# --- khoảng trống từ vựng do bộ đo phát hiện ---
-# Từ khách dùng thật khác hẳn từ trong tài liệu. Mỗi dòng dưới đây tương ứng
-# một câu hỏi từng trượt trong golden.yml.
-"tong dai": [ho tro, lien he, cham soc khach hang]
-"mail": [email]
-"bat lua": [chay no, cam, vu khi]
-"ca nha": [nhieu, hanh khach, so luong]
-"di va ve": [khu hoi]
-"ca hai chieu": [khu hoi]
-"laptop": [de vo, thiet bi dien tu, gia tri]
-"may anh": [de vo, thiet bi dien tu, gia tri]
-"re nhat": [gia, loc, tim chuyen]
-"lan dau": [cac buoc, dat ve]
+  # --- khoảng trống từ vựng do bộ đo phát hiện: từ khách dùng thật khác hẳn từ trong tài liệu
+  "tong dai": [ho tro, lien he, cham soc khach hang]
+  "mail": [email]
+  "bat lua": [chay no, cam, vu khi]
+  "ca nha": [nhieu, hanh khach, so luong]
+  "di va ve": [khu hoi]
+  "ca hai chieu": [khu hoi]
+  "laptop": [de vo, thiet bi dien tu, gia tri]
+  "may anh": [de vo, thiet bi dien tu, gia tri]
+  "re nhat": [gia, loc, tim chuyen]
+  "lan dau": [cac buoc, dat ve]
+
+en:
+  # BM25 so khớp mặt chữ nên "cancel" không tự khớp "cancellation", "pay" không khớp "paid".
+  # Bảng này gánh việc của một stemmer: cắm stemmer thật sẽ kéo theo thư viện mới và đụng cả
+  # token tiếng Việt — với corpus cỡ này, liệt tay vài biến thể hay gặp rẻ hơn và kiểm soát được.
+  "bag": [baggage, luggage]
+  "bags": [baggage, luggage]
+  "luggage": [baggage, luggage]
+  "baggage": [baggage, luggage]
+  "suitcase": [baggage, luggage]
+  "carry on": [carry, cabin, baggage]
+  "overweight": [excess, allowance, fee]
+  "kilo": [kg, allowance]
+  "kilos": [kg, allowance]
+
+  "cancel": [cancel, cancelled, cancellation, refund]
+  "refund": [refund, refunded, cancellation]
+  "money back": [refund, cancellation]
+  "no show": [miss, refund, departure]
+  "miss": [miss, no-show, departure]
+  "change my ticket": [swapping, cancel, trip]
+
+  "pet": [pet, pets, animal, carrier]
+  "dog": [dog, pet, pets, carrier]
+  "cat": [cat, pet, pets, carrier]
+  "puppy": [dog, pet, pets]
+
+  "kid": [child, children, fare]
+  "kids": [child, children, fare]
+  "child": [child, children, infant]
+  "baby": [infant, children]
+  "toddler": [infant, children]
+
+  "pay": [payment, pay, vnpay]
+  "paid": [payment, paid, vnpay]
+  "card": [payment, visa, mastercard, atm]
+  "charged": [charged, payment, transaction]
+  "invoice": [invoice, vat, provider]
+  "receipt": [invoice, receipts, transaction]
+
+  "promo code": [discount, voucher, promo]
+  "coupon": [discount, voucher, promo]
+  "discount": [discount, voucher, promo]
+  "voucher": [discount, voucher, promo]
+
+  "qr": [qr, scan, code]
+  "barcode": [qr, scan, code]
+  "boarding": [board, scan, staff]
+  "check in": [checked, scan, qr]
+
+  "hotline": [hotline, support, customer care]
+  "phone": [hotline, phone, support]
+  "complain": [complaint, complaints, operator]
+  "rude": [rude, complaint, poor]
+
+  "eticket": [ticket, email, confirmation]
+  "e ticket": [ticket, email, confirmation]
+  "mail": [email, confirmation]
+  "otp": [verification, code]
+  "sign up": [register, account]
+  "log in": [login, account]
+  "round trip": [round, outbound, return]
+  "return ticket": [round, outbound, return]
+  "delayed": [delayed, rescheduled, status]
+  "late": [delayed, departure]
+  "cheapest": [cheapest, price, filters]
+
+ja:
+  # Nhỏ hơn hẳn hai bảng trên vì bigram đã tự gánh phần lớn việc: "手荷物" và "荷物" chung
+  # bigram 荷物 nên khớp được mà không cần khai báo. Chỉ còn những cặp KHÁC MẶT CHỮ hay bị dùng
+  # lẫn: từ ngoại lai katakana so với từ thuần Nhật, cách nói đời thường so với từ tài liệu.
+  "ペット": [ペット, 動物, 犬, 猫]
+  "犬": [ペット, 犬, 動物]
+  "猫": [ペット, 猫, 動物]
+  "スーツケース": [手荷物, 荷物]
+  "バッグ": [手荷物, 荷物]
+  "キャンセル": [キャンセル, 取り消し, 払い戻し]
+  # KHÔNG nối 返金 sang キャンセル: câu hỏi "返金はいつ口座に入る" (bao giờ tiền về) từng bị đẩy
+  # xuống hạng 5 vì mấy chunk về huỷ vé được cộng điểm oan. Hỏi tiền về tài khoản không phải
+  # là hỏi cách huỷ.
+  "返金": [払い戻し, 返金, 口座]
+  "払い戻し": [払い戻し, 返金]
+  "電車": [列車, 鉄道]
+  "キロ": [kg, 手荷物, 重量]
+  "カード": [カード, 支払い, 決済]
+  "子供": [子供, 小児, 幼児]
+  "赤ちゃん": [幼児, 子供]
+  "支払い": [支払い, 決済, カード]
+  "クーポン": [割引, クーポン, コード]
+  "メール": [メール, 確認, チケット]
+  "電話": [電話, 問い合わせ, サポート]
+  "遅れ": [遅延, 変更, 出発]
+
+zh:
+  # Cùng nguyên tắc với bảng tiếng Nhật.
+  "宠物": [宠物, 动物, 狗, 猫]
+  "狗": [宠物, 狗, 动物]
+  "猫": [宠物, 猫, 动物]
+  "箱子": [行李, 托运]
+  "背包": [行李, 随身]
+  "退票": [退票, 取消, 退款]
+  "退钱": [退款, 退票]
+  "退款": [退款, 退票, 取消]
+  "小孩": [儿童, 小孩, 婴儿]
+  "宝宝": [婴儿, 儿童]
+  "付款": [付款, 支付, 银行卡]
+  "付钱": [付款, 支付, 银行卡]
+  "刷卡": [银行卡, 支付, 付款]
+  "优惠码": [优惠, 折扣, 代码]
+  "邮件": [邮件, 确认, 车票]
+  "电话": [电话, 联系, 客服]
+  "晚点": [延误, 改点, 出发]

@@ -6,6 +6,15 @@
 #
 # expected liệt kê mọi chunk được coi là trả lời đúng: nhiều câu hỏi có hơn một câu
 # trả lời hợp lệ, và phạt hệ thống vì chọn chunk đúng "khác" là sai.
+#
+# lang: ngôn ngữ của CÂU HỎI, bỏ trống thì hiểu là "vi". Bộ đo chấm điểm riêng cho
+# từng ngôn ngữ rồi mới gộp, vì một con số trung bình của cả hai sẽ che mất việc một
+# ngôn ngữ tụt hẳn.
+#
+# Câu hỏi tiếng Anh kỳ vọng chunk có hậu tố "-en" và được chấm trên ĐÚNG corpus hỗn
+# hợp mà production đang dùng (cả faq-vi.yml lẫn faq-en.yml, chưa lọc theo lang). Đó
+# là chủ ý: phải có số của trạng thái hiện tại thì sau này thêm bộ lọc ngôn ngữ vào
+# HybridRetriever mới biết là tốt lên hay tệ đi.
 
 - query: cho tôi hỏi được mang bao nhiêu kg lên máy bay
   expected: [baggage-plane-general]
@@ -58,7 +67,7 @@
 - query: đơn hoàn tiền của tôi đang chờ duyệt nghĩa là sao
   expected: [refund-status-meaning]
 
-- query: sao tôi chỉ được trả lại một nửa tiền
+- query: sao tôi không được hoàn đủ tiền vé
   expected: [refund-partial, cancel-policy-refund-tiers]
 
 - query: bé nhà tôi 1 tuổi có phải mua vé không
@@ -177,3 +186,310 @@
 
 - query: đánh giá sao cho chuyến vừa đi
   expected: [support-review]
+
+# ---------------------------------------------------------------------------
+# Câu hỏi tiếng Anh. Viết theo kiểu khách gõ thật: chữ thường, viết tắt, sai
+# chính tả, nói vòng ("what happens if i miss the bus") chứ không chép lại tiêu đề
+# chunk.
+# ---------------------------------------------------------------------------
+
+- query: how many kg of luggage can i take on the plane
+  lang: en
+  expected: [baggage-plane-general-en]
+
+- query: whats the baggage allowance on a bus
+  lang: en
+  expected: [baggage-bus-general-en]
+
+- query: my suitcase is too heavy, what do i pay
+  lang: en
+  expected: [baggage-overweight-fee-en]
+
+- query: can i put my laptop in the checked bag
+  lang: en
+  expected: [baggage-fragile-en]
+
+- query: am i allowed to bring a lighter on board
+  lang: en
+  expected: [baggage-prohibited-en]
+
+- query: can i bring my dog with me
+  lang: en
+  expected: [pets-bus-en, pets-plane-en]
+
+- query: travelling with a cat on the train
+  lang: en
+  expected: [pets-train-en, pets-bus-en]
+
+- query: what happens if i miss the bus
+  lang: en
+  expected: [cancel-missed-trip-en, cancel-policy-refund-tiers-en]
+
+- query: i want to cancel and get my money back
+  lang: en
+  expected: [cancel-how-to-en, cancel-policy-refund-tiers-en]
+
+- query: how much do i lose if i cancel 10 hours before
+  lang: en
+  expected: [cancel-policy-refund-tiers-en, refund-partial-en]
+
+- query: how long until the refund reaches my bank
+  lang: en
+  expected: [refund-processing-time-en]
+
+- query: my refund says pending what does that mean
+  lang: en
+  expected: [refund-status-meaning-en]
+
+- query: do i need to buy a ticket for my 1 year old
+  lang: en
+  expected: [children-infant-free-en]
+
+- query: price for a 5 year old kid
+  lang: en
+  expected: [children-2-to-12-en]
+
+- query: which cards can i pay with
+  lang: en
+  expected: [payment-methods-en]
+
+- query: payment failed but money was taken
+  lang: en
+  expected: [payment-failed-en, payment-double-charge-en]
+
+- query: i got charged twice for the same booking
+  lang: en
+  expected: [payment-double-charge-en]
+
+- query: how long do you hold the seat before i pay
+  lang: en
+  expected: [payment-hold-time-en]
+
+- query: first time here how do i buy a ticket
+  lang: en
+  expected: [booking-how-to-en]
+
+- query: i paid but no email arrived
+  lang: en
+  expected: [booking-confirmation-email-en]
+
+- query: where do i see the tickets i bought
+  lang: en
+  expected: [booking-check-my-tickets-en]
+
+- query: can i book the return trip at the same time
+  lang: en
+  expected: [booking-round-trip-en]
+
+- query: someone took the seat while i was choosing
+  lang: en
+  expected: [seat-locked-by-others-en]
+
+- query: can i change my seat after paying
+  lang: en
+  expected: [seat-change-after-payment-en]
+
+- query: what do i show the driver when i get on
+  lang: en
+  expected: [checkin-qr-usage-en]
+
+- query: the qr code wont scan
+  lang: en
+  expected: [checkin-qr-not-working-en]
+
+- query: how early should i get to the station
+  lang: en
+  expected: [checkin-arrive-early-en]
+
+- query: where do i type the promo code
+  lang: en
+  expected: [voucher-how-to-use-en]
+
+- query: my discount code says invalid
+  lang: en
+  expected: [voucher-not-working-en, voucher-conditions-en]
+
+- query: i forgot my password
+  lang: en
+  expected: [account-forgot-password-en]
+
+- query: never got the verification code
+  lang: en
+  expected: [account-not-receiving-code-en]
+
+- query: looking for the cheapest morning trip
+  lang: en
+  expected: [trip-search-tips-en]
+
+- query: no trips showing up for that day
+  lang: en
+  expected: [trip-no-results-en]
+
+- query: my trip got delayed
+  lang: en
+  expected: [trip-delay-en]
+
+- query: why is the same route more expensive
+  lang: en
+  expected: [trip-price-difference-en]
+
+- query: i need to talk to someone on the phone
+  lang: en
+  expected: [support-contact-en]
+
+- query: the driver was rude i want to complain
+  lang: en
+  expected: [support-complaint-en]
+
+# ---------------------------------------------------------------------------
+# Câu hỏi tiếng Nhật. Cố ý viết khác mặt chữ với tiêu đề chunk: nhánh BM25 cắt
+# chữ Nhật thành bigram, nên chép lại tiêu đề là tự cho điểm chính mình.
+# ---------------------------------------------------------------------------
+
+- query: 飛行機に何キロまで荷物を持ち込めますか
+  lang: ja
+  expected: [baggage-plane-general-ja]
+
+- query: バスの荷物は何キロまで無料ですか
+  lang: ja
+  expected: [baggage-bus-general-ja]
+
+- query: スーツケースが重い場合いくら払いますか
+  lang: ja
+  expected: [baggage-overweight-fee-ja]
+
+- query: ライターを持って乗れますか
+  lang: ja
+  expected: [baggage-prohibited-ja]
+
+- query: 犬を連れて行けますか
+  lang: ja
+  expected: [pets-bus-ja, pets-plane-ja]
+
+- query: 猫と一緒に電車に乗りたい
+  lang: ja
+  expected: [pets-train-ja, pets-bus-ja]
+
+- query: 乗り遅れたらお金は戻りますか
+  lang: ja
+  expected: [cancel-missed-trip-ja, cancel-policy-refund-tiers-ja]
+
+- query: 予約をやめたいのですがどこから手続きしますか
+  lang: ja
+  expected: [cancel-how-to-ja]
+
+- query: 返金はいつ口座に入りますか
+  lang: ja
+  expected: [refund-processing-time-ja]
+
+- query: 1歳の子供もチケットが必要ですか
+  lang: ja
+  expected: [children-infant-free-ja]
+
+- query: 5歳の子供の料金はいくらですか
+  lang: ja
+  expected: [children-2-to-12-ja]
+
+- query: どのカードで払えますか
+  lang: ja
+  expected: [payment-methods-ja]
+
+- query: 払ったのにメールが来ません
+  lang: ja
+  expected: [booking-confirmation-email-ja]
+
+- query: QRが反応しないと言われました
+  lang: ja
+  expected: [checkin-qr-not-working-ja]
+
+- query: クーポンはどこに入力しますか
+  lang: ja
+  expected: [voucher-how-to-use-ja]
+
+- query: ログインできずパスワードが分かりません
+  lang: ja
+  expected: [account-forgot-password-ja]
+
+- query: 電話で直接聞きたいのですが
+  lang: ja
+  expected: [support-contact-ja]
+
+- query: 乗る便の時間が変わりました
+  lang: ja
+  expected: [trip-delay-ja]
+
+# ---------------------------------------------------------------------------
+# Câu hỏi tiếng Trung, cùng nguyên tắc. Chỉ viết giản thể, đúng như corpus.
+# ---------------------------------------------------------------------------
+
+- query: 坐飞机能带多少公斤行李
+  lang: zh
+  expected: [baggage-plane-general-zh]
+
+- query: 坐客车免费带多少公斤
+  lang: zh
+  expected: [baggage-bus-general-zh]
+
+- query: 箱子超重要交多少钱
+  lang: zh
+  expected: [baggage-overweight-fee-zh]
+
+- query: 打火机能带上车吗
+  lang: zh
+  expected: [baggage-prohibited-zh]
+
+- query: 可以带狗一起走吗
+  lang: zh
+  expected: [pets-bus-zh, pets-plane-zh]
+
+- query: 带猫坐火车行不行
+  lang: zh
+  expected: [pets-train-zh, pets-bus-zh]
+
+- query: 没赶上车还能退钱吗
+  lang: zh
+  expected: [cancel-missed-trip-zh, cancel-policy-refund-tiers-zh]
+
+- query: 我不想去了在哪里操作
+  lang: zh
+  expected: [cancel-how-to-zh]
+
+- query: 退的钱多久能到银行卡
+  lang: zh
+  expected: [refund-processing-time-zh]
+
+- query: 一岁的宝宝要买票吗
+  lang: zh
+  expected: [children-infant-free-zh]
+
+- query: 五岁小孩怎么算钱
+  lang: zh
+  expected: [children-2-to-12-zh]
+
+- query: 可以用什么卡付钱
+  lang: zh
+  expected: [payment-methods-zh]
+
+- query: 付了钱没收到邮件
+  lang: zh
+  expected: [booking-confirmation-email-zh]
+
+- query: 扫不了码上不了车怎么办
+  lang: zh
+  expected: [checkin-qr-not-working-zh]
+
+- query: 优惠码在哪里输入
+  lang: zh
+  expected: [voucher-how-to-use-zh]
+
+- query: 登录不了密码想不起来
+  lang: zh
+  expected: [account-forgot-password-zh]
+
+- query: 想打电话找人问一下
+  lang: zh
+  expected: [support-contact-zh]
+
+- query: 我坐的班次晚点了
+  lang: zh
+  expected: [trip-delay-zh]

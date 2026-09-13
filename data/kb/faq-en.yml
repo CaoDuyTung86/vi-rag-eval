@@ -1,0 +1,527 @@
+# Knowledge base cho chatbot VigoTrip (tiếng Anh) — bản song hành của faq-vi.yml.
+#
+# QUAN HỆ VỚI faq-vi.yml:
+#   - Mỗi mục ở đây ứng với đúng một mục trong faq-vi.yml, docId là docId tiếng Việt
+#     cộng hậu tố "-en". KHÔNG dùng lại nguyên docId tiếng Việt: KnowledgeBaseSeeder
+#     đối chiếu chunk theo docId, hai mục trùng docId sẽ ghi đè lên nhau và bản tiếng
+#     Việt biến mất khỏi chỉ mục.
+#   - Nội dung phải khớp chính sách với bản tiếng Việt. Sửa số liệu (mức phí hủy, định
+#     mức hành lý, độ tuổi trẻ em) ở một file thì phải sửa file kia trong cùng lần
+#     commit, nếu không chatbot trả lời khác nhau tùy ngôn ngữ đang chọn.
+#
+# CÁCH VIẾT content:
+#   - Nhồi sẵn từ đời thường mà khách nói tiếng Anh hay gõ ("carry-on", "no-show",
+#     "checked bag", "e-ticket"), vì nhánh BM25 khớp theo mặt chữ.
+#   - Giữ nguyên tên riêng như bản tiếng Việt (VNPAY, Visa, Mastercard, QR) để hai
+#     ngôn ngữ cùng khớp được khi khách gõ lẫn lộn.
+#
+# LƯU Ý VỀ TRUY HỒI: hai ngôn ngữ nằm chung một chỉ mục, nhưng truy hồi có lọc theo
+# cột lang nên câu hỏi tiếng Anh chỉ chấm trên chunk tiếng Anh. Nghĩa là mục nào thiếu
+# ở file này thì người hỏi tiếng Anh KHÔNG được bản tiếng Việt đỡ cho — giữ hai file
+# song hành đủ 1:1. Xem docs/CHATBOT_AI.md §10.3.
+
+- docId: baggage-plane-general-en
+  title: Flight baggage allowance
+  category: BAGGAGE
+  lang: en
+  content: >-
+    A standard flight ticket includes 7kg of carry-on baggage and 20kg of checked baggage.
+    Carry-on bags must fit in the overhead bin or under the seat in front of you.
+    If your luggage is over the weight limit, you buy an extra baggage package at the
+    counter or pay the airline excess baggage fee.
+
+- docId: baggage-bus-general-en
+  title: Bus baggage allowance
+  category: BAGGAGE
+  lang: en
+  content: >-
+    A bus ticket includes up to 20kg of luggage per passenger free of charge.
+    Bulky bags go in the storage compartment under the coach, small bags stay with you
+    at your seat. There is no extra fee as long as your total luggage stays within the
+    20kg allowance.
+
+- docId: baggage-train-general-en
+  title: Train baggage allowance
+  category: BAGGAGE
+  lang: en
+  content: >-
+    A train ticket lets you carry personal luggage into the carriage, under 20kg per passenger.
+    Put bags on the rack above your seat or under the sleeper berth.
+    Oversized goods must be sent through the separate freight service of the station.
+
+- docId: baggage-overweight-fee-en
+  title: How excess baggage is charged
+  category: BAGGAGE
+  lang: en
+  content: >-
+    Luggage over the free allowance is charged an excess baggage fee for each extra kilogram.
+    If your suitcase is too heavy or overweight, what you pay depends on how many kilos you
+    are over. Each bus operator and airline sets its own rate and collects it directly at the
+    check-in counter. Weigh your bags before leaving home so the extra cost does not
+    catch you by surprise.
+
+- docId: baggage-fragile-en
+  title: Fragile and valuable items
+  category: BAGGAGE
+  lang: en
+  content: >-
+    Keep fragile items, electronics, cash and identity documents with you in the cabin,
+    not in checked baggage or the luggage compartment under the coach.
+    The carrier is not liable for valuables placed in checked baggage.
+
+- docId: baggage-prohibited-en
+  title: Prohibited items
+  category: BAGGAGE
+  lang: en
+  content: >-
+    Explosives, flammable substances, weapons, toxic chemicals, fireworks, large quantities
+    of lighters and other banned goods are not allowed on any vehicle. On flights, liquids
+    in carry-on bags are limited in volume under aviation security rules.
+    Breaking these rules means refused carriage with no refund.
+
+- docId: cancel-policy-refund-tiers-en
+  title: Cancellation policy and refund tiers
+  category: CANCEL
+  lang: en
+  content: >-
+    Cancel more than 24 hours before departure and you get a 100 percent refund of the ticket price.
+    Cancel between 4 and 24 hours before departure and a 10 percent cancellation fee applies,
+    so you get back 90 percent of the order value.
+    Less than 4 hours before departure the ticket can no longer be cancelled or refunded.
+    A ticket already scanned at the station cannot be cancelled either, no matter how long
+    is left before departure.
+
+- docId: cancel-how-to-en
+  title: How to cancel a booking
+  category: CANCEL
+  lang: en
+  content: >-
+    To cancel, log in, open Booking History, pick the order you want to drop and press cancel.
+    The system shows the refund amount before you confirm.
+    Only the account that made the booking can cancel that order.
+
+- docId: cancel-missed-trip-en
+  title: Missing the trip or arriving late
+  category: CANCEL
+  lang: en
+  content: >-
+    If you miss the bus, miss your train or miss your flight, a no-show gets no refund,
+    because the cancellation window already closed 4 hours before departure.
+    A ticket that has been scanned cannot be refunded either. If you know you cannot travel,
+    cancel as early as possible to land in a higher refund tier.
+    Be at the station at least 30 minutes before departure.
+
+- docId: cancel-change-ticket-en
+  title: Changing to a different trip
+  category: CANCEL
+  lang: en
+  content: >-
+    The system does not support swapping a ticket directly to another trip yet. Cancel the
+    old ticket under the current refund policy, then book a new ticket for the trip you want.
+
+- docId: refund-processing-time-en
+  title: How long a refund takes
+  category: REFUND
+  lang: en
+  content: >-
+    Once a refund request is approved, the money goes back to the original payment method.
+    It usually reaches your account within 3 to 7 business days, depending on how fast your
+    bank or e-wallet settles it. You can follow the status in Booking History.
+
+- docId: refund-status-meaning-en
+  title: What the refund statuses mean
+  category: REFUND
+  lang: en
+  content: >-
+    A refund request has three main statuses, pending, approved and rejected.
+    Pending means the operator is still reviewing it. Approved means the money is on its way
+    back to your account. Rejected comes with a specific reason from the provider.
+
+- docId: refund-partial-en
+  title: Why only part of the money is refunded
+  category: REFUND
+  lang: en
+  content: >-
+    The refund amount depends on when you cancel relative to departure. Cancelling between
+    4 and 24 hours before departure carries a 10 percent cancellation fee, so you get back
+    90 percent of the order value rather than the full amount. Service fees and add-on
+    services already used may fall outside the refunded amount.
+
+- docId: pets-plane-en
+  title: Taking a pet on a flight
+  category: PETS
+  lang: en
+  content: >-
+    Pets, dogs and cats are not allowed in the aircraft passenger cabin.
+    If you need to transport an animal, contact the airline directly to use their separate
+    animal transport service, book it in advance and bring valid veterinary paperwork.
+
+- docId: pets-bus-en
+  title: Taking a pet on a bus
+  category: PETS
+  lang: en
+  content: >-
+    Buses accept small pets such as dogs, cats and puppies, provided the animal travels in a
+    proper carrier placed in the luggage compartment under the coach.
+    Pets are not allowed on the seats or loose in the passenger cabin.
+
+- docId: pets-train-en
+  title: Taking a pet on a train
+  category: PETS
+  lang: en
+  content: >-
+    Trains only accept pets locked in a closed carrier and sent in the luggage car.
+    Animals are not allowed in sleeper compartments or seating carriages.
+    Contact the station before your travel date for the rules on your specific route.
+
+- docId: pets-service-animal-en
+  title: Guide dogs for blind passengers
+  category: PETS
+  lang: en
+  content: >-
+    A guide dog assisting a blind passenger is handled separately and is not subject to the
+    normal pet rules. Tell the carrier in advance and bring documents proving the animal is
+    a trained service animal.
+
+- docId: children-infant-free-en
+  title: Tickets for infants under 2
+  category: CHILDREN
+  lang: en
+  content: >-
+    Infants under 2 years old travel free with the accompanying adult, without their own seat.
+    Each adult may bring one infant under 2.
+    You still have to declare the infant details when booking.
+
+- docId: children-2-to-12-en
+  title: Child fares from 2 to 12 years old
+  category: CHILDREN
+  lang: en
+  content: >-
+    Children aged 2 to 12 pay 75 percent of the adult fare and get their own seat.
+    When booking, set the passenger type to child so the system applies the right price.
+
+- docId: children-over-12-en
+  title: Fares for children over 12
+  category: CHILDREN
+  lang: en
+  content: >-
+    Passengers aged 12 and over pay the full adult fare and no longer qualify for the child
+    discount.
+
+- docId: children-travel-alone-en
+  title: Children travelling alone
+  category: CHILDREN
+  lang: en
+  content: >-
+    Children under 12 must travel with an adult. For an unaccompanied minor, contact the bus
+    operator or airline directly to arrange their supervision service for the journey.
+    Online booking does not handle this case on its own.
+
+- docId: payment-methods-en
+  title: Accepted payment methods
+  category: PAYMENT
+  lang: en
+  content: >-
+    Payment is online through the VNPAY gateway, which supports domestic ATM cards, QR code
+    scanning, Visa and Mastercard international cards, and the e-wallets linked to VNPAY.
+    Paying cash on board is not supported.
+
+- docId: payment-failed-en
+  title: What to do when payment fails
+  category: PAYMENT
+  lang: en
+  content: >-
+    If payment fails, errors out or gets interrupted, the order stays unpaid and the seat is
+    held only briefly. Open Booking History to pay again, or place a new order.
+    If money was deducted but the order did not go through, the bank refunds it automatically.
+
+- docId: payment-double-charge-en
+  title: Charged twice for one order
+  category: PAYMENT
+  lang: en
+  content: >-
+    If your account is charged more than once for the same order, take a screenshot of the
+    transaction receipts and contact support. The extra transaction is reconciled with VNPAY
+    and refunded.
+
+- docId: payment-hold-time-en
+  title: How long a seat is held for payment
+  category: PAYMENT
+  lang: en
+  content: >-
+    A selected seat is held for only a short window while you complete payment.
+    After that the system automatically cancels the unpaid order and releases the seat to
+    other customers. So finish payment right after picking your seat.
+
+- docId: payment-invoice-en
+  title: Getting a VAT invoice
+  category: PAYMENT
+  lang: en
+  content: >-
+    For an invoice covering a ticket you bought, contact the transport provider directly with
+    your order code. The booking system issues a booking confirmation, not a VAT invoice.
+
+- docId: booking-how-to-en
+  title: Steps to book a ticket
+  category: BOOKING
+  lang: en
+  content: >-
+    Buying a ticket here for the first time works like this. Choose your origin, destination,
+    departure date and number of passengers, then pick a suitable trip from the list.
+    Next select seats, fill in passenger details and pay through VNPAY.
+    After a successful payment, the ticket and its QR code are emailed to you.
+
+- docId: booking-confirmation-email-en
+  title: Confirmation email did not arrive
+  category: BOOKING
+  lang: en
+  content: >-
+    The confirmation email with your e-ticket usually arrives within a few minutes of a
+    successful payment. If you paid but no email arrived, or you did not receive the ticket
+    mail at all, check your spam and promotions folders first.
+    The ticket is always visible under Booking History in your account, even if the email
+    is late.
+
+- docId: booking-check-my-tickets-en
+  title: Viewing tickets you have booked
+  category: BOOKING
+  lang: en
+  content: >-
+    Log in and open Booking History to see every order, its payment status, QR code and trip
+    details. Only the account owner can see their own tickets.
+
+- docId: booking-guest-vs-account-en
+  title: Do you need an account to book
+  category: BOOKING
+  lang: en
+  content: >-
+    Register an account before booking so you can look up your orders later, get the QR code
+    and request refunds when needed. Without an account, looking up and cancelling a ticket
+    afterwards is much harder.
+
+- docId: booking-round-trip-en
+  title: Booking a round trip
+  category: BOOKING
+  lang: en
+  content: >-
+    Round trip booking, buying the outbound and return ticket together in one go, is under
+    maintenance. Please book two separate one-way tickets for the outbound and return legs.
+
+- docId: booking-multiple-passengers-en
+  title: Booking several tickets at once
+  category: BOOKING
+  lang: en
+  content: >-
+    Travelling as a family or a group, set the passenger count at the search step, then pick
+    the matching number of seats and fill in details for each person.
+    They all sit under one order code and are paid for in a single transaction.
+
+- docId: seat-selection-en
+  title: Choosing a seat
+  category: SEAT
+  lang: en
+  content: >-
+    After picking a trip, the system shows the seat map with available and already sold seats.
+    Click directly on the seat you want. The number of seats selected must match the number
+    of passengers you declared.
+
+- docId: seat-locked-by-others-en
+  title: Why the seat you wanted was taken
+  category: SEAT
+  lang: en
+  content: >-
+    The seat map is synchronised in real time across everyone viewing the same trip.
+    When one person picks a seat, that seat is locked temporarily to prevent double booking.
+    If somebody took it first, please choose another free seat.
+
+- docId: seat-change-after-payment-en
+  title: Changing seats after payment
+  category: SEAT
+  lang: en
+  content: >-
+    Once payment succeeds the seat is fixed to the ticket and cannot be changed in the system.
+    If you need a different seat, speak to the staff of the operator before departure.
+
+- docId: checkin-qr-usage-en
+  title: Using the QR code to board
+  category: CHECKIN
+  lang: en
+  content: >-
+    Every ticket has its own QR code. When you get on, that is what you show: hold up the QR
+    code on your phone so the driver or the gate staff can scan it.
+    There is no need to print a paper ticket.
+    The QR code is in the confirmation email and under Booking History.
+
+- docId: checkin-qr-not-working-en
+  title: QR code will not scan
+  category: CHECKIN
+  lang: en
+  content: >-
+    If the QR code will not scan, turn up your screen brightness and wipe the phone screen clean.
+    If it still fails, read your order code out to the staff so they can look the booking up
+    manually.
+
+- docId: checkin-arrive-early-en
+  title: How early to arrive before departure
+  category: CHECKIN
+  lang: en
+  content: >-
+    For buses and trains, be at the station at least 30 minutes before departure.
+    For flights, arrive at the airport at least 2 hours ahead for a domestic trip so you have
+    time to check in and clear security.
+
+- docId: checkin-already-used-en
+  title: Can a checked-in ticket be reused
+  category: CHECKIN
+  lang: en
+  content: >-
+    Each ticket can only be checked in once. After a successful scan the ticket is marked as
+    used and cannot be scanned again, which stops tickets being shared or forged.
+
+- docId: voucher-how-to-use-en
+  title: How to use a discount code
+  category: PROMO
+  lang: en
+  content: >-
+    Enter your discount code, voucher or promo code at the payment step, before confirming
+    the order. The system checks the conditions and takes the discount straight off the total.
+    Only one discount code applies per order.
+
+- docId: voucher-conditions-en
+  title: Discount code conditions
+  category: PROMO
+  lang: en
+  content: >-
+    A discount code can carry conditions on minimum order value, maximum discount amount,
+    expiry date and remaining uses. A code that has expired, has run out of uses, or an order
+    below the minimum value will not go through.
+
+- docId: voucher-not-working-en
+  title: Discount code says invalid
+  category: PROMO
+  lang: en
+  content: >-
+    A code usually reads as invalid because it has expired, has no uses left, the order is
+    below the minimum value, or the code only applies to one specific operator.
+    Check the conditions of the code again or pick another code that is still valid.
+
+- docId: voucher-after-payment-en
+  title: Forgot to enter the discount code before paying
+  category: PROMO
+  lang: en
+  content: >-
+    A discount code has to be entered before you confirm payment.
+    Once an order is paid, a discount code cannot be applied retroactively.
+
+- docId: account-register-en
+  title: Registering an account
+  category: ACCOUNT
+  lang: en
+  content: >-
+    Register with an email address and a password, or sign in quickly with a Google account.
+    When registering by email, the system sends a verification code to your inbox to activate
+    the account.
+
+- docId: account-forgot-password-en
+  title: Forgotten password
+  category: ACCOUNT
+  lang: en
+  content: >-
+    Click forgot password on the login screen and enter the email you registered with.
+    The system sends a password reset code to that address.
+    The number of code requests is limited per time window to prevent abuse.
+
+- docId: account-not-receiving-code-en
+  title: Verification code did not arrive
+  category: ACCOUNT
+  lang: en
+  content: >-
+    The verification code can land in your spam folder, so check spam and promotions first.
+    If it still has not arrived, wait a few minutes then request a new one, and double check
+    the email address you typed.
+
+- docId: account-change-info-en
+  title: Editing personal details
+  category: ACCOUNT
+  lang: en
+  content: >-
+    Open your account profile page to update your name, phone number and personal details.
+    Passenger details on a ticket that has already been issued cannot be edited through the
+    system.
+
+- docId: account-saved-passengers-en
+  title: Saving frequent passengers
+  category: ACCOUNT
+  lang: en
+  content: >-
+    The system can store details of the people you travel with often, so next time you simply
+    select them instead of typing everything again.
+
+- docId: trip-search-tips-en
+  title: Finding the right trip
+  category: TRIP
+  lang: en
+  content: >-
+    Enter your origin, destination and departure date to see the list of trips.
+    To find the cheapest trip, narrow the results with filters on departure time window,
+    maximum price and preferred operator.
+
+- docId: trip-no-results-en
+  title: No trips found
+  category: TRIP
+  lang: en
+  content: >-
+    Empty results usually mean the date you chose is not on sale yet, or nobody operates that
+    route. Try another date, or drop some of the price and time filters to see more options.
+
+- docId: trip-vehicle-types-en
+  title: Supported means of transport
+  category: TRIP
+  lang: en
+  content: >-
+    The system sells tickets for three means of transport, flights, trains and buses.
+    Each has its own search page with a matching seat map and baggage policy.
+
+- docId: trip-delay-en
+  title: Trip delayed or rescheduled
+  category: TRIP
+  lang: en
+  content: >-
+    When a trip is delayed or rescheduled, the system notifies the email you registered.
+    Check the trip status in Booking History before heading to the station.
+    If the operator cancels the trip, you are refunded under the rules of that provider.
+
+- docId: trip-price-difference-en
+  title: Why fares differ on the same route
+  category: TRIP
+  lang: en
+  content: >-
+    Fares differ by operator, means of transport, seat class and departure time.
+    Popular time slots and peak holiday dates normally cost more than ordinary days.
+
+- docId: support-contact-en
+  title: Contacting support
+  category: SUPPORT
+  lang: en
+  content: >-
+    To talk to someone on the phone, call the hotline number, or reach the customer care team
+    through the contact details in the website footer.
+    Have your order code ready so they can look it up quickly.
+
+- docId: support-complaint-en
+  title: Complaining about service quality
+  category: SUPPORT
+  lang: en
+  content: >-
+    If the driver or the staff were rude, or the service on the journey was poor, your complaint
+    is passed to the relevant bus operator or carrier.
+    Include your order code, travel date and a specific description of what happened.
+    You can also leave a review for a completed trip.
+
+- docId: support-review-en
+  title: Reviewing a trip
+  category: SUPPORT
+  lang: en
+  content: >-
+    After finishing your journey, you can rate and write a review for the trip under Booking
+    History. Reviews help other customers pick the right operator.

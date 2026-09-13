@@ -1,0 +1,179 @@
+# Bộ câu hỏi vàng để đo chất lượng truy hồi RAG.
+#
+# Câu hỏi được viết theo cách khách HỎI THẬT, không phải theo cách knowledge base
+# VIẾT — cố tình dùng từ khác, viết không dấu, tiếng lóng, sai chính tả. Nếu câu hỏi
+# chỉ là bản chép lại của chunk thì bộ đo này vô nghĩa.
+#
+# expected liệt kê mọi chunk được coi là trả lời đúng: nhiều câu hỏi có hơn một câu
+# trả lời hợp lệ, và phạt hệ thống vì chọn chunk đúng "khác" là sai.
+
+- query: cho tôi hỏi được mang bao nhiêu kg lên máy bay
+  expected: [baggage-plane-general]
+
+- query: di xe khach mang duoc may can hanh ly
+  expected: [baggage-bus-general]
+
+- query: đi tàu có được mang vali to không
+  expected: [baggage-train-general, baggage-overweight-fee]
+
+- query: hành lý quá cân thì tính tiền thế nào
+  expected: [baggage-overweight-fee]
+
+- query: tôi muốn mang laptop và máy ảnh theo
+  expected: [baggage-fragile]
+
+- query: có được mang bật lửa lên xe không
+  expected: [baggage-prohibited]
+
+- query: tôi xách theo con poodle nhỏ có sao không
+  expected: [pets-bus, pets-plane]
+
+- query: mang meo len may bay duoc khong
+  expected: [pets-plane]
+
+- query: cho cun di tau hoa
+  expected: [pets-train, pets-bus]
+
+- query: tôi bị khiếm thị và có chó dẫn đường
+  expected: [pets-service-animal]
+
+- query: lỡ chuyến rồi có lấy lại tiền được không
+  expected: [cancel-missed-trip, cancel-policy-refund-tiers]
+
+- query: bùng vé thì mất bao nhiêu tiền
+  expected: [cancel-policy-refund-tiers, cancel-missed-trip]
+
+- query: huy ve truoc 1 ngay duoc hoan bao nhieu
+  expected: [cancel-policy-refund-tiers]
+
+- query: tôi muốn trả vé thì bấm ở đâu
+  expected: [cancel-how-to]
+
+- query: đổi sang chuyến sớm hơn được không
+  expected: [cancel-change-ticket]
+
+- query: bao lâu thì tiền về tài khoản
+  expected: [refund-processing-time]
+
+- query: đơn hoàn tiền của tôi đang chờ duyệt nghĩa là sao
+  expected: [refund-status-meaning]
+
+- query: sao tôi chỉ được trả lại một nửa tiền
+  expected: [refund-partial, cancel-policy-refund-tiers]
+
+- query: bé nhà tôi 1 tuổi có phải mua vé không
+  expected: [children-infant-free]
+
+- query: tre 5 tuoi tinh gia the nao
+  expected: [children-2-to-12]
+
+- query: con tôi 14 tuổi có được giảm giá không
+  expected: [children-over-12, children-2-to-12]
+
+- query: cho con đi một mình được không
+  expected: [children-travel-alone]
+
+- query: web này trả tiền bằng cách nào
+  expected: [payment-methods]
+
+- query: tôi trả tiền mà báo lỗi
+  expected: [payment-failed]
+
+- query: bi tru tien 2 lan
+  expected: [payment-double-charge]
+
+- query: chọn ghế xong bao lâu phải trả tiền
+  expected: [payment-hold-time]
+
+- query: công ty tôi cần hóa đơn đỏ
+  expected: [payment-invoice]
+
+- query: lần đầu dùng, mua vé kiểu gì
+  expected: [booking-how-to]
+
+- query: thanh toán xong mà chưa thấy mail
+  expected: [booking-confirmation-email]
+
+- query: xem lại vé đã mua ở đâu
+  expected: [booking-check-my-tickets]
+
+- query: không đăng ký tài khoản có mua được không
+  expected: [booking-guest-vs-account]
+
+- query: đặt vé đi và về cùng lúc
+  expected: [booking-round-trip]
+
+- query: mua 4 vé cho cả nhà
+  expected: [booking-multiple-passengers]
+
+- query: tôi muốn ngồi cạnh cửa sổ
+  expected: [seat-selection]
+
+- query: dang chon ghe thi bao da co nguoi dat
+  expected: [seat-locked-by-others]
+
+- query: trả tiền rồi có đổi chỗ ngồi được không
+  expected: [seat-change-after-payment]
+
+- query: len xe thi dua gi cho nhan vien
+  expected: [checkin-qr-usage]
+
+- query: mã vạch của tôi quét mãi không được
+  expected: [checkin-qr-not-working]
+
+- query: nên ra bến trước bao lâu
+  expected: [checkin-arrive-early]
+
+- query: quét mã rồi có quét lại được nữa không
+  expected: [checkin-already-used]
+
+- query: nhập mã giảm giá chỗ nào
+  expected: [voucher-how-to-use]
+
+- query: ma giam gia bao khong hop le
+  expected: [voucher-not-working, voucher-conditions]
+
+- query: điều kiện để dùng voucher là gì
+  expected: [voucher-conditions]
+
+- query: quên nhập mã rồi giờ tính sao
+  expected: [voucher-after-payment]
+
+- query: tôi quên mật khẩu
+  expected: [account-forgot-password]
+
+- query: đăng ký tài khoản mới
+  expected: [account-register]
+
+- query: khong nhan duoc ma xac thuc
+  expected: [account-not-receiving-code]
+
+- query: đổi số điện thoại trong tài khoản
+  expected: [account-change-info]
+
+- query: lưu sẵn thông tin người đi cùng
+  expected: [account-saved-passengers]
+
+- query: tìm chuyến rẻ nhất buổi sáng
+  expected: [trip-search-tips]
+
+- query: sao khong co chuyen nao het
+  expected: [trip-no-results]
+
+- query: web bán vé những loại xe gì
+  expected: [trip-vehicle-types]
+
+- query: chuyến của tôi bị đổi giờ
+  expected: [trip-delay]
+
+- query: sao cùng tuyến mà giá khác nhau
+  expected: [trip-price-difference]
+
+- query: tôi muốn gọi tổng đài
+  expected: [support-contact]
+
+- query: nhà xe phục vụ tệ tôi muốn phản ánh
+  expected: [support-complaint]
+
+- query: đánh giá sao cho chuyến vừa đi
+  expected: [support-review]

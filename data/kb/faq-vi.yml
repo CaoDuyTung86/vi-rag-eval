@@ -1,0 +1,497 @@
+# Knowledge base cho chatbot VigoTrip (tiếng Việt).
+#
+# Mỗi mục là một chunk được embed và đánh chỉ mục riêng. Nguyên tắc viết:
+#   - Một chunk = một câu hỏi trả lời trọn vẹn. Đừng gộp nhiều chủ đề vào một chunk,
+#     vì cả tìm kiếm ngữ nghĩa lẫn BM25 đều loãng điểm khi chunk lan man.
+#   - Nhồi sẵn từ ngữ đời thường mà khách hay dùng vào phần content ("mấy cân",
+#     "bùng vé"), vì nhánh BM25 khớp theo mặt chữ.
+#   - docId phải ỔN ĐỊNH. Đổi docId sẽ tạo chunk mới thay vì cập nhật chunk cũ.
+#
+# Sau khi sửa file này, chỉ những chunk đổi nội dung mới bị embed lại (đối chiếu
+# content_hash), nên sửa vặt gần như không tốn quota.
+
+- docId: baggage-plane-general
+  title: Quy định hành lý máy bay
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi.
+    Hành lý xách tay phải để vừa ngăn hành lý phía trên hoặc dưới ghế ngồi.
+    Nếu hành lý vượt số cân cho phép, khách phải mua thêm gói hành lý tại quầy
+    hoặc trả phí quá cân theo biểu giá của hãng.
+
+- docId: baggage-bus-general
+  title: Quy định hành lý xe khách
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách.
+    Hành lý cồng kềnh để ở khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế.
+    Không tính thêm phí nếu tổng hành lý nằm trong định mức 20kg.
+
+- docId: baggage-train-general
+  title: Quy định hành lý tàu hỏa
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Vé tàu hỏa cho phép mang theo hành lý cá nhân trong khoang, dưới 20kg mỗi khách.
+    Hành lý để trên giá phía trên chỗ ngồi hoặc dưới giường nằm.
+    Hàng hóa kích thước lớn cần gửi qua dịch vụ vận chuyển riêng của nhà ga.
+
+- docId: baggage-overweight-fee
+  title: Hành lý quá cân tính phí thế nào
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt.
+    Mức phí do từng nhà xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục.
+    Khách nên cân hành lý trước khi ra bến để tránh phát sinh chi phí ngoài dự tính.
+
+- docId: baggage-fragile
+  title: Mang đồ dễ vỡ và đồ có giá trị
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Đồ dễ vỡ, thiết bị điện tử, tiền mặt và giấy tờ tùy thân nên mang theo người,
+    không để trong hành lý ký gửi hay khoang gầm xe.
+    Nhà vận chuyển không chịu trách nhiệm với tài sản có giá trị để trong hành lý ký gửi.
+
+- docId: baggage-prohibited
+  title: Đồ vật bị cấm mang theo
+  category: BAGGAGE
+  lang: vi
+  content: >-
+    Không được mang chất cháy nổ, vũ khí, hóa chất độc hại, pháo, bật lửa số lượng lớn
+    và hàng cấm lên
+    mọi phương tiện. Với máy bay, chất lỏng xách tay bị giới hạn dung tích theo quy
+    định an ninh hàng không. Vi phạm sẽ bị từ chối vận chuyển và không được hoàn tiền.
+
+- docId: cancel-policy-refund-tiers
+  title: Chính sách hủy vé và mức hoàn tiền
+  category: CANCEL
+  lang: vi
+  content: >-
+    Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé.
+    Hủy trong khoảng 12 đến 24 giờ trước giờ khởi hành được hoàn 50 phần trăm.
+    Hủy dưới 12 giờ trước giờ khởi hành sẽ không được hoàn tiền.
+
+- docId: cancel-how-to
+  title: Cách hủy vé đã đặt
+  category: CANCEL
+  lang: vi
+  content: >-
+    Để hủy vé, khách đăng nhập rồi vào mục Lịch sử đặt vé, chọn đơn hàng cần hủy
+    và bấm nút hủy. Hệ thống sẽ hiển thị số tiền được hoàn trước khi khách xác nhận.
+    Chỉ chủ tài khoản đã đặt vé mới hủy được đơn hàng đó.
+
+- docId: cancel-missed-trip
+  title: Lỡ chuyến, trễ giờ khởi hành
+  category: CANCEL
+  lang: vi
+  content: >-
+    Khách đến muộn và lỡ chuyến được xem như hủy vé dưới 12 giờ, tức là không được
+    hoàn tiền. Nếu biết trước mình không đi được, hãy chủ động hủy vé càng sớm càng
+    tốt để hưởng mức hoàn tiền cao hơn. Nên có mặt tại bến trước giờ khởi hành ít nhất 30 phút.
+
+- docId: cancel-change-ticket
+  title: Đổi vé sang chuyến khác
+  category: CANCEL
+  lang: vi
+  content: >-
+    Hệ thống hiện chưa hỗ trợ đổi trực tiếp sang chuyến khác. Khách cần hủy vé cũ
+    theo chính sách hoàn tiền hiện hành rồi đặt lại vé mới cho chuyến mong muốn.
+
+- docId: refund-processing-time
+  title: Thời gian nhận lại tiền hoàn
+  category: REFUND
+  lang: vi
+  content: >-
+    Sau khi yêu cầu hoàn tiền được duyệt, tiền được chuyển về đúng phương thức thanh
+    toán ban đầu. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy ngân hàng
+    hoặc ví điện tử xử lý. Khách theo dõi trạng thái trong mục Lịch sử đặt vé.
+
+- docId: refund-status-meaning
+  title: Ý nghĩa các trạng thái hoàn tiền
+  category: REFUND
+  lang: vi
+  content: >-
+    Yêu cầu hoàn tiền có các trạng thái chính, gồm đang chờ duyệt, đã duyệt và bị từ
+    chối. Đang chờ duyệt nghĩa là nhà xe đang xem xét. Đã duyệt nghĩa là tiền đang
+    trên đường về tài khoản. Bị từ chối sẽ kèm lý do cụ thể từ nhà cung cấp.
+
+- docId: refund-partial
+  title: Vì sao chỉ được hoàn một phần tiền
+  category: REFUND
+  lang: vi
+  content: >-
+    Số tiền hoàn phụ thuộc thời điểm hủy so với giờ khởi hành. Hủy trong khoảng 12
+    đến 24 giờ trước giờ đi chỉ được hoàn một nửa giá vé. Phần phí dịch vụ và các
+    dịch vụ bổ sung đã sử dụng có thể không nằm trong khoản hoàn.
+
+- docId: pets-plane
+  title: Mang thú cưng lên máy bay
+  category: PETS
+  lang: vi
+  content: >-
+    Máy bay không cho phép mang thú cưng, chó, mèo lên khoang hành khách.
+    Khách có nhu cầu vận chuyển thú cưng cần liên hệ trực tiếp hãng hàng không để
+    dùng dịch vụ vận chuyển động vật riêng, đặt trước và có giấy tờ thú y hợp lệ.
+
+- docId: pets-bus
+  title: Mang thú cưng lên xe khách
+  category: PETS
+  lang: vi
+  content: >-
+    Xe khách cho phép mang theo thú cưng nhỏ như chó, mèo, cún với điều kiện phải
+    để trong lồng chuyên dụng và xếp ở khoang hành lý dưới gầm xe.
+    Không được để thú cưng trên ghế ngồi hoặc thả rông trong khoang hành khách.
+
+- docId: pets-train
+  title: Mang thú cưng lên tàu hỏa
+  category: PETS
+  lang: vi
+  content: >-
+    Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín, gửi ở toa hành lý.
+    Không mang thú cưng vào khoang giường nằm hay khoang ghế ngồi.
+    Khách nên liên hệ nhà ga trước ngày đi để nắm quy định cụ thể của từng tuyến.
+
+- docId: pets-service-animal
+  title: Chó dẫn đường cho người khiếm thị
+  category: PETS
+  lang: vi
+  content: >-
+    Chó dẫn đường hỗ trợ người khiếm thị được xem xét riêng, không áp dụng quy định
+    thú cưng thông thường. Khách cần báo trước cho nhà vận chuyển và mang theo giấy
+    tờ chứng minh đây là động vật hỗ trợ đã qua huấn luyện.
+
+- docId: children-infant-free
+  title: Vé cho em bé dưới 2 tuổi
+  category: CHILDREN
+  lang: vi
+  content: >-
+    Em bé dưới 2 tuổi được miễn phí vé và ngồi cùng người lớn đi kèm, không có ghế riêng.
+    Mỗi người lớn chỉ được kèm một em bé dưới 2 tuổi.
+    Khách vẫn cần khai báo thông tin em bé khi đặt vé.
+
+- docId: children-2-to-12
+  title: Vé trẻ em từ 2 đến 12 tuổi
+  category: CHILDREN
+  lang: vi
+  content: >-
+    Trẻ em từ 2 đến 12 tuổi được tính 75 phần trăm giá vé người lớn và có ghế ngồi riêng.
+    Khi đặt vé, khách chọn loại hành khách là trẻ em để hệ thống áp dụng đúng mức giá.
+
+- docId: children-over-12
+  title: Trẻ trên 12 tuổi tính vé thế nào
+  category: CHILDREN
+  lang: vi
+  content: >-
+    Hành khách từ 12 tuổi trở lên tính giá vé người lớn đầy đủ, không còn được giảm
+    theo diện trẻ em.
+
+- docId: children-travel-alone
+  title: Trẻ em đi một mình
+  category: CHILDREN
+  lang: vi
+  content: >-
+    Trẻ em dưới 12 tuổi cần có người lớn đi kèm. Trường hợp trẻ đi một mình, khách
+    phải liên hệ trực tiếp nhà xe hoặc hãng để đăng ký dịch vụ trông giữ trẻ trong
+    hành trình, hệ thống đặt vé trực tuyến không tự xử lý trường hợp này.
+
+- docId: payment-methods
+  title: Các phương thức thanh toán được hỗ trợ
+  category: PAYMENT
+  lang: vi
+  content: >-
+    Hệ thống thanh toán trực tuyến qua cổng VNPAY, hỗ trợ thẻ ATM nội địa, quét mã QR,
+    thẻ quốc tế Visa và Mastercard, cùng các ví điện tử liên kết với VNPAY.
+    Chưa hỗ trợ thanh toán tiền mặt khi lên xe.
+
+- docId: payment-failed
+  title: Thanh toán thất bại phải làm sao
+  category: PAYMENT
+  lang: vi
+  content: >-
+    Nếu thanh toán thất bại, báo lỗi hoặc bị gián đoạn, đơn hàng sẽ ở trạng thái chưa thanh toán
+    và ghế được giữ trong thời gian ngắn. Khách vào Lịch sử đặt vé để thanh toán lại,
+    hoặc đặt lại đơn mới. Tiền bị trừ mà đơn không thành công sẽ được ngân hàng hoàn tự động.
+
+- docId: payment-double-charge
+  title: Bị trừ tiền hai lần
+  category: PAYMENT
+  lang: vi
+  content: >-
+    Nếu tài khoản bị trừ tiền nhiều lần cho cùng một đơn, khách chụp lại biên lai giao
+    dịch và liên hệ bộ phận hỗ trợ. Giao dịch thừa sẽ được đối soát với VNPAY và hoàn lại.
+
+- docId: payment-hold-time
+  title: Thời gian giữ chỗ chờ thanh toán
+  category: PAYMENT
+  lang: vi
+  content: >-
+    Ghế đã chọn chỉ được giữ trong một khoảng thời gian ngắn để khách hoàn tất thanh toán.
+    Quá thời gian này, hệ thống tự động hủy đơn chưa thanh toán và mở lại ghế cho khách khác.
+    Vì vậy nên hoàn tất thanh toán ngay sau khi chọn ghế.
+
+- docId: payment-invoice
+  title: Xuất hóa đơn cho vé đã mua
+  category: PAYMENT
+  lang: vi
+  content: >-
+    Khách cần hóa đơn cho vé đã mua vui lòng liên hệ trực tiếp nhà cung cấp dịch vụ vận
+    chuyển kèm mã đơn hàng. Hệ thống đặt vé cung cấp xác nhận đặt chỗ, không tự phát hành
+    hóa đơn giá trị gia tăng.
+
+- docId: booking-how-to
+  title: Các bước đặt vé trên hệ thống
+  category: BOOKING
+  lang: vi
+  content: >-
+    Khách chọn điểm đi, điểm đến, ngày khởi hành và số hành khách, sau đó chọn chuyến
+    phù hợp trong danh sách. Tiếp theo chọn ghế, điền thông tin hành khách rồi thanh toán
+    qua VNPAY. Sau khi thanh toán thành công, vé và mã QR được gửi về email.
+
+- docId: booking-confirmation-email
+  title: Không nhận được email xác nhận vé
+  category: BOOKING
+  lang: vi
+  content: >-
+    Email xác nhận, hay mail vé, thường tới trong vài phút sau khi thanh toán thành công.
+    Nếu chưa thấy, khách kiểm tra hộp thư rác và mục quảng cáo.
+    Vé luôn xem được trong mục Lịch sử đặt vé của tài khoản, kể cả khi email chưa tới.
+
+- docId: booking-check-my-tickets
+  title: Xem lại vé đã đặt
+  category: BOOKING
+  lang: vi
+  content: >-
+    Khách đăng nhập rồi vào mục Lịch sử đặt vé để xem toàn bộ đơn hàng, trạng thái
+    thanh toán, mã QR và chi tiết hành trình. Chỉ chủ tài khoản mới xem được vé của mình.
+
+- docId: booking-guest-vs-account
+  title: Có cần tài khoản để đặt vé không
+  category: BOOKING
+  lang: vi
+  content: >-
+    Khách nên đăng ký tài khoản trước khi đặt vé để tra cứu lại đơn hàng, nhận mã QR
+    và yêu cầu hoàn tiền khi cần. Không có tài khoản thì việc tra cứu và hủy vé sau này
+    sẽ khó khăn hơn nhiều.
+
+- docId: booking-round-trip
+  title: Đặt vé khứ hồi
+  category: BOOKING
+  lang: vi
+  content: >-
+    Tính năng đặt vé khứ hồi, tức là mua vé đi và về cùng lúc trong một lần, hiện đang bảo trì.
+    Khách vui lòng đặt riêng hai vé một chiều cho lượt đi và lượt về.
+
+- docId: booking-multiple-passengers
+  title: Đặt nhiều vé trong một lần
+  category: BOOKING
+  lang: vi
+  content: >-
+    Khách đi cả nhà hoặc đi theo nhóm chọn số lượng hành khách ngay ở bước tìm kiếm,
+    sau đó chọn đủ số ghế tương ứng
+    và khai thông tin cho từng người. Tất cả nằm chung một mã đơn hàng và thanh toán một lần.
+
+- docId: seat-selection
+  title: Chọn chỗ ngồi
+  category: SEAT
+  lang: vi
+  content: >-
+    Sau khi chọn chuyến, hệ thống hiển thị sơ đồ chỗ ngồi với ghế còn trống và ghế đã bán.
+    Khách bấm trực tiếp lên ghế muốn chọn. Số ghế được chọn phải bằng số hành khách đã khai.
+
+- docId: seat-locked-by-others
+  title: Vì sao ghế đang chọn bị người khác lấy mất
+  category: SEAT
+  lang: vi
+  content: >-
+    Sơ đồ ghế được đồng bộ thời gian thực giữa tất cả khách đang xem cùng chuyến.
+    Khi một người chọn ghế, ghế đó bị khóa tạm thời để tránh đặt trùng.
+    Nếu ghế bị người khác giữ trước, khách vui lòng chọn ghế còn trống khác.
+
+- docId: seat-change-after-payment
+  title: Đổi ghế sau khi đã thanh toán
+  category: SEAT
+  lang: vi
+  content: >-
+    Sau khi thanh toán thành công, ghế đã gán cố định cho vé và không đổi được trên hệ thống.
+    Trường hợp cần đổi chỗ, khách liên hệ trực tiếp nhân viên nhà xe trước giờ khởi hành.
+
+- docId: checkin-qr-usage
+  title: Dùng mã QR để lên xe
+  category: CHECKIN
+  lang: vi
+  content: >-
+    Mỗi vé có một mã QR riêng. Khi tới bến, khách đưa mã QR trên điện thoại cho nhân viên
+    soát vé quét để xác thực. Không cần in vé giấy.
+    Mã QR nằm trong email xác nhận và trong mục Lịch sử đặt vé.
+
+- docId: checkin-qr-not-working
+  title: Mã QR không quét được
+  category: CHECKIN
+  lang: vi
+  content: >-
+    Nếu mã QR không quét được, khách tăng độ sáng màn hình và lau sạch mặt kính điện thoại.
+    Trường hợp vẫn không được, đọc mã đơn hàng cho nhân viên soát vé để tra cứu thủ công.
+
+- docId: checkin-arrive-early
+  title: Nên có mặt trước giờ khởi hành bao lâu
+  category: CHECKIN
+  lang: vi
+  content: >-
+    Với xe khách và tàu hỏa, khách nên có mặt tại bến trước giờ khởi hành ít nhất 30 phút.
+    Với máy bay, nên tới sân bay trước ít nhất 2 tiếng cho chuyến nội địa để kịp làm thủ tục
+    và qua kiểm tra an ninh.
+
+- docId: checkin-already-used
+  title: Vé đã check-in rồi có dùng lại được không
+  category: CHECKIN
+  lang: vi
+  content: >-
+    Mỗi vé chỉ check-in được một lần. Sau khi đã quét mã thành công, vé chuyển sang trạng
+    thái đã sử dụng và không quét lại được, nhằm chống dùng chung hoặc làm giả vé.
+
+- docId: voucher-how-to-use
+  title: Cách dùng mã giảm giá
+  category: PROMO
+  lang: vi
+  content: >-
+    Khách nhập mã giảm giá ở bước thanh toán, trước khi xác nhận đơn hàng.
+    Hệ thống sẽ kiểm tra điều kiện áp dụng và trừ trực tiếp vào tổng tiền.
+    Mỗi đơn hàng chỉ áp dụng được một mã giảm giá.
+
+- docId: voucher-conditions
+  title: Điều kiện áp dụng mã giảm giá
+  category: PROMO
+  lang: vi
+  content: >-
+    Mã giảm giá có thể kèm điều kiện về giá trị đơn tối thiểu, mức giảm tối đa,
+    thời hạn sử dụng và số lượt dùng còn lại.
+    Mã hết hạn, hết lượt hoặc đơn chưa đạt giá trị tối thiểu sẽ không áp dụng được.
+
+- docId: voucher-not-working
+  title: Mã giảm giá báo không hợp lệ
+  category: PROMO
+  lang: vi
+  content: >-
+    Mã báo không hợp lệ thường do đã hết hạn, đã dùng hết lượt, đơn hàng chưa đạt giá trị
+    tối thiểu, hoặc mã chỉ áp dụng cho một nhà xe cụ thể.
+    Khách kiểm tra lại điều kiện của mã hoặc chọn mã khác đang còn hiệu lực.
+
+- docId: voucher-after-payment
+  title: Quên nhập mã giảm giá trước khi thanh toán
+  category: PROMO
+  lang: vi
+  content: >-
+    Mã giảm giá phải nhập trước khi xác nhận thanh toán.
+    Đơn hàng đã thanh toán xong thì không áp dụng bù mã giảm giá được nữa.
+
+- docId: account-register
+  title: Đăng ký tài khoản
+  category: ACCOUNT
+  lang: vi
+  content: >-
+    Khách đăng ký bằng email và mật khẩu, hoặc đăng nhập nhanh bằng tài khoản Google.
+    Với cách đăng ký bằng email, hệ thống gửi mã xác thực về hộp thư để kích hoạt tài khoản.
+
+- docId: account-forgot-password
+  title: Quên mật khẩu
+  category: ACCOUNT
+  lang: vi
+  content: >-
+    Khách bấm quên mật khẩu ở màn hình đăng nhập và nhập email đã đăng ký.
+    Hệ thống gửi mã đặt lại mật khẩu về email đó.
+    Số lần yêu cầu gửi mã bị giới hạn trong mỗi khoảng thời gian để chống lạm dụng.
+
+- docId: account-not-receiving-code
+  title: Không nhận được mã xác thực qua email
+  category: ACCOUNT
+  lang: vi
+  content: >-
+    Mã xác thực có thể rơi vào hộp thư rác. Khách kiểm tra mục spam và quảng cáo trước.
+    Nếu vẫn chưa nhận được, đợi vài phút rồi yêu cầu gửi lại, và kiểm tra kỹ email đã nhập đúng chưa.
+
+- docId: account-change-info
+  title: Sửa thông tin cá nhân
+  category: ACCOUNT
+  lang: vi
+  content: >-
+    Khách vào trang thông tin tài khoản để cập nhật họ tên, số điện thoại và thông tin cá nhân.
+    Thông tin hành khách trên vé đã xuất thì không sửa được qua hệ thống.
+
+- docId: account-saved-passengers
+  title: Lưu thông tin hành khách thường đi
+  category: ACCOUNT
+  lang: vi
+  content: >-
+    Hệ thống cho phép lưu sẵn thông tin những hành khách hay đi cùng, để lần đặt vé sau
+    chỉ cần chọn thay vì nhập lại từ đầu.
+
+- docId: trip-search-tips
+  title: Cách tìm chuyến phù hợp
+  category: TRIP
+  lang: vi
+  content: >-
+    Khách nhập điểm đi, điểm đến và ngày khởi hành để xem danh sách chuyến.
+    Muốn tìm chuyến giá rẻ nhất, khách lọc thêm theo khung giờ khởi hành, mức giá tối đa và nhà xe mong muốn
+    để thu hẹp kết quả.
+
+- docId: trip-no-results
+  title: Không tìm thấy chuyến nào
+  category: TRIP
+  lang: vi
+  content: >-
+    Không có kết quả thường do ngày đã chọn chưa mở bán, hoặc tuyến đó chưa có chuyến khai thác.
+    Khách thử đổi sang ngày khác, hoặc bỏ bớt bộ lọc giá và khung giờ để xem thêm lựa chọn.
+
+- docId: trip-vehicle-types
+  title: Các loại phương tiện được hỗ trợ
+  category: TRIP
+  lang: vi
+  content: >-
+    Hệ thống bán vé cho ba loại phương tiện, gồm máy bay, tàu hỏa và xe khách.
+    Mỗi loại có trang tìm kiếm riêng với sơ đồ chỗ ngồi và chính sách hành lý phù hợp.
+
+- docId: trip-delay
+  title: Chuyến bị hoãn hoặc đổi giờ
+  category: TRIP
+  lang: vi
+  content: >-
+    Khi chuyến bị hoãn hoặc đổi giờ, hệ thống sẽ thông báo tới email đã đăng ký.
+    Khách nên kiểm tra lại trạng thái chuyến trong Lịch sử đặt vé trước khi ra bến.
+    Trường hợp nhà xe hủy chuyến, khách được hoàn tiền theo quy định của nhà cung cấp.
+
+- docId: trip-price-difference
+  title: Vì sao giá vé cùng tuyến lại khác nhau
+  category: TRIP
+  lang: vi
+  content: >-
+    Giá vé khác nhau theo nhà xe, loại phương tiện, hạng ghế và khung giờ khởi hành.
+    Các khung giờ đẹp và ngày cao điểm lễ tết thường có giá cao hơn ngày thường.
+
+- docId: support-contact
+  title: Liên hệ hỗ trợ
+  category: SUPPORT
+  lang: vi
+  content: >-
+    Khách cần hỗ trợ trực tiếp có thể gọi tổng đài hoặc liên hệ bộ phận chăm sóc khách hàng qua thông tin
+    ở cuối trang web. Khi liên hệ nên cung cấp sẵn mã đơn hàng để được tra cứu nhanh.
+
+- docId: support-complaint
+  title: Khiếu nại về chất lượng dịch vụ
+  category: SUPPORT
+  lang: vi
+  content: >-
+    Khiếu nại về chất lượng phục vụ trên hành trình được chuyển tới nhà xe hoặc hãng vận
+    chuyển tương ứng. Khách gửi kèm mã đơn hàng, ngày đi và mô tả cụ thể sự việc.
+    Khách cũng có thể để lại đánh giá cho chuyến đi đã hoàn thành.
+
+- docId: support-review
+  title: Đánh giá chuyến đi
+  category: SUPPORT
+  lang: vi
+  content: >-
+    Sau khi hoàn thành hành trình, khách có thể chấm điểm và viết nhận xét cho chuyến đi
+    trong mục Lịch sử đặt vé. Đánh giá giúp khách khác chọn nhà xe phù hợp hơn.

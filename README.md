@@ -17,7 +17,7 @@ Port từ module RAG của đồ án VigoTrip (Spring Boot). Giữ nguyên bộ 
 | `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong, test bằng vector giả |
 | `rag/embed.py` — client embedding + cache đĩa | xong, test bằng transport giả |
 | `eval/` — chỉ số, harness, cổng ngưỡng | xong |
-| Baseline nhánh Vector / Hybrid | **chưa chạy** — cần `--live` với API key |
+| Baseline nhánh Vector / Hybrid | đã chạy `--live` 13/09/2026, chưa đối chiếu với Java |
 
 94 test, không test nào gọi mạng.
 
@@ -42,6 +42,22 @@ Trùng từng chữ số với `./mvnw test -Dtest=RagRetrievalQualityTest` trê
 `9f17f77` (13/09/2026), kể cả danh sách câu trượt và thứ tự top-5 của từng câu.
 
 `+ lọc lang` là đường mà lượt chat thật đi qua: chỉ chấm chunk cùng ngôn ngữ với câu hỏi.
+
+## Kết quả nhánh Vector / Hybrid
+
+`gemini-embedding-001`, 768 chiều, 10 ứng viên mỗi nhánh, ngưỡng cosine 0.55. Chỉ trích dòng
+gộp; bảng đầy đủ theo ngôn ngữ ở [experiments.md](experiments.md).
+
+```
+Cấu hình                 Câu      P@1      R@3      R@5      P@3     F1@3      MRR
+-----------------------------------------------------------------
+Vector · gộp             130    84.6%    99.2%   100.0%   0.356   0.524   0.913
+Vector + lọc lang · gộp  130    95.4%    99.2%   100.0%   0.377   0.546   0.975
+Hybrid (RRF) · gộp       130    93.1%   100.0%   100.0%   0.377   0.547   0.964
+Hybrid + lọc lang · gộp  130    89.2%   100.0%   100.0%   0.379   0.550   0.945
+```
+
+Chưa có bảng live nào của Java được lưu lại, nên nhánh này chưa kiểm được là trùng bản Java.
 
 ## Chạy
 

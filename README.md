@@ -87,6 +87,7 @@ python -m eval.harness --json             # JSON, kèm nDCG@5 và câu trượt
 python -m eval.harness --live --variants  # thêm dòng RRF và Xếp lại (cách ghép cũ, để so)
 python -m eval.harness --live --variants --bm25-weight 0.5   # RRF với trọng số BM25 0.5
 python scripts/p1_diff.py                 # câu nào Vector đúng hạng 1 mà RRF sai, và vì sao
+python scripts/by_category.py             # điểm theo category + câu sai hạng 1, chỉ đọc cache
 ```
 
 Mã thoát: `0` đạt · `1` tụt dưới ngưỡng (recall@3 < 0.85 hoặc MRR < 0.70 ở bất kỳ ngôn ngữ

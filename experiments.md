@@ -511,6 +511,79 @@ Vector trả chưa đủ top-k vì ngưỡng cosine 0.55.
 
 ---
 
+## 2026-09-14 — Lỗi nằm ở đâu: tách theo category
+
+**Vì sao.** Sau khi đổi sang Bù BM25, đường production vẫn sai hạng 1 ở 6/132 câu vàng và 16/104
+câu holdout tiếng Việt (3/55 Claude viết, 13/49 người thật gõ). Trước khi thử reranker hay bất kỳ
+tầng nào, cần biết lỗi dồn vào đâu. Đây là đo để hiểu, KHÔNG đổi hệ thống — holdout được phép
+nhìn ở mức này, không được dùng để chỉnh.
+
+**Cách đo.** `scripts/by_category.py`, chỉ đọc vector từ cache (0 lời gọi API; client không có
+key nên thiếu cache là báo lỗi chứ không gọi mạng). Category của câu = category của chunk đúng đầu
+tiên. Mỗi câu sai hạng 1 được gắn nhãn máy: trượt top-5 / nhầm chunk cùng category / nhầm sang
+category khác, và hạng 1 do Vector hay do BM25 lấp. Nhóm nguyên nhân (câu dồn nhiều ý, nhãn gây
+tranh cãi, truy hồi thật sự sai) gán tay sau khi đọc từng câu.
+
+**Giả thuyết** (viết trước khi chạy).
+
+- Bộ vàng quá ít lỗi để xếp hạng category: Hybrid + lọc lang không category nào sai quá 2 câu. Bảng
+  category trên bộ vàng chủ yếu cho thấy BM25 yếu ở đâu — dự đoán BAGGAGE và BOOKING (mỗi loại 6
+  chunk tiếng Việt, từ vựng chồng nhau) có P@1 BM25 thấp nhất.
+- Holdout vi, 16 câu sai hạng 1: quá nửa (≥ 9) là nhầm sang chunk anh em CÙNG category, không phải
+  bốc sang chủ đề khác. Hạng 1 sai gần như luôn do Vector (BM25 chỉ lấp khi Vector trả thiếu).
+- Ít nhất 4/13 câu người thật gõ sai hạng 1 là do câu dồn nhiều ý hoặc nhãn gây tranh cãi, không
+  phải truy hồi sai — nghĩa là 73.5% đánh giá thấp hệ thống.
+- nDCG@5 xếp category giống MRR: rất ít câu có hơn một chunk đúng.
+
+**Kết quả** (0 lời gọi API; Hybrid = Bù BM25, + lọc lang):
+
+| Bộ | Câu | BM25 P@1 | Hybrid P@1 | Sai hạng 1 | Category Hybrid yếu nhất |
+|---|---|---|---|---|---|
+| golden, 4 ngôn ngữ | 132 | 76.5% | 95.5% | 6 | CHECKIN 7/9, CANCEL 10/12 |
+| holdout vi | 104 | 51.0% | 84.6% | 16 | REFUND 5/9, ACCOUNT 5/7, BOOKING 8/11 |
+| holdout_codes vi | 32 | 50.0% | 90.6% | 3 | REFUND 1/2, TRIP 2/3, CHECKIN 2/3 |
+
+Cả 25 câu sai hạng 1, hạng 1 đều do nhánh Vector xếp — BM25 lấp chỗ không gây ra lỗi nào. 2 câu
+trượt hẳn top-5, cả hai ở holdout.
+
+**Nhóm nguyên nhân** (gán tay sau khi đọc chunk; 25 câu gộp cả ba bộ):
+
+| Nhóm | Câu | Ví dụ | Cơ chế |
+|---|---|---|---|
+| Hủy vé ↔ hoàn tiền | 7 | "Sau khi hủy vé, tôi nhận hoàn tiền bằng hình thức nào?" → `cancel-how-to` | Câu có "hủy" + "tiền"; `cancel-how-to`, `cancel-policy-refund-tiers`, `refund-partial` đều nói "hoàn", Vector không tách được "hủy thế nào" với "tiền về ra sao". Có ở cả ba bộ (golden 2, holdout 4, có mã 1) |
+| Câu mơ hồ hoặc nhãn gián tiếp | 5 | "nó bắt t đăng nhập mới xem được à?", "pass 1 cặp vé cho người khác" | 3 câu dồn ý, chửi, hoặc cần lượt chat trước; 2 câu đổi tên người đi mà KB chỉ trả lời bằng một mệnh đề phụ trong `account-change-info`. Toàn bộ là câu người thật gõ |
+| Không dấu đọc thành từ khác | 4 | "toi ngu quen xe chay mat" → `account-forgot-password` ("quen" → "quên") | Bỏ dấu làm câu trùng nghĩa với chunk khác: hộp thư, quét vé, đưa gì cho nhân viên |
+| Con số | 4 | "Con tôi 3 tuổi đi cùng tôi có cần vé không?" → `children-infant-free` | Vector không so được khoảng tuổi (3 tuổi so với "dưới 2" và "2 đến 12"); "1tr8 / 1tr2" kéo về `payment-double-charge` |
+| Lệch nghĩa khác | 5 | "mang dao lên máy bay" → `pets-plane`; "xe đến trễ 2 tiếng" → `cancel-missed-trip` | Từ nổi bật kéo sai chủ đề: "máy bay", "trễ" (xe trễ bị hiểu thành khách trễ), "báo lỗi" → voucher |
+
+**Đối chiếu giả thuyết.**
+
+- Bộ vàng không category nào sai quá 2 câu — **đúng** (CHECKIN 2, CANCEL 2). BM25 yếu nhất ở
+  BAGGAGE và BOOKING — **sai**: thấp nhất là CHILDREN 40.0% (con số tuổi), PROMO 62.5%, rồi mới tới
+  BAGGAGE 63.2%; BOOKING 75.0% ở giữa bảng.
+- Holdout: ≥ 9/16 là nhầm chunk cùng category — **sai**: nhãn máy chỉ 4/16; kể cả gộp CANCEL với
+  REFUND làm một chủ đề cũng mới 7/16. Hạng 1 sai gần như luôn do Vector — **đúng**, 16/16.
+- ≥ 4/13 câu người thật gõ sai do câu mơ hồ hoặc nhãn — **đúng**, 5/13. Bỏ 5 câu đó thì 36/44 =
+  81.8%, nhưng không nên coi đó là "số thật": khách thật vẫn gõ đúng những câu như vậy, bot vẫn phải
+  xử lý — việc của tuần 9 (hỏi lại, từ chối đúng lúc), không phải của truy hồi.
+- nDCG@5 xếp giống MRR — **đúng ở đầu bảng**: ba category yếu nhất trên holdout giống nhau theo cả
+  hai (REFUND, ACCOUNT, BOOKING); giữa bảng đổi chỗ một hai bậc. nDCG@5 không đổi thứ tự ưu tiên sửa.
+
+**Kết luận.** Nguyên nhân lớn nhất có tên là cặp hủy vé ↔ hoàn tiền: 7/25 câu sai, có mặt ở cả
+ba bộ, kể cả bộ vàng — nên đây là chỗ DUY NHẤT trong bảng có thể chọn cách sửa trên golden rồi xác
+nhận trên holdout. Hai nhóm tiếp theo (không dấu, con số) mỗi nhóm 4 câu, rải rác, chưa đủ để chọn.
+Nhóm câu mơ hồ không sửa ở truy hồi.
+
+Không đổi gì trong hệ thống. Ghi chú cho reranker (tuần 7): cross-encoder đọc cả câu hỏi lẫn chunk
+cùng lúc, nên về lý thuyết hợp đúng nhóm hủy ↔ hoàn tiền và con số — hai nhóm mà cosine giữa hai
+vector nén sẵn không tách được. Nhưng golden chỉ có 3 câu thuộc hai nhóm đó; muốn chọn trên golden
+thì phải thêm câu vào golden trước, rồi mới đo.
+
+Giới hạn: gán nhóm là phán đoán một người (Claude), mỗi câu một nhóm dù có câu dính hai. Hai câu
+"Sau khi hủy vé…" gần như trùng nhau, nên nhóm hủy ↔ hoàn tiền được đếm hơi cao.
+
+---
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn
@@ -536,11 +609,8 @@ Vector trả chưa đủ top-k vì ngưỡng cosine 0.55.
 |---|---|
 | Bảng live Java sau khi port Bù BM25 | `RAG_EVAL_LIVE=1` bên WebProject và `python -m eval.harness --live`: 20 dòng Vector/Hybrid phải trùng lại từng chữ số. Dòng "Hybrid + lọc lang" dự kiến trùng "Vector + lọc lang" trên bộ vàng |
 | `docs/CHATBOT_AI.md` bên WebProject | Mục 5.6, 8.6, sơ đồ và bảng số vẫn tả RRF — tài liệu đồ án, cập nhật khi nào? |
-| P@1 73.5% trên câu người thật gõ | 13 câu sai hạng 1: do câu dồn nhiều ý, do nhãn, hay do truy hồi. Chỉ để hiểu — không chỉnh trên holdout |
-| Hai câu thua RRF thật, một câu en mới sai | "đi tàu có được mang vali to không" (`pets-train` chen lên nhờ khoá `vali`?), "web này trả tiền bằng cách nào", "i want to cancel and get my money back". Mỗi câu: chunk nào chen lên, vì sao |
+| Nhóm hủy vé ↔ hoàn tiền | Nguyên nhân lớn nhất (7/25 câu sai hạng 1). Golden mới có 2 câu thuộc nhóm — thêm câu vào golden TRƯỚC, rồi mới so cách sửa (reranker, viết lại title/content chunk) trên golden, xác nhận trên holdout một lần |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |
-| Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods. Khoảng trống từ vựng hay do chunk viết khác cách hỏi |
-| Cross-encoder rerank trên top-20 | Delta R@3 có đáng với delta độ trễ không — đặt ngân sách độ trễ TRƯỚC khi đo |
+| Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods (nhánh BM25). Khoảng trống từ vựng hay do chunk viết khác cách hỏi |
+| Cross-encoder rerank trên top-20 | Delta P@1 trên nhóm hủy ↔ hoàn tiền và nhóm con số có đáng với delta độ trễ không — đặt ngân sách độ trễ TRƯỚC khi đo |
 | Chunk size, overlap, title trong phần đem nhúng | Cấu hình nào cho R@3 cao nhất, trả giá bao nhiêu độ trễ |
-| nDCG@5 | Có xếp lại thứ tự ưu tiên sửa lỗi so với recall@3 không |
-| Tách điểm theo category | Category nào yếu nhất, và vì sao |

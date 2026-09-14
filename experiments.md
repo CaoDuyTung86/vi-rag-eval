@@ -257,6 +257,11 @@ vẫn giữ trong `rrf` và `--bm25-weight` để đo lại khi đó.
 
 Còn mở: hai câu thua RRF thật (mục 1) và câu tiếng Anh vừa chuyển sang sai.
 
+**Port sang Java (14/09).** Khoá `chó` có dấu vào `SynonymExpander.java`, "Vector trước" vào
+`HybridRetriever.fuse`, hai câu chó vào `rag-eval.yml`, kèm test cho từng thay đổi. Bảng BM25 của
+`RagRetrievalQualityTest` trùng bản Python từng chữ số cả 10 dòng trên 132 câu. Bảng live bên
+Java chưa chạy.
+
 ---
 
 ## Mẫu
@@ -283,7 +288,6 @@ Còn mở: hai câu thua RRF thật (mục 1) và câu tiếng Anh vừa chuyể
 | Thí nghiệm | Câu hỏi cần trả lời |
 |---|---|
 | Đối chiếu live với Java | Chạy `RAG_EVAL_LIVE` bên WebProject, so với bảng live ở trên |
-| Port sang Java | Khoá `chó` có dấu (`SynonymExpander.java`), "Vector trước" khi hợp nhất (`HybridRetriever.java`), hai câu mới vào `rag-eval.yml`. Sau khi port, bảng BM25 Java và Python phải trùng từng chữ số trở lại |
 | Hai câu thua RRF thật, một câu en mới sai | "đi tàu có được mang vali to không" (`pets-train` chen lên nhờ khoá `vali`?), "web này trả tiền bằng cách nào", "i want to cancel and get my money back". Mỗi câu: chunk nào chen lên, vì sao |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |
 | Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods. Khoảng trống từ vựng hay do chunk viết khác cách hỏi |

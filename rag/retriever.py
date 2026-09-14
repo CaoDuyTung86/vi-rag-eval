@@ -68,7 +68,7 @@ class HybridRetriever:
         # Nhánh Vector duyệt TRƯỚC: hoà điểm RRF thì chunk xuất hiện trước thắng, và hoà xảy ra
         # thường hơn tưởng — hạng (1, 2) và (2, 1) cho đúng cùng một điểm. Đứng riêng, Vector
         # đúng hạng 1 nhiều hơn BM25 hẳn (95.5% so với 76.5% trên bộ vàng), nên hoà thì nghe
-        # Vector. Bản Java hiện duyệt BM25 trước; xem experiments.md 14/09.
+        # Vector. Bản Java (HybridRetriever.fuse) làm y như vậy; xem experiments.md 14/09.
         lexical_weight, semantic_weight = self.rrf_weights
         return rrf([semantic, lexical], top_k, self.rrf_k, [semantic_weight, lexical_weight])
 

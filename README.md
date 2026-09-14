@@ -13,9 +13,9 @@ so được với hệ thống đang chạy thật. Từ 14/09/2026 bản Python
 | Phần | Trạng thái |
 |---|---|
 | `rag/normalize.py` — tách token Latin + bigram CJK | xong, khớp Java |
-| `rag/synonyms.py` + `data/synonyms.yml` — 4 bảng | xong; khoá `chó` có dấu chưa port sang Java |
+| `rag/synonyms.py` + `data/synonyms.yml` — 4 bảng | xong, khớp Java (khoá `chó` có dấu đã port 14/09) |
 | `rag/bm25.py` — BM25, thống kê theo ngôn ngữ | xong, khớp Java |
-| `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong; RRF duyệt nhánh Vector trước — chưa port sang Java |
+| `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong; RRF duyệt nhánh Vector trước — đã port sang Java 14/09 |
 | `rag/embed.py` — client embedding + cache đĩa | xong, test bằng transport giả |
 | `eval/` — chỉ số, harness, cổng ngưỡng | xong |
 | Baseline nhánh Vector / Hybrid | chạy `--live` 13/09/2026, chưa đối chiếu bảng live của Java |
@@ -124,13 +124,12 @@ Chưa port sang Java (đã đo, đang chờ):
 
 | File | Nguồn trong WebProject | Nội dung |
 |---|---|---|
-| `data/golden.yml` | `src/test/resources/rag-eval.yml` | 132 câu: vi 59 · en 37 · ja 18 · zh 18 — 2 câu chưa có bên Java |
+| `data/golden.yml` | `src/test/resources/rag-eval.yml` | 132 câu: vi 59 · en 37 · ja 18 · zh 18 |
 | `data/kb/faq-{vi,en,ja,zh}.yml` | `src/main/resources/knowledge/` | 56 chunk mỗi ngôn ngữ |
 | `data/synonyms.yml` | tách từ `SynonymExpander.java` | 4 bảng |
 | `data/private/` | xuất từ Neon | gitignore — dữ liệu người dùng thật |
 
-Khi VigoTrip đổi knowledge base hoặc bộ vàng, đồng bộ lại rồi chạy test. Cho tới khi port xong,
-chép đè `golden.yml` sẽ làm mất hai câu chỉ có bên Python:
+Khi VigoTrip đổi knowledge base hoặc bộ vàng, đồng bộ lại rồi chạy test:
 
 ```bash
 W="../WebProject/backend/ticket-booking/src"

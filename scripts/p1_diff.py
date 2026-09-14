@@ -1,4 +1,7 @@
-"""Chẩn đoán P@1: câu nào Vector xếp đúng hạng 1 mà Hybrid thì không, và vì sao.
+"""Chẩn đoán P@1: câu nào Vector xếp đúng hạng 1 mà Hybrid RRF thì không, và vì sao.
+
+Hybrid ở đây ghim fusion="rrf" — cách ghép cũ. Mặc định giờ là Bù BM25, không bao giờ đổi
+hạng 1 của Vector, nên chạy với mặc định thì câu trả lời luôn là 0.
 
     python scripts/p1_diff.py              # tiếng Việt, có lọc lang — đường production đi
     python scripts/p1_diff.py --lang en
@@ -62,7 +65,9 @@ def main() -> int:
     bm25.load(chunks)
     plain = BM25Index(synonyms={})
     plain.load(chunks)
-    retriever = HybridRetriever(bm25, store, embedder, candidates_per_branch=CANDIDATES)
+    retriever = HybridRetriever(
+        bm25, store, embedder, candidates_per_branch=CANDIDATES, fusion="rrf"
+    )
 
     lost: list[str] = []
     gained: list[str] = []

@@ -323,9 +323,12 @@ class TestHybridRetriever:
         assert r.embedding_failures == 1
         assert errors == [self.QUERY]
 
-    def test_chunk_co_mat_o_ca_hai_nhanh_duoc_day_len(self):
+    def test_mac_dinh_la_bu_bm25_nhu_ban_java(self):
+        assert self.build(VI, None).fusion == "vector_fill"
+
+    def test_rrf_chunk_co_mat_o_ca_hai_nhanh_duoc_day_len(self):
         # BM25 xếp baggage-plane đầu; nhánh vector chỉ trả baggage-bus (vector [0,1,0]).
-        r = self.build(VI, FakeEmbedder({self.QUERY: [0, 1, 0]}))
+        r = self.build(VI, FakeEmbedder({self.QUERY: [0, 1, 0]}), fusion="rrf")
         assert r.bm25.search(self.QUERY, 1)[0].chunk.doc_id == "baggage-plane"
         assert r.retrieve(self.QUERY, 3)[0].doc_id == "baggage-bus"
         assert [c.doc_id for c in r.retrieve_semantic_only(self.QUERY, 3)] == ["baggage-bus"]
@@ -354,8 +357,8 @@ class TestHybridRetriever:
         r = self.build(VI, FakeEmbedder({self.QUERY: [0, 1, 0]}), fusion="vector_rerank")
         assert [c.doc_id for c in r.retrieve(self.QUERY, 3)] == ["baggage-bus"]
 
-    @pytest.mark.parametrize("fusion", ["vector_fill", "vector_rerank"])
-    def test_cach_ghep_moi_van_lui_ve_bm25_khi_khong_co_vector(self, fusion):
+    @pytest.mark.parametrize("fusion", ["vector_fill", "rrf", "vector_rerank"])
+    def test_moi_cach_ghep_deu_lui_ve_bm25_khi_khong_co_vector(self, fusion):
         r = self.build(VI, FakeEmbedder({}), fusion=fusion)
         lexical = [h.chunk.doc_id for h in r.bm25.search(self.QUERY, 3)]
         assert [c.doc_id for c in r.retrieve(self.QUERY, 3)] == lexical

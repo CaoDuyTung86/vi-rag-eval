@@ -1,4 +1,4 @@
-"""Truy hồi lai: BM25 + vector, hợp nhất bằng RRF.
+"""Truy hồi lai: Vector là nhánh chính, BM25 bù chỗ trống và làm đường lui.
 
 Tham chiếu: .../ai/rag/HybridRetriever.java
 
@@ -26,11 +26,12 @@ from rag.store import VectorStore
 from rag.types import Chunk, Scored
 
 # Cách ghép hai nhánh — thí nghiệm "Hybrid có đáng giữ không", experiments.md 14/09.
-#   rrf            RRF như bản Java (mặc định)
+#   vector_fill    giữ nguyên thứ tự Vector, BM25 chỉ lấp chỗ Vector để trống (mặc định, như
+#                  bản Java từ 14/09)
+#   rrf            RRF, cách ghép cũ — giữ để đo lại
 #   vector_rerank  RRF, nhưng BM25 chỉ được xếp lại chunk đã có trong top-k Vector
-#   vector_fill    giữ nguyên thứ tự Vector, BM25 chỉ lấp chỗ Vector để trống
 # Cả ba lùi về BM25 thuần khi nhánh Vector rỗng (embedding hỏng, thiếu key).
-FUSIONS = ("rrf", "vector_rerank", "vector_fill")
+FUSIONS = ("vector_fill", "rrf", "vector_rerank")
 
 
 def _fill(semantic: list[Scored], lexical: list[Scored], top_k: int) -> list[Chunk]:
@@ -61,7 +62,7 @@ class HybridRetriever:
         min_similarity: float = 0.55,
         rrf_k: int = DEFAULT_RRF_K,
         rrf_weights: tuple[float, float] = (1.0, 1.0),
-        fusion: str = "rrf",
+        fusion: str = "vector_fill",
         on_embedding_error: Callable[[str, EmbeddingError], None] | None = None,
     ) -> None:
         if fusion not in FUSIONS:
@@ -73,8 +74,8 @@ class HybridRetriever:
         self.candidates_per_branch = candidates_per_branch
         self.min_similarity = min_similarity
         self.rrf_k = rrf_k
-        # (BM25, Vector). Mặc định bằng nhau như bản Java; thí nghiệm P@1 ngày 14/09 thử nghiêng
-        # về Vector.
+        # (BM25, Vector). Chỉ dùng cho rrf / vector_rerank; thí nghiệm P@1 ngày 14/09 thử
+        # nghiêng về Vector.
         self.rrf_weights = rrf_weights
         self._on_embedding_error = on_embedding_error
         self.embedding_failures = 0
@@ -86,15 +87,18 @@ class HybridRetriever:
         candidates = max(top_k, self.candidates_per_branch)
         lexical = self.bm25.search(query, candidates, lang)
         semantic = self._semantic_search(query, candidates, lang)
-        # Nhánh Vector duyệt TRƯỚC: hoà điểm RRF thì chunk xuất hiện trước thắng, và hoà xảy ra
-        # thường hơn tưởng — hạng (1, 2) và (2, 1) cho đúng cùng một điểm. Đứng riêng, Vector
-        # đúng hạng 1 nhiều hơn BM25 hẳn (95.5% so với 76.5% trên bộ vàng), nên hoà thì nghe
-        # Vector. Bản Java (HybridRetriever.fuse) làm y như vậy; xem experiments.md 14/09.
         if self.fusion == "vector_fill":
+            # BM25 không bao giờ đẩy chunk lên trên chunk Vector đã xếp. Trên câu chưa dùng để
+            # chọn, RRF để chunk sai có mặt ở cả hai nhánh vượt chunk đúng chỉ Vector xếp đầu.
+            # Bản Java (HybridRetriever.fuse) làm y như vậy; xem experiments.md 14/09.
             return _fill(semantic, lexical, top_k)
         if self.fusion == "vector_rerank" and semantic:
             allowed = {hit.chunk.doc_id for hit in semantic}
             lexical = [hit for hit in lexical if hit.chunk.doc_id in allowed]
+        # Nhánh Vector duyệt TRƯỚC: hoà điểm RRF thì chunk xuất hiện trước thắng, và hoà xảy ra
+        # thường hơn tưởng — hạng (1, 2) và (2, 1) cho đúng cùng một điểm. Đứng riêng, Vector
+        # đúng hạng 1 nhiều hơn BM25 hẳn (95.5% so với 76.5% trên bộ vàng), nên hoà thì nghe
+        # Vector.
         lexical_weight, semantic_weight = self.rrf_weights
         return rrf([semantic, lexical], top_k, self.rrf_k, [semantic_weight, lexical_weight])
 

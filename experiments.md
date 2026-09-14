@@ -493,6 +493,22 @@ mảnh mã làm nhiễu. Không chặn việc port Bù BM25.
 Giới hạn: 32 câu, Claude viết, mã bịa. KB không có mã nên bộ này không đo được trường hợp chunk
 chứa mã thật — nếu sau này KB thêm bảng mã tuyến, số hiệu tàu hay danh sách voucher thì phải đo lại.
 
+**Port sang Java (14/09).** `HybridRetriever.fuse` bỏ RRF, thay bằng Vector trước rồi BM25 lấp chỗ
+trống — cùng thuật toán với `_fill` bên Python. `rag.rrf-k` bị bỏ khỏi `RagProperties` và
+`application.yml` vì không còn chỗ dùng. Bên Python, mặc định của `HybridRetriever` đổi từ `rrf`
+sang `vector_fill`; `rrf` và `vector_rerank` giữ lại để đo, `--variants` giờ in hai dòng đó.
+Dòng "Hybrid (RRF)" đổi tên thành "Hybrid" ở cả hai bảng. `scripts/p1_diff.py` ghim `fusion="rrf"`,
+vì với Bù BM25 câu trả lời của nó luôn là 0.
+
+Test Java: bỏ "hoà điểm RRF thì nghe Vector", thêm hai test — BM25 chỉ lấp chỗ trống và không
+lặp chunk; chunk có mặt ở cả hai nhánh (BM25 hạng 1, Vector hạng 2) KHÔNG vượt được chunk Vector
+xếp hạng 1 — đúng cơ chế của 8 câu holdout.
+
+Đây không phải "tăng trọng số cho Vector". Tăng trọng số là phương án B (RRF, BM25 0.5): BM25
+vẫn cộng điểm và vẫn có thể đẩy một chunk lên trên chunk Vector xếp. Bù BM25 không cộng điểm nào
+— thứ tự là tuyệt đối. BM25 còn đúng hai việc: đường lui khi nhánh Vector rỗng, và lấp chỗ khi
+Vector trả chưa đủ top-k vì ngưỡng cosine 0.55.
+
 ---
 
 ## Mẫu
@@ -518,7 +534,8 @@ chứa mã thật — nếu sau này KB thêm bảng mã tuyến, số hiệu t�
 
 | Thí nghiệm | Câu hỏi cần trả lời |
 |---|---|
-| Port Bù BM25 sang VigoTrip | `HybridRetriever.fuse` bên Java, kèm đổi mặc định bên Python. Bảng Java/Python phải trùng lại sau khi port. Hỏi trước khi sửa |
+| Bảng live Java sau khi port Bù BM25 | `RAG_EVAL_LIVE=1` bên WebProject và `python -m eval.harness --live`: 20 dòng Vector/Hybrid phải trùng lại từng chữ số. Dòng "Hybrid + lọc lang" dự kiến trùng "Vector + lọc lang" trên bộ vàng |
+| `docs/CHATBOT_AI.md` bên WebProject | Mục 5.6, 8.6, sơ đồ và bảng số vẫn tả RRF — tài liệu đồ án, cập nhật khi nào? |
 | P@1 73.5% trên câu người thật gõ | 13 câu sai hạng 1: do câu dồn nhiều ý, do nhãn, hay do truy hồi. Chỉ để hiểu — không chỉnh trên holdout |
 | Hai câu thua RRF thật, một câu en mới sai | "đi tàu có được mang vali to không" (`pets-train` chen lên nhờ khoá `vali`?), "web này trả tiền bằng cách nào", "i want to cancel and get my money back". Mỗi câu: chunk nào chen lên, vì sao |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |

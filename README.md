@@ -1,12 +1,12 @@
 # vi-rag-eval
 
-Truy hồi lai đa ngôn ngữ (vi / en / ja / zh) — BM25 + vector + RRF — kèm bộ đo chất lượng
-chạy từ dòng lệnh.
+Truy hồi lai đa ngôn ngữ (vi / en / ja / zh) — Vector là nhánh chính, BM25 bù chỗ trống và làm
+đường lui — kèm bộ đo chất lượng chạy từ dòng lệnh.
 
 Port từ module RAG của đồ án VigoTrip (Spring Boot). Giữ nguyên bộ câu hỏi vàng, và **nhánh
 BM25 tái lập đúng từng con số của bản Java** ở tag `baseline` — nên mọi thí nghiệm làm ở đây vẫn
-so được với hệ thống đang chạy thật. Từ 14/09/2026 bản Python đi trước bản Java hai thay đổi đã
-đo (xem [experiments.md](experiments.md)); chúng sẽ được port sang Java.
+so được với hệ thống đang chạy thật. Thay đổi nào thắng ở đây mới được port sang Java (xem
+[experiments.md](experiments.md)).
 
 ## Trạng thái
 
@@ -15,13 +15,13 @@ so được với hệ thống đang chạy thật. Từ 14/09/2026 bản Python
 | `rag/normalize.py` — tách token Latin + bigram CJK | xong, khớp Java |
 | `rag/synonyms.py` + `data/synonyms.yml` — 4 bảng | xong, khớp Java (khoá `chó` có dấu đã port 14/09) |
 | `rag/bm25.py` — BM25, thống kê theo ngôn ngữ | xong, khớp Java |
-| `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong; RRF duyệt nhánh Vector trước — đã port sang Java 14/09 |
+| `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong; Bù BM25 (`vector_fill`) là mặc định, đã port sang Java 14/09 — bảng live Java chưa chạy lại |
 | `rag/embed.py` — client embedding + cache đĩa | xong, test bằng transport giả |
 | `eval/` — chỉ số, harness, cổng ngưỡng | xong |
 | Baseline nhánh Vector / Hybrid | xong, khớp Java — 20 dòng live trùng `RagRetrievalQualityTest` từng chữ số (14/09/2026) |
 | `learn/` — mạng nơ-ron numpy trên MNIST | bài tập nền tảng, không thuộc pipeline |
 
-113 test, không test nào gọi mạng.
+125 test, không test nào gọi mạng.
 
 ## Kết quả nhánh BM25
 
@@ -52,6 +52,8 @@ Bảng trùng từng chữ số với `./mvnw test -Dtest=RagRetrievalQualityTes
 `gemini-embedding-001`, 768 chiều, 10 ứng viên mỗi nhánh, ngưỡng cosine 0.55. Chỉ trích dòng
 gộp; bảng đầy đủ theo ngôn ngữ ở [experiments.md](experiments.md).
 
+Bảng dưới đo ngày 14/09 khi Hybrid còn ghép bằng RRF (duyệt Vector trước):
+
 ```
 Cấu hình                 Câu      P@1      R@3      R@5      P@3     F1@3      MRR
 -----------------------------------------------------------------
@@ -61,15 +63,16 @@ Hybrid (RRF) · gộp       132    95.5%   100.0%   100.0%   0.376   0.547   0.9
 Hybrid + lọc lang · gộp  132    95.5%   100.0%   100.0%   0.379   0.549   0.976
 ```
 
-Hybrid + lọc lang trước và sau khi RRF duyệt nhánh Vector trước (14/09):
+Từ 14/09 Hybrid là **Bù BM25**: giữ nguyên thứ tự Vector, BM25 chỉ lấp chỗ Vector để trống và làm
+đường lui khi embedding hỏng. Trên bộ vàng hai cách ngang nhau; trên câu chưa dùng để chọn, RRF
+để chunk sai có mặt ở cả hai nhánh vượt chunk đúng mà chỉ Vector xếp đầu:
 
-| | vi P@1 | gộp P@1 | gộp MRR |
-|---|---|---|---|
-| BM25 trước, như bản Java | 84.7% | 90.2% | 0.949 |
-| Vector trước | 96.6% | 95.5% | 0.976 |
+| Hybrid + lọc lang · P@1 | vàng · gộp (132) | holdout vi (55) | người thật gõ vi (49) | có mã vi (32) |
+|---|---|---|---|---|
+| RRF | 95.5% | 80.0% | 63.3% | 81.2% |
+| Bù BM25 | 95.5% | 94.5% | 73.5% | 90.6% |
 
-7 trên 9 câu tiếng Việt từng tụt P@1 là hoà điểm RRF tuyệt đối — hạng (1, 2) và (2, 1) cho cùng
-một điểm — mà hoà thì nhánh duyệt trước thắng.
+Dòng "Hybrid" của bảng live chưa chạy lại từ khi đổi mặc định.
 
 ## Chạy
 
@@ -81,8 +84,9 @@ python -m pytest
 python -m eval.harness                    # BM25, không cần key, áp ngưỡng theo từng ngôn ngữ
 python -m eval.harness --live             # thêm Vector + Hybrid, cần GEMINI_API_KEY
 python -m eval.harness --json             # JSON, kèm nDCG@5 và câu trượt
-python -m eval.harness --live --bm25-weight 0.5   # thử trọng số BM25 trong RRF
-python scripts/p1_diff.py                 # câu nào Vector đúng hạng 1 mà Hybrid sai, và vì sao
+python -m eval.harness --live --variants  # thêm dòng RRF và Xếp lại (cách ghép cũ, để so)
+python -m eval.harness --live --variants --bm25-weight 0.5   # RRF với trọng số BM25 0.5
+python scripts/p1_diff.py                 # câu nào Vector đúng hạng 1 mà RRF sai, và vì sao
 ```
 
 Mã thoát: `0` đạt · `1` tụt dưới ngưỡng (recall@3 < 0.85 hoặc MRR < 0.70 ở bất kỳ ngôn ngữ
@@ -114,11 +118,8 @@ Khác biệt có chủ ý:
   token nào trên corpus hiện tại — bảng số trùng khớp ở tag `baseline` là bằng chứng.
 - JSON có thêm nDCG@5; bảng giữ đúng các cột của Java để đặt cạnh nhau.
 
-Chưa port sang Java (đã đo, đang chờ):
-
-- Khoá đồng nghĩa viết có dấu (`"chó"`) khớp trên câu hỏi còn dấu.
-- RRF duyệt nhánh Vector trước nhánh BM25.
-- Hai câu hỏi vàng mới về chó.
+- `HybridRetriever` giữ `rrf` và `vector_rerank` cạnh mặc định `vector_fill` để đo lại; bản
+  Java chỉ còn Bù BM25.
 
 ## Dữ liệu
 

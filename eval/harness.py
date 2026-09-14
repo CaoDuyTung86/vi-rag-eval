@@ -142,24 +142,23 @@ def run_live(
         rrf_weights=(bm25_weight, 1.0),
         on_embedding_error=lambda query, error: failures.append(f"{query!r}: {error}"),
     )
-    if bm25_weight != 1.0:
-        print(f"[Live] RRF: trọng số BM25 {bm25_weight:g}, Vector 1", file=sys.stderr)
-
     configs: list[tuple[str, Retrieve]] = [
         ("Vector", lambda c, k: _doc_ids(retriever.retrieve_semantic_only(c.query, k))),
         (
             "Vector + lọc lang",
             lambda c, k: _doc_ids(retriever.retrieve_semantic_only(c.query, k, c.lang)),
         ),
-        ("Hybrid (RRF)", lambda c, k: _doc_ids(retriever.retrieve(c.query, k))),
+        ("Hybrid", lambda c, k: _doc_ids(retriever.retrieve(c.query, k))),
         ("Hybrid + lọc lang", lambda c, k: _doc_ids(retriever.retrieve(c.query, k, c.lang))),
     ]
     if variants:
-        # Chỉ đường production (+ lọc lang). Không in mặc định để bảng 20 dòng vẫn so thẳng
-        # được với RagRetrievalQualityTest bên Java.
+        # Cách ghép cũ, chỉ đường production (+ lọc lang). Không in mặc định để bảng 20 dòng
+        # vẫn so thẳng được với RagRetrievalQualityTest bên Java.
+        if bm25_weight != 1.0:
+            print(f"[Live] RRF: trọng số BM25 {bm25_weight:g}, Vector 1", file=sys.stderr)
         for name, fusion in (
+            ("RRF + lọc lang", "rrf"),
             ("Xếp lại + lọc lang", "vector_rerank"),
-            ("Bù BM25 + lọc lang", "vector_fill"),
         ):
             variant = HybridRetriever(
                 bm25,
@@ -203,7 +202,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--candidates", type=int, default=10, help="ứng viên mỗi nhánh (live)")
     parser.add_argument("--min-similarity", type=float, default=0.55, help="ngưỡng cosine (live)")
     parser.add_argument(
-        "--bm25-weight", type=float, default=1.0, help="trọng số BM25 trong RRF (live), Vector là 1"
+        "--bm25-weight",
+        type=float,
+        default=1.0,
+        help="trọng số BM25 trong dòng RRF của --variants, Vector là 1",
     )
     parser.add_argument("--min-recall3", type=float, help="ghi đè ngưỡng recall@3 mọi ngôn ngữ")
     parser.add_argument("--min-mrr", type=float, help="ghi đè ngưỡng MRR mọi ngôn ngữ")

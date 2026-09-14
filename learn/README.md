@@ -54,3 +54,20 @@ Cùng 10 epoch, lô 32, seed 0. Con số là độ chính xác trên validation.
 - **Ảnh trọng số** (`learn/out/weights-784-16-16-10-sigmoid-mse.png`): phần lớn lốm đốm như dự
   đoán, nhưng vài neuron trông giống một vệt ngắn xiên — gần với "nét" hơn tôi nghĩ. Không
   neuron nào là một nét sạch như hình minh hoạ trong video.
+
+## Đọc ảnh trọng số
+
+Mỗi lần chạy ghi hai ảnh vào `learn/out/`. Mỗi ô 28×28 là 784 trọng số đi vào một neuron của lớp
+ẩn đầu: **đỏ** — pixel đó sáng thì neuron sáng lên, **xanh** — pixel đó sáng thì neuron tối đi,
+**trắng** — không ảnh hưởng.
+
+- `weights-….png`: trọng số thô.
+- `weights-…-da-hoc.png`: trọng số trừ đi giá trị lúc khởi tạo — chỉ phần mạng đã học được.
+
+Vì sao ảnh thô lẫn đốm quanh viền: 67/784 pixel tối ở MỌI ảnh train. Gradient của trọng số nối
+từ pixel đó là `delta · 0 = 0`, nên chúng giữ nguyên giá trị ngẫu nhiên lúc khởi tạo mãi mãi. Rất
+nhiều pixel viền khác chỉ sáng ở vài ảnh, nên cũng gần như không học. Ảnh "đã học" có viền trắng
+sạch. Test `test_trong_so_noi_tu_pixel_luon_toi_khong_bao_gio_doi` chốt đúng điều này.
+
+Phần giữa vẫn lốm đốm, và điều đó là thật: mỗi neuron học một tổ hợp rải rác của nhiều vùng,
+không phải một nét gọn — đúng điều chương 2 của video nói về hy vọng "lớp 1 bắt nét".

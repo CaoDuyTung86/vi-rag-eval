@@ -123,6 +123,8 @@ class Network:
             for n_in, n_out in zip(sizes[:-1], sizes[1:], strict=True)
         ]
         self.biases = [np.zeros(n_out) for n_out in sizes[1:]]
+        # Giữ bản lúc khởi tạo để vẽ riêng phần trọng số mạng đã HỌC được, xem weights_image.
+        self.initial_weights = [w.copy() for w in self.weights]
 
     @property
     def n_params(self) -> int:
@@ -252,23 +254,33 @@ def train(
 # ---------------------------------------------------------------- ảnh trọng số
 
 
-def weights_image(net: Network, scale: int = 4, pad: int = 2) -> np.ndarray:
-    """Lưới ảnh 28×28, mỗi ô là trọng số từ 784 pixel vào MỘT neuron của lớp đầu tiên.
+def weights_image(
+    net: Network, *, since_init: bool = False, scale: int = 4, pad: int = 2
+) -> np.ndarray:
+    """Lưới ảnh RGB, mỗi ô 28×28 là trọng số từ 784 pixel vào MỘT neuron của lớp đầu tiên.
 
-    Xám = 0, trắng = dương (pixel đó sáng thì neuron sáng), đen = âm. Mỗi ô tự co giãn theo
-    trị tuyệt đối lớn nhất của nó.
+    Trắng = 0, đỏ = dương (pixel đó sáng thì neuron sáng lên), xanh = âm (pixel đó sáng thì
+    neuron tối đi). Mỗi ô co giãn theo phân vị 99 của trị tuyệt đối, để vài trọng số cực đoan
+    không làm cả ô nhạt đi.
+
+    since_init=True vẽ phần trọng số ĐÃ HỌC ĐƯỢC (trừ đi giá trị lúc khởi tạo). Ảnh thô lẫn
+    đốm vì viền ảnh MNIST luôn tối: gradient của trọng số nối từ pixel luôn bằng 0 là
+    delta · 0 = 0, nên chúng giữ nguyên giá trị ngẫu nhiên lúc khởi tạo mãi mãi.
     """
-    first = net.weights[0]
+    first = net.weights[0] - net.initial_weights[0] if since_init else net.weights[0]
     count = first.shape[0]
     side = int(np.sqrt(first.shape[1]))
     cols = int(np.ceil(np.sqrt(count)))
     rows = int(np.ceil(count / cols))
     cell = side * scale
-    canvas = np.full((rows * (cell + pad) + pad, cols * (cell + pad) + pad), 255, dtype=np.uint8)
+    shape = (rows * (cell + pad) + pad, cols * (cell + pad) + pad, 3)
+    canvas = np.full(shape, 160, dtype=np.uint8)
     for index, row in enumerate(first):
-        peak = np.abs(row).max() or 1.0
-        tile = ((row / peak + 1.0) / 2.0 * 255.0).reshape(side, side)
-        tile = np.kron(tile, np.ones((scale, scale))).astype(np.uint8)
+        peak = np.percentile(np.abs(row), 99) or 1.0
+        value = np.clip(row / peak, -1.0, 1.0).reshape(side, side)
+        pos, neg = np.clip(value, 0.0, 1.0), np.clip(-value, 0.0, 1.0)
+        tile = np.stack([1.0 - neg, 1.0 - pos - neg, 1.0 - pos], axis=-1) * 255.0
+        tile = tile.repeat(scale, axis=0).repeat(scale, axis=1).round().astype(np.uint8)
         top = pad + (index // cols) * (cell + pad)
         left = pad + (index % cols) * (cell + pad)
         canvas[top : top + cell, left : left + cell] = tile
@@ -276,15 +288,18 @@ def weights_image(net: Network, scale: int = 4, pad: int = 2) -> np.ndarray:
 
 
 def write_png(path: Path, pixels: np.ndarray) -> None:
-    """Ghi ảnh xám 8-bit ra PNG bằng zlib — đủ để khỏi thêm matplotlib/Pillow chỉ vì một ảnh."""
-    height, width = pixels.shape
+    """Ghi ảnh 8-bit (xám 2 chiều hoặc RGB 3 chiều) ra PNG bằng zlib — đủ để khỏi thêm
+    matplotlib/Pillow chỉ vì một ảnh."""
+    height, width = pixels.shape[:2]
+    color_type = 2 if pixels.ndim == 3 else 0
+    pixels = np.ascontiguousarray(pixels, dtype=np.uint8)
 
     def chunk(tag: bytes, data: bytes) -> bytes:
         crc = zlib.crc32(tag + data) & 0xFFFFFFFF
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
 
     raw = b"".join(b"\x00" + pixels[r].tobytes() for r in range(height))
-    header = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
+    header = struct.pack(">IIBBBBB", width, height, 8, color_type, 0, 0, 0)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(
         b"\x89PNG\r\n\x1a\n"
@@ -324,6 +339,9 @@ def main(argv: list[str] | None = None) -> None:
     lr = args.lr if args.lr is not None else (1.0 if args.cost == "mse" else 0.1)
     train_split, val_split, test_split = load_mnist()
     net = Network([784, *args.hidden, 10], act=args.act, cost=args.cost, seed=args.seed)
+    if not args.quiet:
+        dead = int(np.sum(train_split.x.max(axis=0) == 0))
+        print(f"{dead}/784 pixel tối ở MỌI ảnh train — trọng số nối từ chúng không bao giờ học")
 
     def report(epoch: Epoch) -> None:
         if not args.quiet:
@@ -345,9 +363,10 @@ def main(argv: list[str] | None = None) -> None:
         on_epoch=report,
     )
 
-    png = OUT_DIR / f"weights-{net.name}-{args.act}-{args.cost}.png"
     if len(args.hidden) > 0:
-        write_png(png, weights_image(net))
+        stem = f"weights-{net.name}-{args.act}-{args.cost}"
+        write_png(OUT_DIR / f"{stem}.png", weights_image(net))
+        write_png(OUT_DIR / f"{stem}-da-hoc.png", weights_image(net, since_init=True))
 
     seconds = sum(e.seconds for e in history)
     print(

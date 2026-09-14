@@ -70,8 +70,8 @@ def test_hoc_duoc_ba_cum_diem_tach_roi(act, cost, lr):
 def test_anh_trong_so_va_png(tmp_path):
     net = Network([784, 16, 10])
     image = weights_image(net, scale=2, pad=1)
-    # 16 neuron xếp lưới 4×4, mỗi ô 56 px, cách nhau 1 px.
-    assert image.shape == (4 * 57 + 1, 4 * 57 + 1)
+    # 16 neuron xếp lưới 4×4, mỗi ô 56 px, cách nhau 1 px, 3 kênh màu.
+    assert image.shape == (4 * 57 + 1, 4 * 57 + 1, 3)
 
     path = tmp_path / "w.png"
     write_png(path, image)
@@ -79,3 +79,24 @@ def test_anh_trong_so_va_png(tmp_path):
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
     assert int.from_bytes(data[16:20], "big") == image.shape[1]
     assert int.from_bytes(data[20:24], "big") == image.shape[0]
+    assert data[25] == 2  # color type RGB
+
+
+def test_mang_chua_train_thi_anh_da_hoc_trang_tron():
+    image = weights_image(Network([784, 16, 10]), since_init=True, scale=1, pad=0)
+    assert (image == 255).all()
+
+
+def test_trong_so_noi_tu_pixel_luon_toi_khong_bao_gio_doi():
+    # Viền ảnh MNIST luôn bằng 0, nên gradient của trọng số nối từ đó = delta · 0 = 0.
+    # Chúng giữ nguyên giá trị ngẫu nhiên lúc khởi tạo — lớp đốm nhiễu quanh viền ảnh thô.
+    rng = np.random.default_rng(0)
+    x = rng.random((200, 784))
+    x[:, :28] = 0.0
+    y = rng.integers(0, 10, size=200)
+    net = Network([784, 16, 10])
+
+    train(net, Split(x, y), Split(x, y), epochs=2, lr=1.0)
+
+    np.testing.assert_array_equal(net.weights[0][:, :28], net.initial_weights[0][:, :28])
+    assert not np.allclose(net.weights[0][:, 28:], net.initial_weights[0][:, 28:])

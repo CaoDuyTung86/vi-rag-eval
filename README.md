@@ -18,7 +18,7 @@ so được với hệ thống đang chạy thật. Từ 14/09/2026 bản Python
 | `rag/store.py`, `rag/fusion.py`, `rag/retriever.py` | xong; RRF duyệt nhánh Vector trước — đã port sang Java 14/09 |
 | `rag/embed.py` — client embedding + cache đĩa | xong, test bằng transport giả |
 | `eval/` — chỉ số, harness, cổng ngưỡng | xong |
-| Baseline nhánh Vector / Hybrid | chạy `--live` 13/09/2026, chưa đối chiếu bảng live của Java |
+| Baseline nhánh Vector / Hybrid | xong, khớp Java — 20 dòng live trùng `RagRetrievalQualityTest` từng chữ số (14/09/2026) |
 | `learn/` — mạng nơ-ron numpy trên MNIST | bài tập nền tảng, không thuộc pipeline |
 
 113 test, không test nào gọi mạng.

@@ -25,6 +25,23 @@ from rag.fusion import DEFAULT_RRF_K, rrf
 from rag.store import VectorStore
 from rag.types import Chunk, Scored
 
+# Cách ghép hai nhánh — thí nghiệm "Hybrid có đáng giữ không", experiments.md 14/09.
+#   rrf            RRF như bản Java (mặc định)
+#   vector_rerank  RRF, nhưng BM25 chỉ được xếp lại chunk đã có trong top-k Vector
+#   vector_fill    giữ nguyên thứ tự Vector, BM25 chỉ lấp chỗ Vector để trống
+# Cả ba lùi về BM25 thuần khi nhánh Vector rỗng (embedding hỏng, thiếu key).
+FUSIONS = ("rrf", "vector_rerank", "vector_fill")
+
+
+def _fill(semantic: list[Scored], lexical: list[Scored], top_k: int) -> list[Chunk]:
+    seen: set[str] = set()
+    out: list[Chunk] = []
+    for hit in [*semantic, *lexical]:
+        if hit.chunk.doc_id not in seen:
+            seen.add(hit.chunk.doc_id)
+            out.append(hit.chunk)
+    return out[:top_k]
+
 
 class Embedder(Protocol):
     @property
@@ -44,8 +61,12 @@ class HybridRetriever:
         min_similarity: float = 0.55,
         rrf_k: int = DEFAULT_RRF_K,
         rrf_weights: tuple[float, float] = (1.0, 1.0),
+        fusion: str = "rrf",
         on_embedding_error: Callable[[str, EmbeddingError], None] | None = None,
     ) -> None:
+        if fusion not in FUSIONS:
+            raise ValueError(f"fusion phải là một trong {FUSIONS}, nhận {fusion!r}")
+        self.fusion = fusion
         self.bm25 = bm25
         self.store = store
         self.embedder = embedder
@@ -69,6 +90,11 @@ class HybridRetriever:
         # thường hơn tưởng — hạng (1, 2) và (2, 1) cho đúng cùng một điểm. Đứng riêng, Vector
         # đúng hạng 1 nhiều hơn BM25 hẳn (95.5% so với 76.5% trên bộ vàng), nên hoà thì nghe
         # Vector. Bản Java (HybridRetriever.fuse) làm y như vậy; xem experiments.md 14/09.
+        if self.fusion == "vector_fill":
+            return _fill(semantic, lexical, top_k)
+        if self.fusion == "vector_rerank" and semantic:
+            allowed = {hit.chunk.doc_id for hit in semantic}
+            lexical = [hit for hit in lexical if hit.chunk.doc_id in allowed]
         lexical_weight, semantic_weight = self.rrf_weights
         return rrf([semantic, lexical], top_k, self.rrf_k, [semantic_weight, lexical_weight])
 

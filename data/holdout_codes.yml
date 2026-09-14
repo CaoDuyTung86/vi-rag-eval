@@ -1,0 +1,106 @@
+# Câu hỏi có mã voucher, mã đơn, số hiệu chuyến, số ghế — kiểm tra rủi ro trước khi port "Bù BM25".
+#
+# Knowledge base không chứa mã nào (đã quét cả 4 ngôn ngữ và bản export production 14/09/2026), và
+# 39 câu thật trong chat_messages.csv không câu nào gõ mã voucher hay mã đơn. Nên bộ này KHÔNG đo
+# được "BM25 bắt mã giỏi" — mã trong câu không khớp chữ nào của chunk. Nó đo điều ngược lại: mã lạ
+# có làm nhiễu nhánh nào không, và Bù BM25 có thua RRF ở loại câu này không.
+#
+# Claude viết 14/09/2026, theo văn phong câu người thật gõ trong holdout.yml (không dấu, viết tắt,
+# cáu), trước khi xem tokenizer xử lý mã thế nào. Mã đều bịa, không phải mã thật của hệ thống.
+# Không dùng để chọn cấu hình — chỉ để chặn: Bù BM25 thua RRF từ 3 câu P@1 thì chưa port.
+
+- query: nhap ma VIGO50 bao khong hop le la sao
+  expected: [voucher-not-working]
+
+- query: mã TET2027 còn dùng đc ko hay hết hạn r
+  expected: [voucher-not-working, voucher-conditions]
+
+- query: code SALE100K ap cho ve tau dc ko hay chi xe khach
+  expected: [voucher-conditions, voucher-not-working]
+
+- query: t có 2 mã FREESHIP với HE2026, nhập cả 2 cùng lúc đc k
+  expected: [voucher-how-to-use]
+
+- query: vừa trả tiền xong mới nhớ có mã GIAM20, cộng lại đc ko
+  expected: [voucher-after-payment]
+
+- query: ma KM30 nhap o dau vay
+  expected: [voucher-how-to-use]
+
+- query: "đơn #VG20260914-0012 bị trừ tiền 2 lần kìa"
+  expected: [payment-double-charge]
+
+- query: don hang VG1234 thanh toan loi, lam lai the nao
+  expected: [payment-failed]
+
+- query: mã đơn DH889911 hủy ở chỗ nào
+  expected: [cancel-how-to]
+
+- query: hủy đơn 20260915ABC thì bao lâu tiền về
+  expected: [refund-processing-time]
+
+- query: don VG5566 hien trang thai tu choi hoan tien la sao
+  expected: [refund-status-meaning]
+
+- query: tàu SE1 có cho mang chó mèo k
+  expected: [pets-train]
+
+- query: chuyến VN213 xách tay đc bao nhiêu kg
+  expected: [baggage-plane-general]
+
+- query: VJ122 hoãn 3 tiếng thì sao hả, bồi thường j k
+  expected: [trip-delay]
+
+- query: tau SE3 mang vali 25kg co bi phat khong
+  expected: [baggage-train-general, baggage-overweight-fee]
+
+- query: xe 29B-123.45 đón ở bến mỹ đình thì mấy giờ phải có mặt
+  expected: [checkin-arrive-early, cancel-missed-trip]
+
+- query: ghế A12 t chọn bị ng khác lấy mất r
+  expected: [seat-locked-by-others]
+
+- query: thanh toán rồi muốn đổi ghế B05 sang ghế A01 đc ko
+  expected: [seat-change-after-payment]
+
+- query: QR ve VG778899 quet ko len
+  expected: [checkin-qr-not-working]
+
+- query: ve so 0012 quet roi chieu nay di tiep dc k
+  expected: [checkin-already-used]
+
+- query: chưa nhận đc mail vé cho đơn VG4455
+  expected: [booking-confirmation-email]
+
+- query: otp 6 so ko gui ve gmail
+  expected: [account-not-receiving-code]
+
+- query: hoa don VAT cho don VG3321 lay o dau
+  expected: [payment-invoice]
+
+- query: SE7 ngày 30/4 k ra chuyến nào là sao
+  expected: [trip-no-results]
+
+- query: sao VN245 hôm nay 1tr8 mà hôm qua có 1tr2
+  expected: [trip-price-difference]
+
+- query: bé 18 tháng đi VJ150 có mất tiền vé k
+  expected: [children-infant-free]
+
+- query: thẻ visa bị từ chối khi thanh toán đơn VG9900
+  expected: [payment-failed]
+
+- query: t đặt 3 vé chuyến SE5 trong 1 đơn đc ko
+  expected: [booking-multiple-passengers]
+
+- query: mat pass tk vigo_user123 roi
+  expected: [account-forgot-password]
+
+- query: đơn VG2024 hủy trước 3 tiếng có đc hoàn k
+  expected: [cancel-policy-refund-tiers]
+
+- query: hotline 1900 của web là số mấy
+  expected: [support-contact]
+
+- query: chuyến HN-SG 8h30 sáng mai hủy trước 1 ngày mất bao nhiêu %
+  expected: [cancel-policy-refund-tiers, refund-partial]

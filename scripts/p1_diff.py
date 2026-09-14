@@ -2,6 +2,7 @@
 
     python scripts/p1_diff.py              # tiếng Việt, có lọc lang — đường production đi
     python scripts/p1_diff.py --lang en
+    python scripts/p1_diff.py --golden data/holdout.yml   # chỉ để hiểu, không để chỉnh
 
 Dùng lại vector trong cache của harness --live; câu hỏi chưa có trong cache thì cần
 GEMINI_API_KEY. Chạy từ gốc repo.
@@ -16,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from eval.corpus import load_golden, load_kb  # noqa: E402
+from eval.corpus import DEFAULT_GOLDEN, load_golden, load_kb  # noqa: E402
 from rag.bm25 import BM25Index  # noqa: E402
 from rag.embed import EmbeddingClient  # noqa: E402
 from rag.fusion import DEFAULT_RRF_K  # noqa: E402
@@ -47,10 +48,11 @@ def main() -> int:
             stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="Câu nào Vector đúng hạng 1 mà Hybrid sai")
     parser.add_argument("--lang", default="vi")
+    parser.add_argument("--golden", default=str(DEFAULT_GOLDEN), help="bộ câu hỏi")
     args = parser.parse_args()
 
     chunks = load_kb()
-    cases = [case for case in load_golden() if case.lang == args.lang]
+    cases = [case for case in load_golden(args.golden) if case.lang == args.lang]
     embedder = EmbeddingClient()
     store = VectorStore()
     store.load(chunks, embedder.embed_all([chunk.embedding_text for chunk in chunks]))

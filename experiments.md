@@ -259,8 +259,239 @@ Còn mở: hai câu thua RRF thật (mục 1) và câu tiếng Anh vừa chuyể
 
 **Port sang Java (14/09).** Khoá `chó` có dấu vào `SynonymExpander.java`, "Vector trước" vào
 `HybridRetriever.fuse`, hai câu chó vào `rag-eval.yml`, kèm test cho từng thay đổi. Bảng BM25 của
-`RagRetrievalQualityTest` trùng bản Python từng chữ số cả 10 dòng trên 132 câu. Bảng live bên
-Java chưa chạy.
+`RagRetrievalQualityTest` trùng bản Python từng chữ số cả 10 dòng trên 132 câu.
+
+**Bảng live bên Java (14/09).** Lần chạy đầu hỏng: `CachingEmbeddingClient` thử lại cả 224 chunk
+một lượt, delegate bắn 7 lô 32 liền nhau, vượt 100 request/phút, và mỗi lần thử gửi lại từ lô đầu
+— hỏng cả 4 lần. Sửa trong test (không đụng production): chia lô 32, mỗi lô tự thử lại, lô xong nằm
+trong cache, giống `embed_all` bên Python. Lần chạy lại: 139 lời gọi, 3 lần thử lại vì 429, 0 lời
+gọi hỏng.
+
+Đối chiếu với `python -m eval.harness --live` chạy lại cùng ngày từ cache (0 lời gọi API): cả 20
+dòng Vector / Vector + lọc lang / Hybrid / Hybrid + lọc lang, theo từng ngôn ngữ lẫn gộp, trùng
+từng chữ số ở cả 6 cột. Cộng 10 dòng BM25, bản Python và bản Java cho cùng 30 dòng trên 132 câu.
+Đường production (Hybrid + lọc lang) tiếng Việt: P@1 84.7% → 96.6%, R@3 100%, MRR 0.921 → 0.980.
+
+---
+
+## 2026-09-14 — Bộ holdout tiếng Việt
+
+**Vì sao.** Luật "Vector trước" được chọn sau khi nhìn kết quả trên chính 59 câu vi của
+`golden.yml`. Số 96.6% có thể lạc quan vì chọn trên cùng bộ đo. `data/holdout.yml` — 55 câu vi,
+một câu mỗi chunk trừ `pets-bus` — chỉ chạy để xác nhận, không để chọn cấu hình.
+
+**Cách viết.** Câu hỏi viết khi chỉ nhìn docId và title, gán expected sau khi đọc content. Khoảng
+1/3 không dấu hoặc viết tắt. Không câu nào trùng `golden.yml` (so sau khi bỏ dấu) hay chép nguyên
+văn chunk. Còn thiếu phần người thật gõ.
+
+**Giả thuyết** (viết trước khi chạy). Holdout khó hơn golden: phân bố đều mọi chunk thay vì dồn
+vào chủ đề hay hỏi, và câu viết lệch từ với chunk có chủ đích.
+
+- Hybrid + lọc lang · vi: P@1 thấp hơn golden (96.6%) nhưng vẫn trong khoảng 85–95% (47–52/55),
+  R@3 ≥ 95%. Dưới 85% thì 96.6% trên golden là lạc quan thật, và luật "Vector trước" cần xem lại
+  trên bộ lớn hơn — nhưng KHÔNG chỉnh trên holdout.
+- BM25 + lọc lang · vi: P@1 60–75% (golden 74.6%). Câu không dấu và câu né từ của chunk là chỗ
+  BM25 thua.
+- Khoảng cách Hybrid − BM25 trên holdout lớn hơn trên golden (22 điểm), vì holdout ít trùng từ hơn.
+
+**Kết quả BM25** (offline, 0 lời gọi API):
+
+| Cấu hình · vi | Câu | P@1 | R@3 | MRR |
+|---|---|---|---|---|
+| BM25 · golden | 59 | 72.9% | 94.9% | 0.842 |
+| BM25 · holdout | 55 | 52.7% | 83.6% | 0.668 |
+| BM25 + lọc lang · golden | 59 | 74.6% | 94.9% | 0.843 |
+| BM25 + lọc lang · holdout | 55 | 61.8% | 81.8% | 0.726 |
+
+BM25 + lọc lang P@1 61.8% nằm trong khoảng dự đoán 60–75%, sát đầu dưới. R@3 81.8% thấp hơn cổng
+0.85 — holdout chạy với `--no-gate`, cổng chỉ áp cho golden.
+
+7 câu trượt khỏi top-5 (BM25 + lọc lang), ghi lại để hiểu, KHÔNG để sửa trên holdout:
+
+- Không dấu, không có từ nào chung với chunk: "toi ngu quen xe chay mat roi gio sao",
+  "co tra bang momo duoc khong" (KB không nhắc MoMo), "con 7 tuoi duoc giam gia bao nhieu"
+  (chunk nói "75 phần trăm", không nói "giảm giá").
+- Có dấu nhưng né từ của chunk: "hủy vé 5 hôm rồi chưa thấy tiền về" (từ "hủy" kéo về nhóm
+  cancel), "tài xế chạy ẩu muốn phản ánh" (chunk viết "khiếu nại"), "nhà xe báo lùi giờ…" (chunk
+  viết "hoãn"), "thùng xốp đựng đồ ăn" (chunk viết "hàng hóa kích thước lớn").
+
+Đây đúng loại câu mà nhánh Vector sinh ra để bắt.
+
+**Kết quả live** (2 lời gọi API, 0 lần 429, 0 lời gọi hỏng):
+
+| Cấu hình · vi | golden P@1 | holdout P@1 | holdout R@3 | holdout MRR |
+|---|---|---|---|---|
+| BM25 + lọc lang | 74.6% | 61.8% | 81.8% | 0.726 |
+| Vector | 89.8% | 92.7% | 98.2% | 0.948 |
+| Vector + lọc lang | 94.9% | **94.5%** | 98.2% | **0.961** |
+| Hybrid (RRF) | 96.6% | 85.5% | 96.4% | 0.905 |
+| Hybrid + lọc lang (production) | 96.6% | **80.0%** | 92.7% | 0.864 |
+
+**Giả thuyết 1 SAI.** Hybrid + lọc lang 80.0% (44/55), dưới khoảng dự đoán 85–95%. Vector + lọc
+lang gần như giữ nguyên giữa hai bộ (94.9% → 94.5%), còn Hybrid tụt 16.6 điểm. Giả thuyết 2 đúng
+(BM25 61.8%). Giả thuyết 3 đúng theo hướng cực đoan: trên holdout, Hybrid không những thua Vector
+mà còn thua Vector 8 câu, thắng 0 câu.
+
+**Chẩn đoán** — `scripts/p1_diff.py --golden data/holdout.yml`, 0 lời gọi API. 8 câu Vector đúng
+hạng 1 mà Hybrid sai; 0 câu do đồng nghĩa; 0 câu do hoà điểm (luật "Vector trước" không liên
+quan). Cả 8 cùng một cơ chế: chunk sai có mặt ở CẢ HAI nhánh thắng chunk đúng chỉ mạnh ở một nhánh.
+
+- 3 câu chunk đúng vắng hẳn khỏi top-10 BM25, nên chỉ được 1/61 ≈ 0.0164. Bất kỳ chunk nào lọt cả
+  hai top-10 — kể cả hạng 6 + 6 ("momo" → `support-contact`) hay 3 + 9 ("phản ánh" →
+  `payment-double-charge`) — đều vượt qua: "co tra bang momo duoc khong", "tài xế chạy ẩu muốn
+  phản ánh", "hủy vé 5 hôm rồi chưa thấy tiền về".
+- 5 câu sát nút: chunk sai (BM25 hạng 1, Vector hạng 2) = 0.0325 thắng chunk đúng (BM25 hạng 3–7,
+  Vector hạng 1) = 0.0313–0.0323. BM25 bắt được từ chung ("tuổi", "mail", "giờ") nhưng xếp nhầm
+  chunk anh em cùng chủ đề lên đầu.
+
+Vì sao golden không lộ ra: câu golden viết gần từ của chunk hơn, nên BM25 thường cũng đúng và hai
+nhánh đồng thuận. RRF chỉ có lợi khi hai nhánh ngang sức; khi một nhánh (BM25 ở đây) kém hẳn, nó
+kéo nhánh mạnh xuống.
+
+**Kết luận.** Số 96.6% của Hybrid + lọc lang trên golden là lạc quan: trên câu chưa dùng để chọn,
+đường production đúng hạng 1 ở 80.0% câu, trong khi Vector + lọc lang đạt 94.5%. Khoảng cách 8/55
+câu vượt xa mức nhiễu một hai câu. Không đổi gì trong hệ thống dựa trên holdout — mọi phương án
+sửa phải chọn trên golden (hoặc một bộ thứ ba), rồi quay lại holdout đúng MỘT lần để xác nhận.
+Cũng chưa port gì sang VigoTrip.
+
+Đổi ý nếu: phần câu người thật gõ, khi thêm vào, cho thấy Hybrid hơn Vector — tức là câu Claude
+viết lệch về phía né từ nhiều hơn khách thật.
+
+---
+
+## 2026-09-14 — Hybrid có đáng giữ không
+
+**Bối cảnh.** Hybrid (RRF) vẫn đang chạy ở cả vi-rag-eval lẫn VigoTrip — chưa đổi gì. Câu hỏi đặt
+ra từ holdout: trên câu chưa dùng để chọn, Hybrid + lọc lang 80.0%, Vector + lọc lang 94.5%.
+
+**Dữ liệu.** Người thật gõ 126 câu: 49 câu trả lời được bằng KB thêm vào holdout (có nhãn), 77 câu
+KB không trả lời được tách sang `data/unanswerable.yml` cho tuần 9 và 12. 49 câu này CHƯA chạy lần
+nào; 55 câu Claude viết đã chạy một lần nên chỉ báo cáo kèm.
+
+**Phương án.** Tất cả đều lùi về BM25 thuần khi embedding hỏng — BM25 vẫn là đường lui, chỉ đổi
+cách ghép khi cả hai nhánh cùng có kết quả.
+
+| | Cách ghép | Cờ |
+|---|---|---|
+| A | RRF hiện tại | mặc định |
+| B | RRF trọng số BM25 0.5 | `--bm25-weight 0.5` |
+| C | Xếp lại: BM25 chỉ xếp lại chunk đã có trong top-10 Vector | `--variants` |
+| D | Bù BM25: giữ thứ tự Vector, BM25 chỉ lấp chỗ trống | `--variants` |
+
+**Tiêu chí chọn** (viết trước khi chạy). Chọn trên `golden.yml`, 132 câu, theo P@1 gộp của đường
+production (+ lọc lang). Mặc định chọn D — ít cơ chế nhất mà vẫn có đường lui. Chỉ chọn A, B hoặc C
+nếu hơn D từ 3 câu P@1 gộp trở lên VÀ R@3 gộp không thấp hơn. Không chọn trọng số khác 0.5 — lý do
+như mục P@1 ở trên. Sau khi chọn, chạy phần người thật gõ đúng một lần để xác nhận.
+
+**Dự đoán.**
+
+- Golden: A và D chênh không quá 2 câu gộp (bảng live đã có Vector + lọc lang = Hybrid + lọc lang
+  = 95.5% gộp). B và C nằm giữa A và D. → Theo tiêu chí, chọn D.
+- 49 câu người thật: D hơn A từ 3 câu P@1 trở lên. Nếu A ≥ D thì kết quả trên 55 câu Claude viết
+  là do cách viết né từ, và nên giữ A.
+- Không đo được bằng bộ này: BM25 mạnh ở mã voucher, số hiệu chuyến — golden gần như không có loại
+  câu đó, nên D có thể thua ở chỗ bộ đo không nhìn thấy.
+
+**Kết quả chọn — golden** (0 lời gọi API, đường production + lọc lang):
+
+| | Cách ghép | vi P@1 | en P@1 | ja P@1 | zh P@1 | gộp P@1 | gộp R@3 | gộp MRR |
+|---|---|---|---|---|---|---|---|---|
+| A | RRF | 96.6% | 91.9% | 94.4% | 100% | 95.5% (126) | 100% | 0.976 |
+| B | RRF, BM25 0.5 | 94.9% | 97.3% | 100% | 94.4% | 96.2% (127) | 100% | 0.980 |
+| C | Xếp lại | 93.2% | 91.9% | 100% | 94.4% | 93.9% (124) | 100% | 0.968 |
+| D | Bù BM25 | 94.9% | 97.3% | 94.4% | 94.4% | 95.5% (126) | 99.2% | 0.975 |
+
+D trùng từng chữ số với Vector + lọc lang: trên golden nhánh Vector không lần nào trả thiếu 5
+chunk, nên BM25 chưa phải lấp chỗ nào. Dự đoán "A và D chênh ≤ 2 câu" đúng (0 câu). Dự đoán "B, C
+nằm giữa" sai: B hơn cả hai 1 câu, C thua cả hai 2 câu.
+
+**Chọn D** theo tiêu chí: không phương án nào hơn D từ 3 câu. Ghi rõ cái giá: R@3 gộp của D thấp
+hơn A và B một câu (99.2% so với 100%) — tiêu chí không đặt điều kiện R@3 cho D, nên không đổi kết
+quả chọn, nhưng đó là chỗ BM25 đang giúp thật.
+
+Viết trước khi chạy xác nhận: D sẽ hơn A từ 3/49 câu P@1 trên phần người thật gõ.
+
+**Kết quả xác nhận — holdout, chạy một lần** (2 lời gọi API, 0 lần 429, 0 lời gọi hỏng):
+
+| · vi, + lọc lang | Người thật gõ (49) P@1 | R@3 | MRR | Claude viết (55, lần 2) P@1 | R@3 |
+|---|---|---|---|---|---|
+| BM25 | 38.8% | 71.4% | 0.548 | 61.8% | 81.8% |
+| A · RRF | 63.3% (31) | 81.6% | 0.736 | 80.0% | 92.7% |
+| C · Xếp lại | 65.3% (32) | 83.7% | 0.756 | 81.8% | 92.7% |
+| D · Bù BM25 | **73.5% (36)** | **95.9%** | **0.838** | **94.5%** | 98.2% |
+
+Dự đoán đúng: D hơn A 5/49 câu P@1, và R@3 hơn 14.3 điểm. Điều kiện đổi ý ("người thật gõ mà A
+≥ D thì do Claude viết né từ") không xảy ra — câu người thật gõ còn né từ của chunk nhiều hơn: BM25
+chỉ đúng hạng 1 ở 38.8%, thấp hơn cả phần Claude viết. Trên cả hai phần, D trùng từng chữ số với
+Vector + lọc lang.
+
+P@1 tuyệt đối 73.5% thấp hơn hẳn phần Claude viết. Một phần do câu người thật gõ dồn nhiều ý hoặc
+mơ hồ ("mua ve xe di hai phong", "thời tiết có ảnh hưởng giá vé hay chỉ delay"), một phần do nhãn
+là phán đoán của Claude — chưa tách được hai nguyên nhân. R@3 95.9% cho thấy chunk đúng gần như luôn
+có mặt trong ngữ cảnh gửi cho LLM.
+
+**Kết luận.** Giữ BM25, bỏ RRF. BM25 vẫn là đường lui khi embedding hỏng và vẫn lấp chỗ khi Vector
+trả thiếu, nhưng không còn được đẩy chunk lên trên chunk mà Vector xếp đầu. Trên golden hai cách
+ngang nhau (126/132); trên câu chưa dùng để chọn, D hơn A 5/49 (người thật) và 8/55 (Claude viết).
+
+Chưa đổi mặc định của `HybridRetriever` (vẫn `rrf`, để bảng 20 dòng còn so thẳng với Java), chưa
+port sang VigoTrip.
+
+Đổi ý nếu: một bộ câu hỏi có mã voucher, số hiệu chuyến, mã đơn hàng cho thấy D thua A — đó là chỗ
+BM25 mạnh mà cả golden lẫn holdout gần như không có.
+
+---
+
+## 2026-09-14 — Câu có mã: Bù BM25 có thua RRF không
+
+**Kiểm tra trước.** Knowledge base 4 ngôn ngữ và bản export production không chứa mã nào; 39 câu thật
+không câu nào gõ mã voucher hay mã đơn. Lợi thế "BM25 bắt mã" không tồn tại với corpus này: mã trong
+câu hỏi không khớp chữ nào của chunk. Câu hỏi đổi thành: mã lạ có làm nhiễu nhánh nào không.
+
+**Cách tokenizer xử lý mã** (hành vi hệ thống, xem trước khi chạy): số một chữ số bị bỏ ("SE1" →
+`se`, "1tr8" → `tr`), chữ và số tách nhau ("VIGO50" → `vigo`, `50`). Trong KB tiếng Việt, `se` có
+11 lần (từ "sẽ"), `ma` 36 lần (từ "mã"), `12` 5 lần ("12 tuổi"), `20` 4 lần ("20kg").
+
+**Dữ liệu.** `data/holdout_codes.yml` — 32 câu vi, Claude viết theo văn phong câu người thật gõ, trước
+khi xem tokenizer. Mã đều bịa. Không dùng để chọn, chỉ để chặn.
+
+**Giả thuyết** (viết trước khi chạy).
+
+- BM25 + lọc lang tệ hơn trên holdout thường: mảnh mã như `se`, `12`, `20` khớp nhầm chunk không
+  liên quan. P@1 dưới 60%.
+- Vector gần như không bị mã làm nhiễu: câu vẫn còn đủ từ mang nghĩa ("hoãn", "quét", "trừ tiền").
+  Vector + lọc lang P@1 ≥ 80%.
+- D không thua A: D − A ≥ 0 câu P@1. **Tiêu chí chặn:** A hơn D từ 3/32 câu P@1 thì chưa port D.
+
+**Kết quả** (1 lời gọi API, 0 lần 429, 0 lời gọi hỏng; · vi + lọc lang):
+
+| Cấu hình | P@1 | R@3 | MRR |
+|---|---|---|---|
+| BM25 | 50.0% (16) | 65.6% | 0.600 |
+| Vector | 87.5% (28) | 96.9% | 0.911 |
+| A · RRF | 81.2% (26) | 90.6% | 0.867 |
+| C · Xếp lại | 84.4% (27) | 90.6% | 0.883 |
+| D · Bù BM25 | **90.6% (29)** | **100%** | **0.943** |
+
+Ba giả thuyết đều đúng: BM25 50.0% (< 60%), Vector 87.5% (≥ 80%), D hơn A 3 câu. Không chạm tiêu chí
+chặn.
+
+Trong 6 câu BM25 trượt khỏi top-5, mảnh mã và con số kéo BM25 đi lạc: "t đặt 3 vé chuyến SE5…" →
+`payment-failed` đứng đầu, "HN-SG 8h30 … hủy trước 1 ngày" → `checkin-arrive-early` đứng đầu. RRF
+mang một phần nhiễu đó vào: A trượt 2 câu khỏi top-5, D không trượt câu nào.
+
+Lần đầu tiên D khác Vector thuần: hơn 1 câu P@1 và 3.1 điểm R@3. Có câu Vector trả thiếu vì ngưỡng
+cosine 0.55, BM25 lấp vào và trúng — phần "bù" có việc thật, không chỉ là đường lui.
+
+Ở VigoTrip, mã voucher thật không đi qua RAG: `ChatService` có tool `check_voucher` (kiểm tra mã
+qua `VoucherService`), `save_voucher` và `search_trips`. RAG chỉ lo phần chính sách xung quanh mã,
+đúng phần bộ này đo.
+
+**Kết luận.** Không có bằng chứng BM25 cần được xếp ngang Vector cho câu có mã; ngược lại, RRF để
+mảnh mã làm nhiễu. Không chặn việc port Bù BM25.
+
+Giới hạn: 32 câu, Claude viết, mã bịa. KB không có mã nên bộ này không đo được trường hợp chunk
+chứa mã thật — nếu sau này KB thêm bảng mã tuyến, số hiệu tàu hay danh sách voucher thì phải đo lại.
 
 ---
 
@@ -287,7 +518,8 @@ Java chưa chạy.
 
 | Thí nghiệm | Câu hỏi cần trả lời |
 |---|---|
-| Đối chiếu live với Java | Chạy `RAG_EVAL_LIVE` bên WebProject, so với bảng live ở trên |
+| Port Bù BM25 sang VigoTrip | `HybridRetriever.fuse` bên Java, kèm đổi mặc định bên Python. Bảng Java/Python phải trùng lại sau khi port. Hỏi trước khi sửa |
+| P@1 73.5% trên câu người thật gõ | 13 câu sai hạng 1: do câu dồn nhiều ý, do nhãn, hay do truy hồi. Chỉ để hiểu — không chỉnh trên holdout |
 | Hai câu thua RRF thật, một câu en mới sai | "đi tàu có được mang vali to không" (`pets-train` chen lên nhờ khoá `vali`?), "web này trả tiền bằng cách nào", "i want to cancel and get my money back". Mỗi câu: chunk nào chen lên, vì sao |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |
 | Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods. Khoảng trống từ vựng hay do chunk viết khác cách hỏi |

@@ -20,7 +20,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import asdict
 
-from eval.corpus import check_golden_against_kb, load_golden, load_kb
+from eval.corpus import DEFAULT_GOLDEN, check_golden_against_kb, load_golden, load_kb
 from eval.metrics import ALL_LANGS, Metrics, Retrieve, evaluate_by_lang
 from rag.bm25 import BM25Index
 from rag.embed import EmbeddingClient, EmbeddingError
@@ -110,6 +110,7 @@ def run_live(
     min_similarity: float,
     bm25_weight: float = 1.0,
     embedder: EmbeddingClient | None = None,
+    variants: bool = False,
 ) -> tuple[list[Metrics], str | None]:
     """Đo bốn cấu hình dùng embedding. Trả (kết quả, thông báo lỗi hoặc None)."""
     embedder = embedder or EmbeddingClient()
@@ -153,6 +154,24 @@ def run_live(
         ("Hybrid (RRF)", lambda c, k: _doc_ids(retriever.retrieve(c.query, k))),
         ("Hybrid + lọc lang", lambda c, k: _doc_ids(retriever.retrieve(c.query, k, c.lang))),
     ]
+    if variants:
+        # Chỉ đường production (+ lọc lang). Không in mặc định để bảng 20 dòng vẫn so thẳng
+        # được với RagRetrievalQualityTest bên Java.
+        for name, fusion in (
+            ("Xếp lại + lọc lang", "vector_rerank"),
+            ("Bù BM25 + lọc lang", "vector_fill"),
+        ):
+            variant = HybridRetriever(
+                bm25,
+                store,
+                embedder,
+                candidates_per_branch=candidates,
+                min_similarity=min_similarity,
+                rrf_weights=(bm25_weight, 1.0),
+                fusion=fusion,
+                on_embedding_error=lambda query, error: failures.append(f"{query!r}: {error}"),
+            )
+            configs.append((name, lambda c, k, r=variant: _doc_ids(r.retrieve(c.query, k, c.lang))))
     results: list[Metrics] = []
     for name, retrieve in configs:
         results.extend(evaluate_by_lang(name, cases, retrieve).values())
@@ -189,15 +208,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--min-recall3", type=float, help="ghi đè ngưỡng recall@3 mọi ngôn ngữ")
     parser.add_argument("--min-mrr", type=float, help="ghi đè ngưỡng MRR mọi ngôn ngữ")
     parser.add_argument("--no-gate", action="store_true", help="chỉ in số, không áp ngưỡng")
+    parser.add_argument(
+        "--golden",
+        default=str(DEFAULT_GOLDEN),
+        help="bộ câu hỏi; data/holdout.yml chỉ để xác nhận, không để chọn cấu hình",
+    )
+    parser.add_argument(
+        "--variants", action="store_true", help="thêm cách ghép Xếp lại và Bù BM25 (live)"
+    )
     args = parser.parse_args(argv)
 
     info = sys.stderr if args.json else sys.stdout
 
     chunks = load_kb()
-    cases = load_golden()
+    cases = load_golden(args.golden)
     missing = check_golden_against_kb(cases, chunks)
     if missing:
-        print("docId trong golden.yml không tồn tại trong knowledge base:", file=sys.stderr)
+        print(f"docId trong {args.golden} không tồn tại trong knowledge base:", file=sys.stderr)
         for doc_id in missing:
             print(f"  - {doc_id}", file=sys.stderr)
         return EXIT_BAD_DATA
@@ -224,6 +251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             candidates=args.candidates,
             min_similarity=args.min_similarity,
             bm25_weight=args.bm25_weight,
+            variants=args.variants,
         )
         results.extend(live_results)
     else:

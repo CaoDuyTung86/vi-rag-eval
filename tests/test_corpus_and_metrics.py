@@ -5,7 +5,7 @@ import math
 
 import pytest
 
-from eval.corpus import check_golden_against_kb, load_golden, load_kb
+from eval.corpus import ROOT, check_golden_against_kb, load_golden, load_kb
 from eval.harness import MIN_MRR, MIN_RECALL_AT_3, check_thresholds, main
 from eval.metrics import (
     ALL_LANGS,
@@ -18,7 +18,10 @@ from eval.metrics import (
     recall_at_k,
     reciprocal_rank,
 )
+from rag.normalize import remove_accents
 from rag.types import GoldenCase
+
+HOLDOUT = ROOT / "data" / "holdout.yml"
 
 
 @pytest.fixture(scope="module")
@@ -87,6 +90,41 @@ class TestCorpus:
         langs = {case.lang for case in golden}
         assert langs <= set(MIN_RECALL_AT_3)
         assert langs <= set(MIN_MRR)
+
+
+@pytest.fixture(scope="module")
+def holdout():
+    return load_golden(HOLDOUT)
+
+
+class TestHoldout:
+    """holdout.yml chỉ có giá trị khi nó thật sự tách khỏi golden.yml."""
+
+    def test_doc_id_ton_tai_va_cung_ngon_ngu(self, holdout, kb):
+        assert check_golden_against_kb(holdout, kb) == []
+        lang_of = {c.doc_id: c.lang for c in kb}
+        assert all(lang_of[d] == case.lang for case in holdout for d in case.expected)
+
+    def test_khong_trung_golden_ke_ca_khi_bo_dau(self, holdout, golden):
+        seen = {remove_accents(case.query.lower()) for case in golden}
+        assert [c.query for c in holdout if remove_accents(c.query.lower()) in seen] == []
+
+    def test_khong_chep_nguyen_van_chunk(self, holdout, kb):
+        contents = " ".join(c.content.lower() for c in kb)
+        assert [c.query for c in holdout if c.query.lower() in contents] == []
+
+    def test_bo_cau_co_ma_hop_le(self, kb, golden, holdout):
+        codes = load_golden(ROOT / "data" / "holdout_codes.yml")
+        assert check_golden_against_kb(codes, kb) == []
+        lang_of = {c.doc_id: c.lang for c in kb}
+        assert all(lang_of[d] == case.lang for case in codes for d in case.expected)
+        seen = {remove_accents(c.query.lower()) for c in [*golden, *holdout]}
+        assert [c.query for c in codes if remove_accents(c.query.lower()) in seen] == []
+
+    def test_harness_nhan_co_golden(self, capsys):
+        assert main(["--golden", str(HOLDOUT), "--json", "--no-gate"]) == 0
+        rows = json.loads(capsys.readouterr().out)
+        assert {r["n"] for r in rows if r["name"].endswith("· vi")} == {len(load_golden(HOLDOUT))}
 
 
 class TestMetrics:

@@ -341,3 +341,25 @@ class TestHybridRetriever:
         assert r.retrieve("   ", 3) == []
         assert r.retrieve_semantic_only(None, 3) == []
         assert r.embedding_failures == 0
+
+    def test_vector_fill_giu_thu_tu_vector_roi_bu_bm25(self):
+        # Vector chỉ trả baggage-bus; BM25 xếp baggage-plane đầu. Bù: bus trước, BM25 lấp sau.
+        r = self.build(VI, FakeEmbedder({self.QUERY: [0, 1, 0]}), fusion="vector_fill")
+        lexical = [h.chunk.doc_id for h in r.bm25.search(self.QUERY, 3)]
+        got = [c.doc_id for c in r.retrieve(self.QUERY, 3)]
+        assert got[0] == "baggage-bus"
+        assert got[1:] == [d for d in lexical if d != "baggage-bus"][:2]
+
+    def test_vector_rerank_khong_cho_bm25_them_chunk_moi(self):
+        r = self.build(VI, FakeEmbedder({self.QUERY: [0, 1, 0]}), fusion="vector_rerank")
+        assert [c.doc_id for c in r.retrieve(self.QUERY, 3)] == ["baggage-bus"]
+
+    @pytest.mark.parametrize("fusion", ["vector_fill", "vector_rerank"])
+    def test_cach_ghep_moi_van_lui_ve_bm25_khi_khong_co_vector(self, fusion):
+        r = self.build(VI, FakeEmbedder({}), fusion=fusion)
+        lexical = [h.chunk.doc_id for h in r.bm25.search(self.QUERY, 3)]
+        assert [c.doc_id for c in r.retrieve(self.QUERY, 3)] == lexical
+
+    def test_cach_ghep_la_thi_bao_loi(self):
+        with pytest.raises(ValueError):
+            self.build(VI, None, fusion="cong_diem")

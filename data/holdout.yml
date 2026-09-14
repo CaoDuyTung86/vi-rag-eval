@@ -1,0 +1,340 @@
+# Bộ holdout tiếng Việt — KHÔNG dùng để chọn cấu hình.
+#
+# golden.yml đã bị "nhìn" khi chọn luật RRF duyệt Vector trước (experiments.md 14/09), nên số
+# trên đó có thể lạc quan. File này chỉ chạy để XÁC NHẬN một quyết định đã chốt, không bao giờ để
+# chọn giữa các phương án. Thấy câu nào sai thì ghi vào experiments.md, KHÔNG sửa hệ thống cho
+# riêng câu đó rồi đo lại trên file này — làm vậy là biến holdout thành bộ vàng thứ hai.
+#
+# Cách viết (14/09/2026): Claude viết câu hỏi chỉ nhìn docId + title của faq-vi.yml, chưa đọc
+# content, rồi mới đọc content để gán expected. Mục đích: câu hỏi không mượn từ của chunk.
+# Điểm mù còn lại: người viết đã từng thấy golden.yml và tên chunk, nên vẫn nghiêng về cách hỏi
+# "khớp" với title. Phần của người thật gõ (bên dưới) để bù điểm mù đó.
+#
+# Một câu mỗi chunk, 55/56 chunk (bỏ pets-bus vì golden.yml đã có 4 câu về nó). Khoảng 1/3 gõ
+# không dấu hoặc viết tắt.
+
+# ---------------------------------------------------------------- Claude viết
+
+- query: bay nội địa được xách tay mấy ký
+  expected: [baggage-plane-general]
+
+- query: di xe giuong nam de balo to duoi gam co mat tien khong
+  expected: [baggage-bus-general]
+
+- query: lên tàu mang theo thùng xốp đựng đồ ăn được không
+  expected: [baggage-train-general]
+
+- query: vali nặng hơn mức cho phép thì bị thu thêm bao nhiêu
+  expected: [baggage-overweight-fee]
+
+- query: gửi laptop với máy ảnh lỡ hỏng có được đền không
+  expected: [baggage-fragile]
+
+- query: sac du phong co bi tich thu khi len may bay ko
+  expected: [baggage-prohibited]
+
+- query: còn 1 ngày nữa mới đi mà hủy thì mất bao nhiêu phần trăm
+  expected: [cancel-policy-refund-tiers, refund-partial]
+
+- query: nút hủy vé nằm ở chỗ nào vậy
+  expected: [cancel-how-to]
+
+- query: toi ngu quen xe chay mat roi gio sao
+  expected: [cancel-missed-trip]
+
+- query: muốn dời sang hôm sau đi thì có được không
+  expected: [cancel-change-ticket]
+
+- query: hủy vé 5 hôm rồi chưa thấy tiền về
+  expected: [refund-processing-time]
+
+- query: trạng thái "đang xử lý" nghĩa là sao
+  expected: [refund-status-meaning]
+
+- query: sao hủy xong chỉ nhận lại có một nửa
+  expected: [refund-partial, cancel-policy-refund-tiers]
+
+- query: mèo nhà tôi đi máy bay cùng được không
+  expected: [pets-plane]
+
+- query: cho con cun len tau hoa co phai mua ve rieng khong
+  expected: [pets-train]
+
+- query: người mù đi cùng chó dẫn đường có bị thu phí không
+  expected: [pets-service-animal]
+
+- query: bé nhà mình 18 tháng có phải mua vé không
+  expected: [children-infant-free]
+
+- query: con 7 tuoi duoc giam gia bao nhieu
+  expected: [children-2-to-12]
+
+- query: cháu 14 tuổi thì tính giá người lớn hả
+  expected: [children-over-12]
+
+- query: cho con 10 tuổi tự đi xe về quê có được không
+  expected: [children-travel-alone]
+
+- query: co tra bang momo duoc khong
+  expected: [payment-methods]
+
+- query: chuyển khoản báo giao dịch không thành công
+  expected: [payment-failed]
+
+- query: ngân hàng trừ tiền 2 lần cho có 1 vé
+  expected: [payment-double-charge]
+
+- query: dat xong chua tra tien thi giu ghe duoc bao lau
+  expected: [payment-hold-time]
+
+- query: công ty cần hóa đơn VAT thì lấy ở đâu
+  expected: [payment-invoice]
+
+- query: lần đầu mua vé trên web này thì bắt đầu từ đâu
+  expected: [booking-how-to]
+
+- query: thanh toan roi ma hop thu khong thay gi
+  expected: [booking-confirmation-email]
+
+- query: vé mình mua tuần trước xem lại ở mục nào
+  expected: [booking-check-my-tickets]
+
+- query: không muốn lập tài khoản thì có mua vé được ko
+  expected: [booking-guest-vs-account]
+
+- query: mua vé đi và vé về cùng lúc được không
+  expected: [booking-round-trip]
+
+- query: nha 5 nguoi dat chung 1 don duoc khong
+  expected: [booking-multiple-passengers]
+
+- query: muốn ngồi cạnh cửa sổ thì chọn thế nào
+  expected: [seat-selection]
+
+- query: dang bam chon ghe thi no bao da co nguoi giu
+  expected: [seat-locked-by-others]
+
+- query: trả tiền xong rồi có đổi sang ghế khác được không
+  expected: [seat-change-after-payment]
+
+- query: lên xe thì đưa cái gì cho nhà xe kiểm tra
+  expected: [checkin-qr-usage]
+
+- query: nhân viên quét mã mãi không nhận
+  expected: [checkin-qr-not-working]
+
+- query: xe 6h sang thi may gio phai ra ben
+  expected: [checkin-arrive-early, cancel-missed-trip]
+
+- query: vé quét rồi chiều đi lại dùng tiếp được không
+  expected: [checkin-already-used]
+
+- query: có mã khuyến mãi thì nhập vào đâu
+  expected: [voucher-how-to-use]
+
+- query: mã giảm giá có áp cho đơn dưới 100k không
+  expected: [voucher-conditions, voucher-not-working]
+
+- query: nhap code giam gia bao loi
+  expected: [voucher-not-working]
+
+- query: trả tiền rồi mới nhớ ra có mã giảm giá
+  expected: [voucher-after-payment]
+
+- query: tạo tài khoản mới như nào
+  expected: [account-register]
+
+- query: không đăng nhập được do quên pass
+  expected: [account-forgot-password]
+
+- query: cho mai khong thay otp gui ve mail
+  expected: [account-not-receiving-code]
+
+- query: đổi số điện thoại trong hồ sơ ở đâu
+  expected: [account-change-info]
+
+- query: lưu sẵn thông tin bố mẹ để lần sau khỏi nhập lại
+  expected: [account-saved-passengers]
+
+- query: tìm chuyến sài gòn đi đà lạt tối nay kiểu gì
+  expected: [trip-search-tips]
+
+- query: chon ngay roi ma no khong ra chuyen nao
+  expected: [trip-no-results]
+
+- query: web có bán vé tàu không hay chỉ có xe
+  expected: [trip-vehicle-types]
+
+- query: nhà xe báo lùi giờ xuất phát 2 tiếng thì có được bồi thường không
+  expected: [trip-delay]
+
+- query: cùng tuyến sao hôm qua rẻ hơn hôm nay
+  expected: [trip-price-difference]
+
+- query: so hotline tong dai la bao nhieu
+  expected: [support-contact]
+
+- query: tài xế chạy ẩu muốn phản ánh
+  expected: [support-complaint]
+
+- query: đi xong muốn chấm sao cho nhà xe
+  expected: [support-review, support-complaint]
+
+# ---------------------------------------------------------------- người thật gõ
+#
+# Người thật gõ ngày 14/09/2026, không mở faq-vi.yml. Gõ 126 câu; ở đây là 49 câu trả lời được
+# bằng knowledge base, expected do Claude gán sau khi đọc content. 77 câu còn lại không có chunk
+# nào trả lời được (chửi, đe doạ, đòi xem code, chính sách KB chưa viết, cần tool tìm chuyến,
+# ngoài lề) nên nằm ở data/unanswerable.yml — đưa vào đây thì câu nào cũng tính là sai.
+#
+# Nhiều expected có 2–3 chunk vì câu hỏi dồn hai ý hoặc ranh giới mơ hồ (bé 2 tuổi nằm giữa
+# children-infant-free và children-2-to-12). Vài nhãn là phán đoán, không hiển nhiên:
+# "pass vé cho người khác" → account-change-info (vé đã xuất không sửa được thông tin hành
+# khách), "tiền thanh toán dư" → payment-double-charge.
+
+- query: "Cho hỏi tôi có thể mang được mấy túi hành lý lên máy bay?"
+  expected: [baggage-plane-general]
+
+- query: "Cún nhỏ có được lên xe không?"
+  expected: [pets-bus]
+
+- query: "Con tôi 3 tuổi đi cùng tôi có cần vé không?"
+  expected: [children-2-to-12]
+
+- query: "Tôi hủy vé trước 2 ngày mà không nhận lại được đủ tiền là sao?"
+  expected: [refund-partial, cancel-policy-refund-tiers]
+
+- query: "vé bị hủy rồi mà app vẫn hiện là 'đang xử lý' thì sao?"
+  expected: [refund-status-meaning]
+
+- query: "cho minh hoi la cho con thu cung di tau duoc khong vay?"
+  expected: [pets-train]
+
+- query: "mua ve xe di hai phong"
+  expected: [booking-how-to, trip-search-tips]
+
+- query: "mua ve tau xong no bao loi là sao??? troll à"
+  expected: [payment-failed]
+
+- query: "sdt de lien he hoac bao"
+  expected: [support-contact, support-complaint]
+
+- query: "bây ơi bây t mang dao lên trên máy bay có sao không?"
+  expected: [baggage-prohibited]
+
+- query: "tra tien roi nhung no bao la giao dich ko thanh cong, lừa nhau à?!"
+  expected: [payment-failed]
+
+- query: "excuse sờ me, cho phép tối đa bao nhiêu túi hành lý lên máy bay?"
+  expected: [baggage-plane-general]
+
+- query: "con tôi 10 tuổi đi xe một mình được không?"
+  expected: [children-travel-alone]
+
+- query: "ĐM LÀM ĂN NHƯ HẠCH, TRỪ TIỀN RỒI MÀ VÉ ĐÂU HẢ LŨ LỪA ĐẢO???"
+  expected: [payment-failed, booking-confirmation-email]
+
+- query: "nó trừ 2 lần tiền của tao rồi mà méo thấy vé đâu, lừa nhau à???"
+  expected: [payment-double-charge]
+
+- query: "pass 1 cặp vé cho người khác có đc k hả m"
+  expected: [account-change-info]
+
+- query: "thế tóm lại nếu bây giờ tao hủy vé có mất tiền ko???"
+  expected: [cancel-policy-refund-tiers, refund-partial]
+
+- query: "sao giờ không hiện giá vé và giờ tàu nữa rồi??"
+  expected: [trip-no-results]
+
+- query: "nó bắt t đăng nhập mới xem được à?"
+  expected: [booking-check-my-tickets, booking-guest-vs-account]
+
+- query: "thời tiết - weather có ảnh hưởng đên giấ vé k, hay chỉ có nguy cơ delay + hủy cmn chuyến???"
+  expected: [trip-price-difference, trip-delay]
+
+- query: "tôi có thể nhận lại tiền hoàn trong bao lâu?"
+  expected: [refund-processing-time]
+
+- query: "Sau khi hủy vé, tôi sẽ nhận được hoàn tiền bằng hình thức nào?"
+  expected: [refund-processing-time]
+
+- query: "Sau khi hủy vé, tôi có thể nhận lại tiền bằng cách nào?"
+  expected: [refund-processing-time]
+
+- query: "Tôi có thể nhận tiền hoàn lại bằng tiền mặt được không?"
+  expected: [refund-processing-time]
+
+- query: "Tôi có thể nhận lại tiền thanh toán dư bằng cách nào?"
+  expected: [payment-double-charge]
+
+- query: "Tôi có thể nhận lại tiền thanh toán dư trong bao lâu?"
+  expected: [payment-double-charge, refund-processing-time]
+
+- query: "Vé chưa được xác nhận sau khi thanh toán thì phải làm sao?"
+  expected: [booking-confirmation-email, payment-failed]
+
+- query: "Sử dụng thẻ để thanh toán và đã trừ tiền nhưng vé chưa được xuất thành công"
+  expected: [payment-failed]
+
+- query: "Tôi bị trừ tiền nhiều lần khi thanh toán, cần làm gì?"
+  expected: [payment-double-charge]
+
+- query: "Thẻ của tôi vẫn đang hoạt động nhưng thanh toán thất bại, cần làm gì?"
+  expected: [payment-failed]
+
+- query: "Quy định vận chuyển thú cưng trên máy bay"
+  expected: [pets-plane]
+
+- query: "Quy định mang chất lỏng lên máy bay"
+  expected: [baggage-prohibited]
+
+- query: "Quy định mua vé tàu hỏa cho trẻ em"
+  expected: [children-2-to-12, children-infant-free]
+
+- query: "Quy định vận chuyển thú cưng khi đi tàu hỏa"
+  expected: [pets-train]
+
+- query: "Quy định về hành lý khi đi tàu"
+  expected: [baggage-train-general]
+
+- query: "Bé nhà tôi 2 tuổi thì mua vé thế nào, có được tính vé riêng không?"
+  expected: [children-2-to-12, children-infant-free]
+
+- query: "Cho hỏi có chính sách giảm giá nào cho trẻ sơ sinh không?"
+  expected: [children-infant-free]
+
+- query: "cho hỏi bé 3 tuổi ngồi ghế riêng hay ngồi chung với phụ huynh ạ?"
+  expected: [children-2-to-12]
+
+- query: "tôi muốn đặt vé khứ hồi đi Huế cho ngày 20 tháng 12, còn giá vé có thay đổi vào cuối tuần không?"
+  expected: [booking-round-trip, trip-price-difference]
+
+- query: "nếu tôi hủy vé trước 1 ngày thì bị trừ bao nhiêu phần trăm phí và có thể nhận lại tiền qua MoMo không?"
+  expected: [cancel-policy-refund-tiers, refund-partial, refund-processing-time]
+
+- query: "có cho phép mang thú cưng lên tàu không và giá vé cho hành khách là người cao tuổi có giảm không?"
+  expected: [pets-train]
+
+- query: "vé có thể đổi tên người đi không, tôi mua rồi mà bạn tôi bận không đi được?"
+  expected: [account-change-info]
+
+- query: "nếu xe đến trễ 2 tiếng thì có được bồi thường không?"
+  expected: [trip-delay]
+
+- query: "vé tàu có thể đổi sang giờ khác không nếu tôi lỡ chuyến?"
+  expected: [cancel-change-ticket, cancel-missed-trip]
+
+- query: "nếu tôi hủy vé sau 5 giờ khởi hành thì có được hoàn tiền không?"
+  expected: [cancel-policy-refund-tiers, cancel-missed-trip]
+
+- query: "ê t vừa mới realisee là t đặt vé chọn nhầm số cân hành lý ký gửi, thì có điều chỉnh đc ko hay phải nộp phí, hay phải yêu cầu nâng hạn mức????"
+  expected: [baggage-overweight-fee, baggage-plane-general]
+
+- query: "cái mã qr nay quet kieu gi, o dau, nhu nao, o vi tri nao??"
+  expected: [checkin-qr-usage]
+
+- query: "ko nhan dc mail nghia la toi dien sai mail a? o the gio nhan ve the nao?"
+  expected: [booking-confirmation-email, account-not-receiving-code]
+
+- query: "cho t hoi muon dat xe di banahills, vinh ha long thì s?"
+  expected: [trip-search-tips, booking-how-to]

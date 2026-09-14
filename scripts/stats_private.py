@@ -36,8 +36,10 @@ def main() -> int:
         print(f"khoảng ngày        : {days[0]} -> {days[-1]}")
     print(f"câu hỏi người dùng : {len(user_rows)}")
     if lengths:
-        print(f"độ dài câu hỏi     : min {lengths[0]}, trung vị {lengths[len(lengths) // 2]}, "
-              f"max {lengths[-1]} ký tự")
+        print(
+            f"độ dài câu hỏi     : min {lengths[0]}, trung vị {lengths[len(lengths) // 2]}, "
+            f"max {lengths[-1]} ký tự"
+        )
 
     print()
     print(f"Tuần 10 cần 300-500 câu gán nhãn. Hiện có {len(user_rows)}.")

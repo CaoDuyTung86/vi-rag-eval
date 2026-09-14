@@ -43,6 +43,7 @@ class HybridRetriever:
         candidates_per_branch: int = 10,
         min_similarity: float = 0.55,
         rrf_k: int = DEFAULT_RRF_K,
+        rrf_weights: tuple[float, float] = (1.0, 1.0),
         on_embedding_error: Callable[[str, EmbeddingError], None] | None = None,
     ) -> None:
         self.bm25 = bm25
@@ -51,6 +52,9 @@ class HybridRetriever:
         self.candidates_per_branch = candidates_per_branch
         self.min_similarity = min_similarity
         self.rrf_k = rrf_k
+        # (BM25, Vector). Mặc định bằng nhau như bản Java; thí nghiệm P@1 ngày 14/09 thử nghiêng
+        # về Vector.
+        self.rrf_weights = rrf_weights
         self._on_embedding_error = on_embedding_error
         self.embedding_failures = 0
 
@@ -61,7 +65,12 @@ class HybridRetriever:
         candidates = max(top_k, self.candidates_per_branch)
         lexical = self.bm25.search(query, candidates, lang)
         semantic = self._semantic_search(query, candidates, lang)
-        return rrf([lexical, semantic], top_k, self.rrf_k)
+        # Nhánh Vector duyệt TRƯỚC: hoà điểm RRF thì chunk xuất hiện trước thắng, và hoà xảy ra
+        # thường hơn tưởng — hạng (1, 2) và (2, 1) cho đúng cùng một điểm. Đứng riêng, Vector
+        # đúng hạng 1 nhiều hơn BM25 hẳn (95.5% so với 76.5% trên bộ vàng), nên hoà thì nghe
+        # Vector. Bản Java hiện duyệt BM25 trước; xem experiments.md 14/09.
+        lexical_weight, semantic_weight = self.rrf_weights
+        return rrf([semantic, lexical], top_k, self.rrf_k, [semantic_weight, lexical_weight])
 
     def retrieve_lexical_only(
         self, query: str | None, top_k: int, lang: str | None = None

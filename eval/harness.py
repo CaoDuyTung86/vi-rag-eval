@@ -108,6 +108,7 @@ def run_live(
     *,
     candidates: int,
     min_similarity: float,
+    bm25_weight: float = 1.0,
     embedder: EmbeddingClient | None = None,
 ) -> tuple[list[Metrics], str | None]:
     """Đo bốn cấu hình dùng embedding. Trả (kết quả, thông báo lỗi hoặc None)."""
@@ -137,8 +138,11 @@ def run_live(
         embedder,
         candidates_per_branch=candidates,
         min_similarity=min_similarity,
+        rrf_weights=(bm25_weight, 1.0),
         on_embedding_error=lambda query, error: failures.append(f"{query!r}: {error}"),
     )
+    if bm25_weight != 1.0:
+        print(f"[Live] RRF: trọng số BM25 {bm25_weight:g}, Vector 1", file=sys.stderr)
 
     configs: list[tuple[str, Retrieve]] = [
         ("Vector", lambda c, k: _doc_ids(retriever.retrieve_semantic_only(c.query, k))),
@@ -179,6 +183,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="in JSON thay vì bảng")
     parser.add_argument("--candidates", type=int, default=10, help="ứng viên mỗi nhánh (live)")
     parser.add_argument("--min-similarity", type=float, default=0.55, help="ngưỡng cosine (live)")
+    parser.add_argument(
+        "--bm25-weight", type=float, default=1.0, help="trọng số BM25 trong RRF (live), Vector là 1"
+    )
     parser.add_argument("--min-recall3", type=float, help="ghi đè ngưỡng recall@3 mọi ngôn ngữ")
     parser.add_argument("--min-mrr", type=float, help="ghi đè ngưỡng MRR mọi ngôn ngữ")
     parser.add_argument("--no-gate", action="store_true", help="chỉ in số, không áp ngưỡng")
@@ -216,6 +223,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             bm25,
             candidates=args.candidates,
             min_similarity=args.min_similarity,
+            bm25_weight=args.bm25_weight,
         )
         results.extend(live_results)
     else:

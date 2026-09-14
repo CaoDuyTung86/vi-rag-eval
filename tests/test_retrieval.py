@@ -90,6 +90,19 @@ class TestSynonyms:
         # Còn khi đúng là một từ thì vẫn phải khớp.
         assert {"thu", "cung"} <= set(expand("tôi mang theo con chó", "vi"))
 
+    def test_khoa_co_dau_chi_khop_khi_cau_hoi_viet_dung_dau(self):
+        # "cho" không dấu hầu như luôn là từ chức năng, và "chỗ" bỏ dấu cũng thành "cho". Khoá
+        # "chó" chỉ khớp khi câu hỏi viết đúng dấu — experiments.md, mục khoá `chó` 14/09.
+        assert "thu" not in expand("cho tôi hỏi mang được mấy cân hành lý", "vi")
+        assert "thu" not in expand("trả tiền rồi có đổi chỗ ngồi được không", "vi")
+        assert {"thu", "cung"} <= set(expand("chó nhà tôi đi xe khách được không", "vi"))
+        # Cái giá đã biết: gõ không dấu thì mất phần mở rộng.
+        assert "thu" not in expand("mang cho len xe khach duoc khong", "vi")
+
+    def test_khoa_co_dau_khop_ca_cau_hoi_dang_to_hop(self):
+        # "o" + dấu sắc rời (NFD) — một số bàn phím và trình duyệt gửi dạng này.
+        assert "thu" in expand("con chó nhà tôi", "vi")
+
     def test_ngon_ngu_chua_co_bang_thi_ap_moi_bang(self):
         assert {"vali", "luggage"} <= set(expand("hành lý baggage", "fr"))
         assert {"vali", "luggage"} <= set(expand("hành lý baggage", None))
@@ -243,6 +256,36 @@ class TestRRF:
         hits = [Scored(chunk(str(i), str(i)), 1.0) for i in range(10)]
         assert len(rrf([hits, []], 3)) == 3
         assert rrf([hits, []], 0) == []
+
+    def test_hoa_diem_thi_nhanh_duyet_truoc_thang(self):
+        # Hạng (1, 2) và (2, 1) cho cùng 1/61 + 1/62 — thí nghiệm P@1 ngày 14/09: 7/9 câu tiếng
+        # Việt tụt P@1 vì đúng luật này.
+        a, b = chunk("a", "a"), chunk("b", "b")
+        lexical = [Scored(a, 9.0), Scored(b, 8.0)]
+        semantic = [Scored(b, 0.9), Scored(a, 0.8)]
+        assert rrf([lexical, semantic], 2)[0].doc_id == "a"
+        assert rrf([semantic, lexical], 2)[0].doc_id == "b"
+
+    def test_trong_so_mac_dinh_giu_nguyen_ket_qua_cu(self):
+        a, b, c = chunk("a", "a"), chunk("b", "b"), chunk("c", "c")
+        lexical = [Scored(a, 3.0), Scored(b, 2.0)]
+        semantic = [Scored(c, 0.9), Scored(b, 0.8)]
+        assert rrf([lexical, semantic], 3) == rrf([lexical, semantic], 3, weights=[1.0, 1.0])
+
+    def test_trong_so_nho_hon_pha_hoa_nghieng_ve_nhanh_kia(self):
+        a, b = chunk("a", "a"), chunk("b", "b")
+        lexical = [Scored(a, 9.0), Scored(b, 8.0)]
+        semantic = [Scored(b, 0.9), Scored(a, 0.8)]
+        assert rrf([lexical, semantic], 2, weights=[0.5, 1.0])[0].doc_id == "b"
+
+    def test_trong_so_0_bo_han_nhanh(self):
+        a, b = chunk("a", "a"), chunk("b", "b")
+        fused = rrf([[Scored(a, 9.0)], [Scored(b, 0.9)]], 5, weights=[0.0, 1.0])
+        assert [c.doc_id for c in fused] == ["b"]
+
+    def test_so_trong_so_phai_bang_so_nhanh(self):
+        with pytest.raises(ValueError):
+            rrf([[], []], 3, weights=[1.0])
 
 
 class FakeEmbedder:

@@ -10,6 +10,8 @@ chỉ là đoán mò.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from rag.types import Chunk, Scored
 
 # Hằng số k trong bài báo gốc của RRF (Cormack, Clarke, Buettcher 2009). Nó làm phẳng chênh
@@ -17,12 +19,20 @@ from rag.types import Chunk, Scored
 DEFAULT_RRF_K = 60
 
 
-def rrf(branches: list[list[Scored]], top_k: int, k: int = DEFAULT_RRF_K) -> list[Chunk]:
-    """Mỗi chunk cộng 1/(k + hạng) từ mỗi nhánh có mặt nó, hạng tính từ 1.
+def rrf(
+    branches: list[list[Scored]],
+    top_k: int,
+    k: int = DEFAULT_RRF_K,
+    weights: Sequence[float] | None = None,
+) -> list[Chunk]:
+    """Mỗi chunk cộng trọng_số/(k + hạng) từ mỗi nhánh có mặt nó, hạng tính từ 1.
 
     Chunk xuất hiện ở CẢ hai nhánh được đẩy lên trên một cách tự nhiên, không cần quy tắc
     riêng. Một nhánh rỗng (embedding hỏng, thiếu API key) thì kết quả rơi về đúng nhánh còn
     lại, giữ nguyên thứ tự của nó.
+
+    weights mặc định là 1 cho mọi nhánh — đúng công thức gốc và bản Java. Trọng số 0 bỏ hẳn
+    nhánh đó, kể cả những chunk chỉ nhánh đó tìm ra.
 
     Gộp theo doc_id chứ không theo object — cùng một chunk đến từ hai nhánh có thể là hai
     instance khác nhau. Điểm bằng nhau giữ thứ tự xuất hiện đầu tiên, như LinkedHashMap bên
@@ -30,14 +40,20 @@ def rrf(branches: list[list[Scored]], top_k: int, k: int = DEFAULT_RRF_K) -> lis
     """
     if top_k <= 0:
         return []
+    if weights is None:
+        weights = [1.0] * len(branches)
+    if len(weights) != len(branches):
+        raise ValueError(f"{len(weights)} trọng số cho {len(branches)} nhánh")
 
     fused: dict[str, float] = {}
     by_id: dict[str, Chunk] = {}
-    for hits in branches:
+    for hits, weight in zip(branches, weights, strict=True):
+        if weight == 0:
+            continue
         for rank, hit in enumerate(hits, start=1):
             doc_id = hit.chunk.doc_id
             by_id.setdefault(doc_id, hit.chunk)
-            fused[doc_id] = fused.get(doc_id, 0.0) + 1.0 / (k + rank)
+            fused[doc_id] = fused.get(doc_id, 0.0) + weight / (k + rank)
 
     ranked = sorted(fused, key=fused.__getitem__, reverse=True)
     return [by_id[doc_id] for doc_id in ranked[:top_k]]

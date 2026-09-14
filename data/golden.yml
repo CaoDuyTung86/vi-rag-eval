@@ -37,6 +37,14 @@
 - query: tôi xách theo con poodle nhỏ có sao không
   expected: [pets-bus, pets-plane]
 
+# Hai câu dưới chỉ có bên Python cho tới khi port sang rag-eval.yml của WebProject. Chúng đo
+# cái giá của khoá "chó" chỉ khớp khi có dấu — xem experiments.md 14/09.
+- query: mang cho len xe khach duoc khong
+  expected: [pets-bus]
+
+- query: chó nhà tôi đi xe khách được không
+  expected: [pets-bus]
+
 - query: mang meo len may bay duoc khong
   expected: [pets-plane]
 

@@ -16,12 +16,15 @@ import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
+import regex
 import yaml
 
 from rag.langfilter import normalize_lang
-from rag.normalize import contains_cjk, tokenize
+from rag.normalize import contains_cjk, remove_accents, tokenize
 
 DEFAULT_SYNONYMS_PATH = Path(__file__).resolve().parent.parent / "data" / "synonyms.yml"
+
+_WORD = regex.compile(r"[\p{L}\p{N}]+")
 
 SynonymTables = dict[str, dict[str, list[str]]]
 
@@ -65,6 +68,47 @@ def tables_for(lang: str | None, tables: SynonymTables) -> list[dict[str, list[s
     return [table] if table is not None else list(tables.values())
 
 
+def matched_entries(
+    query: str | None,
+    lang: str | None = None,
+    tables: SynonymTables | None = None,
+) -> list[tuple[str, list[str]]]:
+    """Các cặp (khoá, từ bổ sung) khớp với truy vấn, theo thứ tự trong bảng.
+
+    Tách khỏi expand để công cụ chẩn đoán in được "khoá nào đã kéo chunk này lên".
+    """
+    tables = load_synonyms() if tables is None else tables
+
+    # Khoá Latin khớp theo RANH GIỚI TỪ, ghép lại từ chính token của truy vấn để hai vế so
+    # khớp đi qua đúng một bộ chuẩn hoá. Khớp chuỗi con thì "chọn ghế" (chon) dính khoá
+    # "cho" và bị nhét thêm cả đống từ về thú cưng.
+    haystack = " " + " ".join(tokenize(query)) + " "
+
+    # Khoá VIẾT CÓ DẤU so trên câu hỏi còn dấu. Dành cho từ mà dạng bỏ dấu trùng với từ thông
+    # dụng: "chó" bỏ dấu thành "cho" — cũng là "cho tôi hỏi", "chỗ ngồi". Cái giá: câu hỏi gõ
+    # không dấu mất phần mở rộng. Xem experiments.md, mục khoá `chó`. NFC để câu hỏi gõ ở dạng
+    # tổ hợp (o + dấu sắc rời) vẫn khớp.
+    accented = " " + " ".join(_WORD.findall(unicodedata.normalize("NFC", (query or "").lower())))
+    accented += " "
+
+    # Khoá CJK thì ngược lại, PHẢI khớp chuỗi con: tiếng Nhật và tiếng Trung viết liền không
+    # dấu cách nên không có ranh giới từ để dựa vào, và token của chúng là bigram.
+    cjk_haystack = unicodedata.normalize("NFKC", query or "")
+
+    entries: list[tuple[str, list[str]]] = []
+    for table in tables_for(lang, tables):
+        for key, synonyms in table.items():
+            if contains_cjk(key):
+                matched = key in cjk_haystack
+            elif remove_accents(key) != key:
+                matched = f" {unicodedata.normalize('NFC', key)} " in accented
+            else:
+                matched = f" {key} " in haystack
+            if matched:
+                entries.append((key, synonyms))
+    return entries
+
+
 def expand(
     query: str | None,
     lang: str | None = None,
@@ -75,23 +119,8 @@ def expand(
     Token gốc đứng trước và không lặp — lặp làm BM25 chấm điểm lệch. dict.fromkeys giữ
     thứ tự chèn và khử trùng trong một bước, đúng việc LinkedHashSet làm bên Java.
     """
-    tables = load_synonyms() if tables is None else tables
-    query_tokens = tokenize(query)
-    tokens = dict.fromkeys(query_tokens)
-
-    # Khoá Latin khớp theo RANH GIỚI TỪ, ghép lại từ chính token của truy vấn để hai vế so
-    # khớp đi qua đúng một bộ chuẩn hoá. Khớp chuỗi con thì "chọn ghế" (chon) dính khoá
-    # "cho" và bị nhét thêm cả đống từ về thú cưng.
-    haystack = " " + " ".join(query_tokens) + " "
-
-    # Khoá CJK thì ngược lại, PHẢI khớp chuỗi con: tiếng Nhật và tiếng Trung viết liền không
-    # dấu cách nên không có ranh giới từ để dựa vào, và token của chúng là bigram.
-    cjk_haystack = unicodedata.normalize("NFKC", query or "")
-
-    for table in tables_for(lang, tables):
-        for key, synonyms in table.items():
-            matched = key in cjk_haystack if contains_cjk(key) else f" {key} " in haystack
-            if matched:
-                for synonym in synonyms:
-                    tokens.update(dict.fromkeys(tokenize(synonym)))
+    tokens = dict.fromkeys(tokenize(query))
+    for _, synonyms in matched_entries(query, lang, tables):
+        for synonym in synonyms:
+            tokens.update(dict.fromkeys(tokenize(synonym)))
     return list(tokens)

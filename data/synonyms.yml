@@ -9,8 +9,11 @@
 # khớp được gì, chỉ làm truy vấn dài ra. Chiều ngược lại cũng vậy.
 #
 # Cách so khớp (xem rag/synonyms.py):
-#   - Khoá Latin: ĐÃ BỎ DẤU, khớp theo RANH GIỚI TỪ trên token của truy vấn — "cho" không được
-#     khớp vào "chon" (chọn), "cun" không được khớp vào "cung" (cùng).
+#   - Khoá Latin: ĐÃ BỎ DẤU, khớp theo RANH GIỚI TỪ trên token của truy vấn — "cun" không được
+#     khớp vào "cung" (cùng).
+#   - Khoá Latin VIẾT CÓ DẤU: khớp theo ranh giới từ trên câu hỏi CÒN dấu. Chỉ dùng cho từ mà
+#     dạng bỏ dấu trùng từ thông dụng — "chó" bỏ dấu là "cho", cũng là "cho tôi hỏi", "chỗ".
+#     Câu hỏi gõ không dấu sẽ mất phần mở rộng; xem experiments.md, mục khoá `chó`.
 #   - Khoá CJK: khớp CHUỖI CON trên truy vấn đã NFKC, vì tiếng Nhật/Trung không có dấu cách.
 # Giá trị là các cụm từ ném THÊM vào truy vấn (sẽ được tách token), không thay thế token gốc.
 #
@@ -19,7 +22,7 @@
 vi:
   # --- thú cưng ---
   "thu cung": [thu cung, cho, meo, pet, dong vat, long]
-  "cho": [thu cung, cho]
+  "chó": [thu cung, cho]
   "meo": [thu cung, meo]
   "cun": [thu cung, cho]
   "poodle": [thu cung, cho]

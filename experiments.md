@@ -131,6 +131,134 @@ dấu.
 
 ---
 
+## 2026-09-14 — Áp khoá `chó`: chỉ khớp khi câu hỏi có dấu
+
+**Giả thuyết.** Cài biến thể "chỉ khi có dấu" thành một cơ chế chung — khoá Latin viết có dấu
+trong `synonyms.yml` được so trên câu hỏi CÒN dấu — sẽ tái lập đúng dòng "bỏ khoá / chỉ khi có
+dấu" của mục 13/09 trên 130 câu cũ: BM25 · vi R@3 94.7%, R@5 100.0%, MRR 0.837; BM25 + lọc
+lang · vi MRR 0.838. Không trùng thì là cài sai, không phải giả thuyết cũ sai.
+
+Sau đó thêm hai câu vào bộ vàng để đo cái giá mà mục 13/09 mới chỉ nêu là rủi ro:
+
+- "mang cho len xe khach duoc khong" → `pets-bus` (chó, gõ không dấu): mất phần mở rộng. Dự
+  đoán vẫn nằm trong top-3 của BM25 + lọc lang, vì chính chunk `pets-bus` chứa "chó" và "xe
+  khách"; có thể tụt từ hạng 1 xuống hạng 2.
+- "chó nhà tôi đi xe khách được không" → `pets-bus` (có dấu): vẫn được mở rộng, hạng 1.
+
+Nhánh Vector không đổi; Hybrid đổi theo BM25. Dự đoán Hybrid + lọc lang · vi không tụt câu P@1
+nào so với baseline 13/09 trên 130 câu cũ.
+
+**Thay đổi.** `rag/synonyms.py`: khoá Latin có dấu khớp theo ranh giới từ trên câu hỏi đã
+thường hoá và NFC nhưng chưa bỏ dấu. `data/synonyms.yml`: `"cho"` → `"chó"`. `data/golden.yml`:
+thêm hai câu trên — chỉ bên Python, bộ vàng lệch bản Java cho tới khi port.
+
+**Kết quả.** Trên 130 câu cũ, BM25 trùng từng chữ số với dòng "bỏ khoá / chỉ khi có dấu" của
+13/09: BM25 · vi R@3 94.7%, R@5 100.0%, MRR 0.837; BM25 · gộp 94.6% / 99.2% / 0.846; BM25 + lọc
+lang · vi MRR 0.838. Cài đặt đúng.
+
+Hybrid + lọc lang · vi trên 130 câu: P@1 82.5% → 84.2% (47 → 48/57), MRR 0.909 → 0.918. Vector
+không đổi, 0 lời gọi API.
+
+Hạng của `pets-bus` ở hai câu mới (lời gọi API: 1):
+
+| Câu | BM25 + lọc lang | Vector + lọc lang | Hybrid + lọc lang |
+|---|---|---|---|
+| mang cho len xe khach duoc khong | 1 | 1 | 1 |
+| chó nhà tôi đi xe khách được không | 1 | 1 | 1 |
+
+Bộ vàng 132 câu: BM25 + lọc lang · vi R@3 94.9%, MRR 0.843.
+
+**Kết luận.** Giả thuyết đúng. Câu không dấu còn tốt hơn dự đoán — hạng 1 chứ không phải 2 — vì
+chính chunk `pets-bus` chứa "chó" và "xe khách", không cần mở rộng. Giữ thay đổi.
+
+Cái giá của biến thể vẫn chưa lộ trên bộ vàng. Chỗ thiệt thật sẽ là câu gõ không dấu mà chunk
+đúng KHÔNG chứa chữ "chó" — bộ vàng chưa có câu nào như vậy. BM25 bản Python giờ lệch bản Java
+cho tới khi port `SynonymExpander.java` và `rag-eval.yml`.
+
+---
+
+## 2026-09-14 — Vì sao Hybrid + lọc lang tụt P@1 tiếng Việt
+
+**Giả thuyết.** Đo trên bộ vàng 132 câu, đã áp khoá `chó`. Baseline 13/09: Vector + lọc lang ·
+vi đúng hạng 1 ở 54/57 câu, Hybrid + lọc lang · vi chỉ 47/57. RRF cộng 1/(60 + hạng) nên các
+hạng gần như ngang nhau: hạng 5 ở cả hai nhánh (2/65 ≈ 0.031) thắng hạng 1 ở một nhánh (1/61 ≈
+0.016).
+
+1. **Cơ chế.** Ở ít nhất 5/7 câu mà Vector đúng hạng 1 còn Hybrid sai, chunk sai đứng đầu có
+   mặt ở CẢ hai nhánh, còn chunk đúng không có trong top-10 BM25 hoặc xếp dưới chunk sai.
+2. **Đồng nghĩa.** Ở ít nhất 3 câu trong số đó, bỏ mở rộng đồng nghĩa thì BM25 không còn xếp
+   chunk sai trên chunk đúng.
+3. **Trọng số.** Cho nhánh BM25 trọng số w, Vector giữ 1. Với w = 0.5: vi P@1 lên ≥ 53/59 mà vi
+   R@3 vẫn 100%; ba ngôn ngữ còn lại mỗi ngôn ngữ tụt không quá 1 câu P@1. Với w = 0: trùng
+   đúng Vector + lọc lang — dùng để kiểm tra cài đặt.
+
+Không đổi k = 60 trong thí nghiệm này — một biến một lần.
+
+**Thay đổi.** `rag/fusion.py`: `rrf` nhận trọng số từng nhánh, mặc định 1 nên số cũ không đổi.
+`eval/harness.py`: thêm `--bm25-weight`. `scripts/p1_diff.py`: in từng câu Vector đúng hạng 1
+mà Hybrid sai, kèm hạng ở mỗi nhánh, điểm RRF và khoá đồng nghĩa đã khớp.
+
+**Kết quả.** Baseline 132 câu, trọng số 1: Vector + lọc lang · vi đúng hạng 1 ở 56/59 (94.9%),
+Hybrid + lọc lang · vi 50/59 (84.7%). `scripts/p1_diff.py` tìm ra 9 câu Vector đúng mà Hybrid
+sai, và 3 câu ngược lại.
+
+1. **Cơ chế — đúng, và rõ hơn dự đoán.** 9/9 câu có chunk sai nằm ở cả hai nhánh. Phát hiện
+   không lường trước: **7/9 là hoà điểm tuyệt đối.** Chunk sai đứng hạng a ở BM25 và hạng b ở
+   Vector; chunk đúng đứng hạng b ở BM25 và hạng a ở Vector — cùng 1/(60+a) + 1/(60+b). Hoà thì
+   `rrf` giữ thứ tự xuất hiện đầu tiên, mà nhánh BM25 được duyệt trước, nên BM25 luôn thắng.
+   Cặp hạng (a, b): (1, 2) × 5, (1, 3) × 1, (1, 6) × 1. Hai câu còn lại thua thật: "đi tàu có
+   được mang vali to không" (0.0325 so với 0.0323) và "web này trả tiền bằng cách nào" (0.0323
+   so với 0.0315).
+2. **Đồng nghĩa — sai.** Chỉ 2/9 câu (khoá `hanh ly`, `ma vach`), dự đoán là ít nhất 3. Bảng
+   đồng nghĩa không phải thủ phạm chính; luật phá hoà mới là.
+3. **Trọng số — đúng.** Hybrid + lọc lang:
+
+| Trọng số BM25 | vi P@1 | vi R@3 | vi MRR | en P@1 | ja P@1 | zh P@1 | gộp P@1 | gộp MRR |
+|---|---|---|---|---|---|---|---|---|
+| 1 (hiện tại) | 84.7% | 100% | 0.921 | 94.6% | 88.9% | 100% | 90.2% | 0.949 |
+| 0.5 | 94.9% | 100% | 0.972 | 97.3% | 100% | 94.4% | 96.2% | 0.980 |
+| 0.25 | 96.6% | 100% | 0.980 | 97.3% | 100% | 94.4% | 97.0% | 0.984 |
+| 0 | 94.9% | 98.3% | 0.969 | 97.3% | 94.4% | 94.4% | 95.5% | 0.975 |
+
+Trọng số 0 trùng từng chữ số với Vector + lọc lang — cài đặt đúng. Trọng số 0.5: vi 56/59 (dự
+đoán ≥ 53), R@3 giữ 100%, zh tụt đúng 1 câu, en và ja tăng.
+
+Chưa chọn trọng số. 0.25 hơn 0.5 đúng một câu tiếng Việt — trong mức nhiễu — và chọn trọng số
+bằng chính bộ vàng là overfit, cùng lý do `bm25.py` không cho chỉnh K1, B.
+
+**Giả thuyết 4** (viết sau khi thấy kết quả 1–3, trước khi chạy). Nếu 7/9 là hoà điểm, thì chỉ
+đổi luật phá hoà — duyệt nhánh Vector trước, trọng số giữ 1 — đã lấy lại phần lớn: vi P@1 từ 50
+lên 54–57/59, R@3 giữ 100%. Ba câu Hybrid đang thắng Vector có thể mất, nếu chính chúng cũng
+thắng nhờ hoà. Cách này không thêm hằng số nào để chỉnh, nên ít rủi ro overfit hơn chọn trọng số.
+
+**Kết quả 4.** Hybrid + lọc lang, trọng số 1, chỉ đổi thứ tự duyệt nhánh (0 lời gọi API):
+
+| Thứ tự | vi P@1 | vi R@3 | vi MRR | en P@1 | ja P@1 | zh P@1 | gộp P@1 | gộp MRR |
+|---|---|---|---|---|---|---|---|---|
+| BM25 trước (cũ) | 84.7% | 100% | 0.921 | 94.6% | 88.9% | 100% | 90.2% | 0.949 |
+| Vector trước | 96.6% | 100% | 0.980 | 91.9% | 94.4% | 100% | 95.5% | 0.976 |
+
+Câu đổi kết quả hạng 1: đúng 7 câu hoà điểm ở mục 1 chuyển sang đúng, thêm một câu tiếng Nhật
+("ログインできずパスワードが分かりません"); một câu tiếng Anh chuyển sang sai ("i want to cancel and
+get my money back"). Không câu nào trong ba câu Hybrid đang thắng Vector bị mất. Giả thuyết 4
+đúng: 57/59, đầu trên của khoảng dự đoán.
+
+**Kết luận.** Áp "Vector trước" vào `HybridRetriever`, giữ trọng số 1. Chọn nó thay vì trọng số
+0.5 hay 0.25 vì:
+
+- Không có hằng số nào được chỉnh theo bộ vàng. Luật phá hoà có lý do riêng, không cần bộ vàng
+  chống lưng: đứng riêng, Vector + lọc lang đúng hạng 1 ở 95.5% câu, BM25 + lọc lang chỉ 76.5%.
+  Hoà thì nghe nhánh mạnh hơn.
+- Khoảng cách với trọng số 0.5 (gộp P@1 96.2% so với 95.5%) là 1 câu trên 132 — trong mức nhiễu.
+- Khi embedding hỏng, nhánh Vector rỗng, không có hoà — luật này không đổi gì ở đường lui BM25.
+
+Đổi ý nếu: bộ vàng lớn hơn cho thấy trọng số < 1 hơn "Vector trước" nhiều hơn vài câu. Trọng số
+vẫn giữ trong `rrf` và `--bm25-weight` để đo lại khi đó.
+
+Còn mở: hai câu thua RRF thật (mục 1) và câu tiếng Anh vừa chuyển sang sai.
+
+---
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn
@@ -155,8 +283,9 @@ dấu.
 | Thí nghiệm | Câu hỏi cần trả lời |
 |---|---|
 | Đối chiếu live với Java | Chạy `RAG_EVAL_LIVE` bên WebProject, so với bảng live ở trên |
-| Hybrid + lọc lang làm tụt P@1 tiếng Việt | Câu nào Vector xếp đúng hạng 1 nhưng RRF đẩy xuống, chunk nào của BM25 chen lên, và khoá đồng nghĩa nào gây ra. Thử trọng số RRF nghiêng về Vector hoặc bỏ hạn BM25 khi điểm thấp |
-| Khoá đồng nghĩa `cho` | Giả thuyết: khoá `cho` (chó) va chạm với từ chức năng "cho" trong "**cho** tôi hỏi", đẩy chunk thú cưng lên. Câu "cho tôi hỏi được mang bao nhiêu kg lên máy bay" trượt ở cấu hình không lọc với top-5 có 3 chunk thú cưng. Bỏ khoá hoặc chỉ giữ dạng có dấu thì có sửa được mà không làm tụt câu hỏi thú cưng nào không |
+| Port sang Java | Khoá `chó` có dấu (`SynonymExpander.java`), "Vector trước" khi hợp nhất (`HybridRetriever.java`), hai câu mới vào `rag-eval.yml`. Sau khi port, bảng BM25 Java và Python phải trùng từng chữ số trở lại |
+| Hai câu thua RRF thật, một câu en mới sai | "đi tàu có được mang vali to không" (`pets-train` chen lên nhờ khoá `vali`?), "web này trả tiền bằng cách nào", "i want to cancel and get my money back". Mỗi câu: chunk nào chen lên, vì sao |
+| Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |
 | Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods. Khoảng trống từ vựng hay do chunk viết khác cách hỏi |
 | Cross-encoder rerank trên top-20 | Delta R@3 có đáng với delta độ trễ không — đặt ngân sách độ trễ TRƯỚC khi đo |
 | Chunk size, overlap, title trong phần đem nhúng | Cấu hình nào cho R@3 cao nhất, trả giá bao nhiêu độ trễ |

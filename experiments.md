@@ -830,8 +830,23 @@ model.
   phút như lần 14/09, mà hết hạn mức ngày: `EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`,
   1000 lượt. Bảng live Java không in dòng nào — giả thuyết 1 chưa kiểm được.
 
-Việc còn lại: chạy lại `RAG_EVAL_LIVE=1` bên WebProject sau khi hạn mức ngày hồi (Google tính theo
-giờ Thái Bình Dương). Không gọi thêm lượt nào tới lúc đó.
+**Kết quả (15/09, lần 2) — đối chiếu được mà không chờ hạn mức.**
+
+- Thay vì chờ, bộ đo Java đọc thẳng `cache/embeddings/` của repo này (biến
+  `RAG_EVAL_EMBEDDING_CACHE`, khoá file `sha256(model \0 số chiều \0 văn bản)` giống `rag/embed.py`).
+  Điều kiện để đọc chung được đã kiểm trước: 132 câu `golden.yml` trùng từng chữ với `rag-eval.yml`,
+  bốn file `data/kb/faq-*.yml` trùng từng byte với bản Java, cùng `gemini-embedding-001` / 768 chiều /
+  `title. content`.
+- Java: 356 vector từ cache (224 chunk + 132 câu), **0 lời gọi API**, chạy không có `GEMINI_API_KEY`.
+  Python: 0 lời gọi, chạy với key giả và `EMBEDDING_BASE_URL` trỏ vào cổng chết để lần chạy không thể
+  ra mạng.
+- `diff` hai bảng: **20 dòng Vector/Hybrid trùng từng chữ số ở cả 6 cột, 10 dòng BM25 cũng trùng** —
+  giả thuyết 1 **đúng**. Hai bên dùng CÙNG từng vector nên phép so này chặt hơn cả hai lần gọi API
+  riêng (loại được khả năng API trả vector hơi khác giữa hai lần).
+
+**Kết luận.** Đường truy hồi của VigoTrip khớp bản Python sau khi port Bù BM25. Tuần 10 so model được
+trên đường này mà không phải lo phần lệch Java/Python bị tính nhầm cho model. Từ nay bảng live chạy lại
+từ cache; chỉ khi đổi knowledge base hoặc bộ câu hỏi mới cần gọi API để điền phần thiếu.
 
 ---
 
@@ -858,7 +873,7 @@ giờ Thái Bình Dương). Không gọi thêm lượt nào tới lúc đó.
 
 | Thí nghiệm | Câu hỏi cần trả lời |
 |---|---|
-| Bảng live Java sau khi port Bù BM25 | `RAG_EVAL_LIVE=1` bên WebProject và `python -m eval.harness --live`: 20 dòng Vector/Hybrid phải trùng lại từng chữ số. Dòng "Hybrid + lọc lang" dự kiến trùng "Vector + lọc lang" trên bộ vàng |
+| ~~Bảng live Java sau khi port Bù BM25~~ | Xong 15/09 từ cache đĩa: 20 dòng Vector/Hybrid và 10 dòng BM25 trùng từng chữ số, 0 lời gọi API |
 | `docs/CHATBOT_AI.md` bên WebProject | Mục 5.6, 8.6, sơ đồ và bảng số vẫn tả RRF — tài liệu đồ án, cập nhật khi nào? |
 | Nhóm hủy vé ↔ hoàn tiền | Nguyên nhân lớn nhất (7/25 câu sai hạng 1). Golden mới có 2 câu thuộc nhóm — thêm câu vào golden TRƯỚC, rồi mới so cách sửa (reranker, viết lại title/content chunk) trên golden, xác nhận trên holdout một lần |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |

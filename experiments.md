@@ -584,6 +584,50 @@ Giới hạn: gán nhóm là phán đoán một người (Claude), mỗi câu m�
 
 ---
 
+## 2026-09-14 — Reranker: không dùng, không đo
+
+**Quyết định** (của người điều hướng, chốt trước khi đo). Ba nguyên nhân lớn nhất trong 25 câu sai
+hạng 1: hủy vé ↔ hoàn tiền 7 câu (28%), không dấu và con số 8 câu (32%), câu mơ hồ hoặc khách gõ tắt
+5 câu (20%). Cross-encoder rerank top-20 ước lượng nâng P@1 tối đa khoảng 5–7 điểm, đổi lấy +150 đến
++300 ms p95 mỗi tin nhắn. R@3 đã khoảng 99% trên bộ vàng, tức chunk đúng gần như luôn nằm trong ngữ
+cảnh LLM đọc — sai hạng 1 chỉ là sai thứ tự trong prompt. Nên KHÔNG thêm tầng rerank; ưu tiên để LLM
+đọc đúng các chunk đã có.
+
+**Lưu ý khi đọc quyết định.** Cả 5–7 điểm lẫn +150–300 ms là ước lượng, CHƯA đo trên máy này.
+Production nhét top-4 chứ không phải top-3 (`rag.top-k: 4`). R@3 trên holdout vi thấp hơn bộ vàng,
+nên "chunk đúng gần như luôn có mặt" đúng với bộ vàng hơn là với câu khách thật gõ.
+
+**Điều kiện đổi ý.** Tuần 9 cho thấy câu trả lời bịa hoặc từ chối thừa mà nguyên nhân là chunk đúng
+KHÔNG có trong top-4 — lỗi đó prompt không sửa được, phải quay lại truy hồi.
+
+---
+
+## 2026-09-14 — Tầng sinh có bịa không (tuần 9)
+
+**Vì sao.** Retrieval đúng chưa đủ: khách đọc câu trả lời, không đọc chunk. Cần biết chatbot có nói
+điều ngoài tài liệu không, và có một judge đủ tin để sau này đo tự động (tuần 10 dùng lại).
+
+**Cách đo.** `scripts/faithfulness.py`. Sinh: prompt VigoTrip chép nguyên văn (bỏ khối tool, voucher,
+link — xem `rag/generate.py`), `gemini-flash-lite-latest`, temperature 0.7, 800 token, top-4 Hybrid +
+lọc lang. 30 câu: 15 câu vi ngẫu nhiên từ golden (seed 9) và 15 câu từ `unanswerable.yml` rải theo
+loại (kb_khong_co 4, ngoai_le 2, injection 2, can_ngu_canh 2, còn lại mỗi loại 1). Người chấm tay 4
+nhãn (có căn cứ / bịa / từ chối đúng / từ chối thừa) TRƯỚC, rồi judge Groq `gpt-oss-120b`,
+temperature 0, khác họ model với bên sinh.
+
+**Giả thuyết** (viết trước khi sinh câu trả lời nào).
+
+- 15 câu golden: ≥ 12 có căn cứ. Câu bịa hoặc từ chối thừa rơi vào câu mà chunk đúng không ở hạng 1
+  hoặc không có trong top-4.
+- 15 câu không trả lời được: ≥ 3 câu bịa, dồn ở kb_khong_co (bà bầu, sinh viên, người cao tuổi —
+  model lấy chính sách hãng ngoài đời ra nói) và can_tool (không có tool nên dễ bịa giờ chuyến).
+  Injection và đe doạ: từ chối đúng cả.
+- Judge cùng nhãn với chấm tay ≥ 80%; cùng ý "có bịa hay không" ≥ 90%. Lệch chủ yếu giữa có căn cứ
+  và bịa ở câu "suy ra" từ tài liệu (judge khắt hơn người).
+
+**Kết quả.** Chưa chạy judge — chờ chấm tay.
+
+---
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn
@@ -612,5 +656,5 @@ Giới hạn: gán nhóm là phán đoán một người (Claude), mỗi câu m�
 | Nhóm hủy vé ↔ hoàn tiền | Nguyên nhân lớn nhất (7/25 câu sai hạng 1). Golden mới có 2 câu thuộc nhóm — thêm câu vào golden TRƯỚC, rồi mới so cách sửa (reranker, viết lại title/content chunk) trên golden, xác nhận trên holdout một lần |
 | Cái giá thật của khoá có dấu | Thêm vào bộ vàng câu gõ không dấu mà chunk đúng KHÔNG chứa chữ "chó", để đo phần mở rộng bị mất |
 | Hai câu vi trượt khi lọc lang | "bao lâu thì tiền về tài khoản" → refund-processing-time, "web này trả tiền bằng cách nào" → payment-methods (nhánh BM25). Khoảng trống từ vựng hay do chunk viết khác cách hỏi |
-| Cross-encoder rerank trên top-20 | Delta P@1 trên nhóm hủy ↔ hoàn tiền và nhóm con số có đáng với delta độ trễ không — đặt ngân sách độ trễ TRƯỚC khi đo |
+| ~~Cross-encoder rerank trên top-20~~ | Hoãn 14/09: quyết định không dùng (mục "Reranker: không dùng, không đo"). Mở lại nếu tuần 9 cho thấy lỗi do chunk đúng vắng mặt khỏi top-4 |
 | Chunk size, overlap, title trong phần đem nhúng | Cấu hình nào cho R@3 cao nhất, trả giá bao nhiêu độ trễ |

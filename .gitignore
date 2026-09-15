@@ -7,6 +7,7 @@ venv/
 .ruff_cache/
 .cache/
 cache/embeddings/
+cache/llm/
 cache/mnist/
 learn/out/
 *.egg-info/

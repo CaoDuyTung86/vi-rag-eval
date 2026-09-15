@@ -88,6 +88,8 @@ python -m eval.harness --live --variants  # thêm dòng RRF và Xếp lại (cá
 python -m eval.harness --live --variants --bm25-weight 0.5   # RRF với trọng số BM25 0.5
 python scripts/p1_diff.py                 # câu nào Vector đúng hạng 1 mà RRF sai, và vì sao
 python scripts/by_category.py             # điểm theo category + câu sai hạng 1, chỉ đọc cache
+python scripts/faithfulness.py gen --env-file ../WebProject/.env    # tuần 9: sinh 30 câu trả lời
+python scripts/faithfulness.py judge --env-file ../WebProject/.env  # sau khi chấm tay: judge đồng ý bao nhiêu
 ```
 
 Mã thoát: `0` đạt · `1` tụt dưới ngưỡng (recall@3 < 0.85 hoặc MRR < 0.70 ở bất kỳ ngôn ngữ

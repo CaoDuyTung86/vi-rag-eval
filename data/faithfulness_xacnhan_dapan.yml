@@ -1,0 +1,118 @@
+# Đáp án bộ xác nhận — chỉ mở sau khi chấm tay xong.
+
+- id: x01
+  nguon: unanswerable
+  loai: kb_khong_co
+  cai_bia: null
+  tra_loi_goc: null
+- id: x02
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: them_quy_dinh
+  tra_loi_goc: Vé tàu hỏa cho phép mang theo hành lý cá nhân với trọng lượng dưới 20kg mỗi khách. Hành
+    lý sẽ được để trên giá phía trên chỗ ngồi hoặc dưới giường nằm. Đối với hàng hóa có kích thước lớn,
+    bạn cần gửi qua dịch vụ vận chuyển riêng của nhà ga. Mời bạn ghé trang chi tiết để xem thêm thông
+    tin.
+- id: x03
+  nguon: holdout_that
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x04
+  nguon: holdout_that
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x05
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: doi_so
+  tra_loi_goc: Hủy vé trước 1 ngày, tức là trước giờ khởi hành trên 24 giờ, quý khách sẽ được hoàn lại
+    100% tiền vé. Để thực hiện, quý khách vui lòng đăng nhập tài khoản, vào mục Lịch sử đặt vé, chọn đơn
+    hàng cần hủy và bấm nút hủy.
+- id: x06
+  nguon: holdout_that
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x07
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: bo_gioi_han
+  tra_loi_goc: Nếu bạn chủ động hủy vé trước giờ khởi hành từ 4 đến 24 giờ, mức phí hủy là 10 phần trăm
+    giá trị đơn hàng, bạn sẽ nhận lại 90 phần trăm tiền vé. Nếu hủy khi còn dưới 4 giờ hoặc đã lỡ chuyến,
+    vé sẽ không được hoàn tiền. Bạn nên chủ động hủy vé sớm nếu không thể tham gia chuyến đi.
+- id: x08
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: doi_so
+  tra_loi_goc: Em bé dưới 2 tuổi được miễn phí vé và ngồi cùng người lớn đi kèm, không có ghế riêng. Mỗi
+    người lớn chỉ được kèm một em bé dưới 2 tuổi, và khách vẫn cần khai báo thông tin em bé khi đặt vé.
+- id: x09
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: them_quy_dinh
+  tra_loi_goc: Đối với đồ dễ vỡ và thiết bị điện tử như laptop và máy ảnh, bạn nên mang theo người hoặc
+    để trong hành lý xách tay, không nên để trong hành lý ký gửi hay khoang gầm xe. Các nhà vận chuyển
+    sẽ không chịu trách nhiệm đối với tài sản có giá trị để trong hành lý ký gửi.
+- id: x10
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x11
+  nguon: holdout_that
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x12
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: them_kenh
+  tra_loi_goc: Không tìm thấy chuyến nào thường do ngày bạn chọn chưa mở bán hoặc tuyến đó chưa có chuyến
+    khai thác. Bạn có thể thử đổi sang ngày khác, hoặc bỏ bớt bộ lọc giá và khung giờ để xem thêm lựa
+    chọn nhé.
+- id: x13
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x14
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: bo_gioi_han
+  tra_loi_goc: Để xem lại vé đã mua, quý khách vui lòng đăng nhập vào tài khoản và truy cập vào mục Lịch
+    sử đặt vé. Tại đây, quý khách có thể xem toàn bộ đơn hàng, trạng thái thanh toán, mã QR và chi tiết
+    hành trình của mình. Lưu ý rằng chỉ chủ tài khoản mới có thể xem được vé đã đặt.
+- id: x15
+  nguon: unanswerable
+  loai: kb_khong_co
+  cai_bia: null
+  tra_loi_goc: null
+- id: x16
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: them_kenh
+  tra_loi_goc: Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín và gửi ở toa hành lý. Bạn không
+    được mang thú cưng vào khoang giường nằm hay khoang ghế ngồi. Bạn nên liên hệ nhà ga trước ngày đi
+    để nắm quy định cụ thể của từng tuyến.
+- id: x17
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x18
+  nguon: golden
+  loai: co_tai_lieu
+  cai_bia: null
+  tra_loi_goc: null
+- id: x19
+  nguon: unanswerable
+  loai: can_tool
+  cai_bia: null
+  tra_loi_goc: null
+- id: x20
+  nguon: unanswerable
+  loai: ngoai_le
+  cai_bia: null
+  tra_loi_goc: null

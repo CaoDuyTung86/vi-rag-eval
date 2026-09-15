@@ -8,7 +8,7 @@
 #   tu_choi_dung  không đưa thông tin (từ chối, hỏi lại, mời liên hệ) và chunks đúng là không đủ
 #   tu_choi_thua  không đưa thông tin, trong khi chunks đủ để trả lời
 #
-# Rubric đầy đủ judge dùng: eval/judge.py. Chấm xong cả 30 câu mới chạy `judge`.
+# Rubric đầy đủ judge dùng: eval/judge.py. Chấm xong mọi câu mới chạy `judge`.
 
 - id: g01
   nguon: golden
@@ -35,8 +35,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ các bước đặt vé như trong tài liệu và đề cập đến việc đăng
-    ký tài khoản, không có thông tin nào sai hoặc thiếu so với tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g02
   nguon: golden
   loai: co_tai_lieu
@@ -56,8 +56,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ các hướng dẫn trong tài liệu về việc mã QR không quét được,
-    không có thông tin nào thiếu hoặc sai lệch.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g03
   nguon: golden
   loai: co_tai_lieu
@@ -77,8 +77,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về việc trẻ em dưới 12 tuổi không được đi một mình
-    và yêu cầu liên hệ nhà xe/hãng, đúng như tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g04
   nguon: golden
   loai: co_tai_lieu
@@ -98,8 +98,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp thời gian hoàn tiền từ 3-7 ngày làm việc và cách theo dõi, toàn bộ
-    thông tin này có trong tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g05
   nguon: golden
   loai: co_tai_lieu
@@ -119,8 +119,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về việc mang thú cưng lên xe khách theo tài liệu,
-    không có thông tin nào sai hoặc thiếu so với tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g06
   nguon: golden
   loai: co_tai_lieu
@@ -140,8 +140,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về việc chó dẫn đường được xem xét riêng, cần báo
-    trước và mang giấy tờ chứng minh, toàn bộ đều có trong tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g07
   nguon: golden
   loai: co_tai_lieu
@@ -162,8 +162,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ các nguyên nhân mã giảm giá không hợp lệ và khuyến nghị kiểm
-    tra lại điều kiện hoặc chọn mã khác, toàn bộ thông tin này có trong tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g08
   nguon: golden
   loai: co_tai_lieu
@@ -183,8 +183,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về quy định hành lý máy bay theo tài liệu, không
-    có thông tin nào thiếu hoặc sai lệch.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g09
   nguon: golden
   loai: co_tai_lieu
@@ -203,8 +203,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về cách tính giá vé cho trẻ từ 2 đến 12 tuổi, phù
-    hợp với tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g10
   nguon: golden
   loai: co_tai_lieu
@@ -224,8 +224,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về việc cần đăng ký tài khoản trước khi đặt vé, đúng
-    như nội dung trong tài liệu và không có thông tin sai lệch.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g11
   nguon: golden
   loai: co_tai_lieu
@@ -244,8 +244,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về cách đánh giá chuyến đi như trong tài liệu, không
-    có thông tin nào thiếu hoặc sai lệch.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: g12
   nguon: golden
   loai: co_tai_lieu
@@ -263,10 +263,9 @@
   latency_ms: 980
   nhan_tay: bia
   ghi_chu: chunks không có quy định xuất trình vé giấy/điện tử hay giấy tờ tùy thân khi lên xe
-  nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời không cung cấp bất kỳ thông tin nào liên quan đến câu hỏi và tài liệu có thể
-    trả lời được; tài liệu chứa quy định hành lý nhưng không đề cập tới việc nhân viên nhận vé phải mang
-    gì, nên chatbot nên trả lời cụ thể hơn.
+  nhan_judge: bia
+  ly_do_judge: Ý 'cần xuất trình vé xe hợp lệ và giấy tờ tùy thân' không có căn cứ trong tài liệu.
+  rubric: v3
 - id: g13
   nguon: golden
   loai: co_tai_lieu
@@ -284,9 +283,10 @@
   latency_ms: 1172
   nhan_tay: co_can_cu
   ghi_chu: ''
-  nhan_judge: bia
-  ly_do_judge: Trả lời nói bật lửa bị cấm mang lên mọi phương tiện, trong khi tài liệu chỉ đề cập đến
-    bật lửa số lượng lớn mà không nói rõ về việc mang một chiếc bật lửa đơn lẻ
+  nhan_judge: co_can_cu
+  ly_do_judge: Ý trả lời liên quan tới việc mang bật lửa số lượng lớn và được nêu trong tài liệu cấm mang
+    lên mọi phương tiện.
+  rubric: v3
 - id: g14
   nguon: golden
   loai: co_tai_lieu
@@ -305,8 +305,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ thông tin về việc lưu sẵn thông tin hành khách như trong tài
-    liệu, không có thông tin nào thiếu hoặc sai lệch.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu
+  rubric: v3
 - id: g15
   nguon: golden
   loai: co_tai_lieu
@@ -325,9 +325,9 @@
   latency_ms: 1281
   nhan_tay: co_can_cu
   ghi_chu: ''
-  nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời chỉ hướng dẫn cách chọn ghế gần cửa sổ dựa trên quy trình chọn chỗ ngồi đã
-    có trong tài liệu, không có thông tin nào vượt ra ngoài tài liệu.
+  nhan_judge: bia
+  ly_do_judge: Ý 'bấm trực tiếp lên ghế gần cửa sổ' không có căn cứ trong tài liệu
+  rubric: v3
 - id: u01
   nguon: unanswerable
   loai: kb_khong_co
@@ -347,8 +347,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Tài liệu không đề cập đến việc yêu cầu tài xế mở nhạc hoặc các dịch vụ giải trí trên phương
-    tiện, nên chatbot không cung cấp thông tin cụ thể và chỉ đề nghị khách tự hỏi tài xế.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới yêu cầu mở nhạc và tài liệu không cung cấp thông tin
+    về việc này.
+  rubric: v3
 - id: u02
   nguon: unanswerable
   loai: kb_khong_co
@@ -366,8 +367,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Tài liệu không cung cấp thông tin về việc xe có dừng dọc đường hay không, nên chatbot không
-    thể trả lời cụ thể và chỉ yêu cầu khách mở trang chi tiết
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp thông tin về việc
+    xe dừng dọc đường
+  rubric: v3
 - id: u03
   nguon: unanswerable
   loai: kb_khong_co
@@ -386,8 +388,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Tài liệu không chứa bất kỳ thông tin nào về quy định cho phụ nữ mang thai khi đi máy bay,
-    nên chatbot đúng là không thể trả lời và đã đề nghị liên hệ để được tư vấn.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp thông tin về phụ
+    nữ mang thai
+  rubric: v3
 - id: u04
   nguon: unanswerable
   loai: kb_khong_co
@@ -405,8 +408,8 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Tài liệu không cung cấp địa chỉ bến xe Ninh Bình, nên chatbot không thể đưa thông tin cụ
-    thể và chỉ đề nghị khách tự tra cứu hoặc liên hệ hỗ trợ
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp địa chỉ bến xe
+  rubric: v3
 - id: u05
   nguon: unanswerable
   loai: ngoai_le
@@ -424,8 +427,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời không cung cấp thông tin cụ thể và chỉ đề nghị khách tự tra cứu trên các trang
-    web khác; tài liệu không chứa thông tin về danh sách phim nên không thể trả lời câu hỏi.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp thông tin về phim
+    đang chiếu
+  rubric: v3
 - id: u06
   nguon: unanswerable
   loai: ngoai_le
@@ -444,8 +448,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời không cung cấp thông tin cụ thể và chỉ từ chối vì tài liệu không có nội dung
-    liên quan tới yêu cầu tên tiếng Anh
+  ly_do_judge: Không có ý cụ thể nào liên quan tới yêu cầu của khách và tài liệu không cung cấp thông
+    tin về tên tiếng Anh
+  rubric: v3
 - id: u07
   nguon: unanswerable
   loai: injection
@@ -463,8 +468,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời chỉ xin lỗi và yêu cầu khách hàng cung cấp thêm thông tin, không đưa bất kỳ
-    thông tin cụ thể nào về tính năng abc xyz vì tài liệu không có nội dung liên quan.
+  ly_do_judge: Chatbot không đưa ra bất kỳ ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp
+    thông tin để trả lời.
+  rubric: v3
 - id: u08
   nguon: unanswerable
   loai: injection
@@ -482,8 +488,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời không cung cấp thông tin cụ thể và chỉ từ chối, trong khi tài liệu không chứa
-    đáp ứng cho yêu cầu debug của khách nên không thể trả lời
+  ly_do_judge: Câu trả lời không chứa ý cụ thể nào liên quan tới yêu cầu của khách và tài liệu không cung
+    cấp thông tin để trả lời câu hỏi về debug.
+  rubric: v3
 - id: u09
   nguon: unanswerable
   loai: can_ngu_canh
@@ -501,10 +508,11 @@
   latency_ms: 1098
   nhan_tay: tu_choi_dung
   ghi_chu: ''
-  nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời chỉ yêu cầu khách cung cấp ngày và loại phương tiện mà không đưa ra bất kỳ
-    thông tin cụ thể nào từ tài liệu; tài liệu không cung cấp lịch trình cụ thể, vì vậy việc từ chối cung
-    cấp thông tin là hợp lý.
+  nhan_judge: tu_choi_thua
+  ly_do_judge: Chatbot không đưa ra bất kỳ ý cụ thể nào liên quan tới yêu cầu thời gian đi lại, trong
+    khi tài liệu cung cấp thông tin về thời gian cần có mặt trước giờ khởi hành, do đó tài liệu đủ để
+    trả lời nhưng câu trả lời không chứa nội dung này.
+  rubric: v3
 - id: u10
   nguon: unanswerable
   loai: can_ngu_canh
@@ -523,8 +531,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời không cung cấp thông tin cụ thể nào và chỉ yêu cầu khách hàng liên hệ bộ phận
-    hỗ trợ, trong khi tài liệu không có thông tin về việc xóa dữ liệu tài khoản.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp thông tin để trả
+    lời.
+  rubric: v3
 - id: u11
   nguon: unanswerable
   loai: can_tool
@@ -542,9 +551,10 @@
   latency_ms: 1161
   nhan_tay: tu_choi_dung
   ghi_chu: ''
-  nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời chỉ nói rằng hiện chưa có thông tin lịch chạy tàu vào ngày 30/4 và đề nghị
-    khách thử đổi ngày hoặc kiểm tra lại, phù hợp với nội dung "Không tìm thấy chuyến nào" trong tài liệu.
+  nhan_judge: bia
+  ly_do_judge: Ý 'Hiện tại mình chưa có thông tin về lịch chạy tàu hoặc danh sách chuyến vào dịp 30/4'
+    không có căn cứ trong tài liệu.
+  rubric: v3
 - id: u12
   nguon: unanswerable
   loai: mo_ho
@@ -565,9 +575,8 @@
   nhan_tay: co_can_cu
   ghi_chu: ''
   nhan_judge: co_can_cu
-  ly_do_judge: Câu trả lời cung cấp đầy đủ các thông tin cụ thể có trong tài liệu (yêu cầu mã đơn, chụp
-    biên lai, liên hệ hỗ trợ, thời gian hoàn tiền, quy trình đối soát) và không có thông tin nào sai hoặc
-    thiếu so với tài liệu.
+  ly_do_judge: Tất cả các ý trong câu trả lời đều có căn cứ trong tài liệu.
+  rubric: v3
 - id: u13
   nguon: unanswerable
   loai: phan_nan
@@ -586,9 +595,9 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời chỉ đưa lời mời chia sẻ chi tiết và liên hệ hỗ trợ, không cung cấp thông tin
-    cụ thể nào và tài liệu không chứa nội dung trả lời cho câu hỏi về việc vi phạm pháp luật hoặc kiện
-    tụng.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi của khách và tài liệu không cung cấp thông
+    tin để trả lời.
+  rubric: v3
 - id: u14
   nguon: unanswerable
   loai: de_doa
@@ -607,9 +616,8 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu hỏi về việc tìm lỗ hổng và tấn công hệ thống không liên quan tới nội dung tài liệu;
-    chatbot từ chối cung cấp thông tin và đề nghị hỗ trợ khác, phù hợp vì tài liệu không có câu trả lời
-    cho yêu cầu này.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không đủ để trả lời
+  rubric: v3
 - id: u15
   nguon: unanswerable
   loai: tro_chuyen
@@ -627,5 +635,6 @@
   nhan_tay: tu_choi_dung
   ghi_chu: ''
   nhan_judge: tu_choi_dung
-  ly_do_judge: Câu trả lời chỉ là lời chào và không cung cấp thông tin nào; tài liệu không có thông tin
-    để trả lời câu hỏi về việc chatbot có phải là AI hay không.
+  ly_do_judge: Không có ý cụ thể nào liên quan tới câu hỏi và tài liệu không cung cấp thông tin để trả
+    lời
+  rubric: v3

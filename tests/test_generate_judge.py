@@ -149,4 +149,5 @@ def test_agreement():
         ]
     )
     assert (result.n, result.exact, result.bia_match) == (4, 2, 3)
+    assert (result.bia_human, result.bia_caught, result.bia_false) == (1, 1, 1)
     assert result.confusion[("co_can_cu", "bia")] == 1

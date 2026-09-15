@@ -624,7 +624,186 @@ temperature 0, khác họ model với bên sinh.
 - Judge cùng nhãn với chấm tay ≥ 80%; cùng ý "có bịa hay không" ≥ 90%. Lệch chủ yếu giữa có căn cứ
   và bịa ở câu "suy ra" từ tài liệu (judge khắt hơn người).
 
-**Kết quả.** Chưa chạy judge — chờ chấm tay.
+**Kết quả** (chấm tay 15/09; judge rubric v1, `reasoning_effort: low`):
+
+| Bộ, người chấm | Có căn cứ | Bịa | Từ chối đúng | Từ chối thừa |
+|---|---|---|---|---|
+| golden, tay | 14 | 1 | 0 | 0 |
+| golden, judge | 13 | 1 | 1 | 0 |
+| không trả lời được, tay | 1 | 0 | 14 | 0 |
+| không trả lời được, judge | 2 | 0 | 13 | 0 |
+
+Judge cùng nhãn 27/30 = 90%, cùng ý có bịa 28/30 = 93% — nhưng bắt được **0/1** câu bịa thật và báo
+bịa giả 1 câu. Độ trễ sinh p50 1125 ms, p95 1663 ms.
+
+**Đối chiếu giả thuyết.**
+
+- Golden ≥ 12/15 có căn cứ — **đúng**, 14/15. Câu bịa duy nhất (g12 "len xe thi dua gi cho nhan
+  vien") đúng là câu mà chunk đúng `checkin-qr-usage` vắng khỏi top-4: bot đọc 4 chunk hành lý rồi
+  tự nói "xuất trình vé giấy hoặc vé điện tử và giấy tờ tùy thân" — trái cả chunk thật ("Không cần
+  in vé giấy").
+- Không trả lời được ≥ 3 câu bịa — **sai**, 0/15. Nguyên tắc "chỉ nói điều có căn cứ" giữ được cả
+  kb_khong_co lẫn can_tool. u12 (khách chửi đòi tiền) được chấm có căn cứ: bot dùng đúng
+  `payment-double-charge`.
+- Judge ≥ 80% cùng nhãn — **đúng**, 90%. ≥ 90% cùng ý có bịa — đạt về số nhưng **không nói được gì**:
+  chỉ có 1 câu bịa, và judge trượt chính câu đó.
+
+**Ba kiểu lệch.**
+
+| Câu | Tay | Judge | Kiểu |
+|---|---|---|---|
+| g12 | bia | tu_choi_dung | Bỏ sót bịa nghe như quy định chung ngoài đời; lý do judge tự mâu thuẫn ("không cung cấp thông tin nào") |
+| g13 | co_can_cu | bia | Đọc sót cụm giới hạn: tài liệu và câu trả lời cùng nói "bật lửa số lượng lớn" |
+| u11 | tu_choi_dung | co_can_cu | Kẽ hở rubric: không trả lời câu hỏi chính nhưng kèm thông tin chung có căn cứ |
+
+**Kết luận.** Trên 30 câu này bot ít bịa (1/30), và câu bịa đến từ truy hồi thiếu chunk chứ không
+từ prompt. Một câu chưa đủ để mở lại reranker — đếm tiếp. Judge v1 CHƯA dùng được để đo bịa: bộ 30
+câu gần như không có câu bịa để thử nó, nên 90% là con số của câu dễ.
+
+---
+
+## 2026-09-15 — Judge v2 và bộ xác nhận
+
+**Thay đổi.** (1) Rubric v2 (`eval/judge.py`): judge liệt kê từng ý cụ thể và đối chiếu với tài
+liệu trước khi gắn nhãn; quy định nghe như chuẩn chung mà tài liệu không ghi là bịa; chép lại có giữ
+cụm giới hạn là có căn cứ; không trả lời câu hỏi chính thì là từ chối dù có kèm thông tin chung.
+(2) `reasoning_effort` low → medium. Đổi hai thứ một lúc là chủ ý: cả hai nhắm cùng hai lỗi, và bộ
+xác nhận chỉ đủ dùng một lần. Cái giá: đạt thì không tách được thay đổi nào có công.
+
+Rubric v2 viết ra từ chính 3 câu lệch ở trên, nên chạy lại trên 30 câu cũ chắc chắn đẹp hơn — con
+số đó chỉ để kiểm tra không tụt, không để quyết định.
+
+**Bộ xác nhận** (`data/faithfulness_xacnhan.yml`, 20 câu, thứ tự xáo, chấm tay mù):
+
+- Sinh tự nhiên: 4 câu holdout vi người thật gõ, 4 câu `unanswerable` chưa dùng (kb_khong_co 2,
+  can_tool 1, ngoai_le 1), 4 câu golden vi chưa dùng.
+- **Cài bịa**: 8 câu golden vi chưa dùng — sinh tự nhiên rồi nhờ Gemini viết lại, cài đúng một lỗi,
+  4 kiểu × 2 câu: đổi con số hoặc thời hạn; thêm quy định nghe như chuẩn chung (kiểu g12); bỏ cụm
+  giới hạn (ngược với g13); thêm số điện thoại, email hoặc link. Kiểu cài của từng câu nằm ở
+  `data/faithfulness_xacnhan_dapan.yml` — không mở trước khi chấm xong.
+
+Vì sao cài: 30 câu tự nhiên chỉ ra 1 câu bịa, nên bộ xác nhận tự nhiên cũng sẽ không có câu bịa để
+thử judge. Giới hạn: bịa do model cài có thể dễ bắt hơn bịa tự nhiên. Nhãn đúng vẫn là nhãn tay,
+không phải đáp án cài — Gemini có thể cài hỏng.
+
+**Tiêu chí đạt tuần 9** (chốt trước khi sinh bộ xác nhận; tính trên nhãn tay của bộ xác nhận):
+
+1. Bắt bịa: trong các câu bạn chấm bia, judge trượt tối đa 1 câu.
+2. Báo bịa giả: tối đa 1 câu judge gắn bia mà bạn chấm không bịa.
+3. Cùng nhãn 4 loại ≥ 80%.
+4. Bản judge đem đi xác nhận, chạy trên 30 câu cũ: cùng nhãn không dưới 90% (mức của v1). Đây là
+   điều kiện vào cửa — kiểm tra trước khi chạy bộ xác nhận.
+
+Đạt cả 4: tuần 10 dùng bản judge đó chấm tự động tỉ lệ bịa của từng model; chấm tay chỉ để soát ngẫu
+nhiên. Trượt: KHÔNG sửa rubric rồi đo lại trên bộ này — làm vậy là biến nó thành bộ dev thứ hai. Ghi
+kiểu lỗi, và tuần 10 dùng judge như bộ lọc: câu nào judge gắn bia, hoặc hai model bị chấm khác nhau,
+thì chấm tay. Đạt hay trượt đều sang tuần 10 — mục tiêu tuần 9 là biết judge đáng tin tới đâu.
+
+**Giả thuyết.** Đạt tiêu chí 1, 3, 4; tiêu chí 2 sát ngưỡng vì v2 soi từng ý nên khắt hơn. Kiểu cài
+khó bắt nhất là bỏ cụm giới hạn. 4 câu holdout người thật gõ không sinh thêm câu bịa tự nhiên nào.
+
+**Kết quả v2 trên bộ dev** (tiêu chí 4): cùng nhãn 22/30 = 73% — **trượt**, v1 là 90%. Bắt được
+g12 (1/1) nhưng báo bịa giả 6 câu, và gắn từ chối cho 2 câu người chấm là có căn cứ.
+
+| Kiểu lỗi của v2 | Câu | Ví dụ |
+|---|---|---|
+| Coi lời từ chối và lời khuyên liên hệ chung là ý cụ thể → bịa | u01, u03, u04, u10, u11 | "liên hệ tổng đài của VigoTrip", "mình chưa có thông tin…" bị coi là ý không có căn cứ |
+| Coi lời nhắc lại mong muốn của khách là ý mới → bịa | g15 | "bấm lên ghế gần cửa sổ còn trống" |
+| Luật "phải trả lời câu hỏi chính" áp quá tay → từ chối | g10, g13 | g10 khuyên đăng ký, đúng tài liệu, nhưng không nói thẳng có/không |
+
+Giả thuyết "tiêu chí 2 sát ngưỡng vì v2 khắt hơn" — đúng hướng, sai mức: khắt tới mức hỏng. Gốc
+rễ: rubric bảo soi "mọi ý" mà không nói cái gì KHÔNG phải ý. Và chính prompt của chatbot dặn "hướng
+khách sang trang phù hợp hoặc tổng đài" khi thiếu căn cứ — v2 phạt đúng hành vi được dặn.
+
+Bộ xác nhận chưa chạy judge nào và chưa ai chấm, nên vẫn còn nguyên giá trị; sửa tiếp rubric trên bộ
+dev là hợp lệ.
+
+---
+
+## 2026-09-15 — Judge v3
+
+**Thay đổi so với v2** (giữ `reasoning_effort: medium`): (1) liệt kê rõ cái KHÔNG phải ý cụ thể —
+nói chưa có thông tin, từ chối, lời khuyên liên hệ không kèm số/email/địa chỉ, nhắc lại lời khách;
+(2) so theo nghĩa thay vì theo chữ, nhưng giữ luật cụm giới hạn; (3) bỏ luật "câu hỏi chính": có ý
+cụ thể liên quan và đủ căn cứ là có căn cứ, dù không trả lời thẳng.
+
+**Giả thuyết** (viết trước khi chạy). Trên bộ dev: cùng nhãn ≥ 27/30, vẫn bắt g12, báo bịa giả ≤ 1.
+u11 có thể vẫn lệch — ranh giới thật: "không có kết quả thường do chưa mở bán" vừa là ý có căn cứ vừa
+không trả lời câu hỏi.
+
+**Nếu v3 vẫn dưới 90% trên bộ dev:** dừng sửa rubric, đem v1 sang bộ xác nhận. Không đem cả hai sang
+rồi chọn bản điểm cao hơn — chọn trên bộ xác nhận là biến nó thành bộ dev.
+
+**Kết quả trên bộ dev:**
+
+| Judge | Cùng nhãn | Bắt bịa | Báo bịa giả | Từ chối gắn nhầm |
+|---|---|---|---|---|
+| v1, low | 27/30 = 90% | 0/1 | 1 | 2 |
+| v2, medium | 22/30 = 73% | 1/1 | 6 | 2 |
+| v3, medium | 27/30 = 90% | 1/1 | 2 | 1 |
+
+Câu v3 còn lệch:
+
+- g15 (tay có căn cứ → judge bịa): vẫn coi "bấm lên ghế gần cửa sổ" là ý mới, dù rubric lấy đúng câu
+  này làm ví dụ KHÔNG phải ý cụ thể.
+- u11 (tay từ chối đúng → judge bịa): coi "mình chưa có thông tin về lịch chạy tàu" là ý không có
+  căn cứ — trái với chữ của rubric.
+- u09 (tay từ chối đúng → judge từ chối thừa): cho rằng chunk thời gian có mặt trước giờ đi trả lời
+  được câu khách kể lịch trình. Ranh giới, không phải lỗi rõ.
+
+**Đối chiếu giả thuyết.** ≥ 27/30 — **đúng**, vừa chạm ngưỡng. Vẫn bắt g12 — **đúng**. Báo bịa giả ≤ 1
+— **sai**, 2. u11 vẫn lệch — **đúng**, nhưng lệch sang bịa chứ không sang có căn cứ như dự đoán.
+
+**Kết luận.** v3 qua điều kiện vào cửa (tiêu chí 4), nên v3 là bản đem sang bộ xác nhận. Không sửa
+thêm: hai câu g15, u11 là judge làm trái chữ của rubric, tức giới hạn của model chứ không còn là kẽ hở
+rubric — sửa tiếp chỉ là vá cho khớp 30 câu này. Tín hiệu cần để ý ở bộ xác nhận: v3 vẫn có xu hướng
+báo bịa giả ở câu từ chối, nên tiêu chí 2 (tối đa 1 câu) là tiêu chí dễ trượt nhất.
+
+**Kết quả bộ xác nhận** (chấm tay 15/09, judge v3, chạy một lần):
+
+| Tiêu chí | Kết quả | |
+|---|---|---|
+| 1. Trượt tối đa 1 câu bịa | bắt 7/8 | **đạt** |
+| 2. Báo bịa giả tối đa 1 câu | 3 câu | **trượt** |
+| 3. Cùng nhãn ≥ 80% | 16/20 = 80% | **đạt**, chạm ngưỡng |
+| 4. Bộ dev không dưới 90% | 27/30 = 90% | **đạt** |
+
+Nhãn tay khớp đáp án cài 8/8: cả 8 câu cài đều cài được, và bạn bắt hết, không gắn bịa cho câu nào
+khác. Judge theo kiểu cài: đổi con số 1/2, thêm quy định 2/2, bỏ cụm giới hạn 2/2, thêm số/kênh
+liên hệ 2/2.
+
+Câu lệch:
+
+| Câu | Tay | Judge | Chuyện gì xảy ra |
+|---|---|---|---|
+| x05 | bia | co_can_cu | Cài "hủy trước **2 ngày**, tức là trên 24 giờ". Judge thấy "trên 24 giờ" có căn cứ và bỏ qua "2 ngày" mâu thuẫn với chính nó |
+| x01 | tu_choi_dung | bia | "VigoTrip luôn đặt bảo mật lên hàng đầu và tuân thủ các tiêu chuẩn an toàn thông tin" — không chunk nào nói vậy |
+| x13 | co_can_cu | bia | "đợi trong giây lát để nhà cung cấp xử lý" — tài liệu không nói duyệt mất bao lâu |
+| x19 | tu_choi_dung | bia | "truy cập trang tìm kiếm chuyến bay" — lời hướng tới trang, đúng loại rubric bảo bỏ qua |
+
+Ghi chú về ba câu báo bịa giả, viết SAU khi thấy nhãn judge nên chỉ để tham khảo: x19 là judge sai
+rõ. x01 và x13 là ranh giới thật — x01 là một lời cam kết về bảo mật mà tài liệu không có, theo chữ
+của rubric thì judge không sai. Nhãn tay KHÔNG sửa lại: sửa sau khi đã thấy judge chấm là đúng kiểu
+thiên lệch mà quy trình chấm mù sinh ra để chặn. Tiêu chí 2 tính là trượt.
+
+**Đối chiếu giả thuyết.**
+
+- Đạt tiêu chí 1, 3, 4 — **đúng**. Tiêu chí 2 sát ngưỡng — **sai**, trượt hẳn (3 so với ngưỡng 1).
+  Xu hướng thấy trên bộ dev (v3 báo bịa giả 2/30) lặp lại: judge v3 khắt, sai về phía báo bịa.
+- Kiểu cài khó bắt nhất là bỏ cụm giới hạn — **sai**: bắt 2/2. Câu trượt là đổi con số, khi con số
+  bịa đứng cạnh một diễn giải đúng.
+- 4 câu holdout người thật gõ không sinh câu bịa tự nhiên — **đúng**, cả 4 có căn cứ.
+
+**Kết luận.** Tuần 9 xong, judge **trượt** tiêu chí 2, nên đi theo nhánh đã chốt: không sửa rubric
+trên bộ này; tuần 10 dùng judge v3 như **bộ lọc một chiều**.
+
+- Judge nói KHÔNG bịa → tin. Trên bộ xác nhận nó chỉ sót 1/8 câu bịa, và 0/1 trên bộ dev.
+- Judge nói bịa → người chấm lại. Trên bộ xác nhận 10 câu bị gắn bịa thì 7 câu bịa thật (70%).
+- Tỉ lệ bịa của một model ở tuần 10 = số câu người xác nhận là bịa, không phải số judge gắn bịa —
+  nếu dùng thẳng số của judge, model nào nói nhiều câu trấn an kiểu x01 sẽ bị phạt oan.
+
+Điều kiện đổi ý: nếu tuần 10 người phải chấm lại quá nhiều (judge gắn bịa > 30% câu của một model),
+thì làm judge v4 — nhưng chỉ đo trên một bộ xác nhận MỚI.
 
 ---
 

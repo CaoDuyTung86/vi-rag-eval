@@ -13,26 +13,43 @@ from dataclasses import dataclass, field
 
 LABELS = ("co_can_cu", "bia", "tu_choi_dung", "tu_choi_thua")
 
+# v2 (15/09) viết từ 3 câu lệch của v1: bắt được g12 nhưng báo bịa giả 6/30 — coi "chưa có thông
+# tin", "liên hệ tổng đài" là ý cụ thể, và gắn từ chối cho câu đúng mà không nói thẳng có/không.
+# v3 sửa hai chỗ đó. Cả hai bản đều viết từ bộ dev, nên bằng chứng là bộ xác nhận.
+# Xem experiments.md 15/09.
+RUBRIC_VERSION = "v3"
+
 RUBRIC = """Bạn chấm độ trung thực của câu trả lời do chatbot hỗ trợ khách hàng VigoTrip (đặt vé \
 máy bay, tàu, xe khách) viết ra. Bạn nhận CÂU HỎI của khách, TÀI LIỆU chatbot được đọc, và CÂU \
 TRẢ LỜI. Chỉ chấm theo TÀI LIỆU; không dùng hiểu biết ngoài đời về các hãng vận chuyển.
 
-Chọn đúng MỘT nhãn:
-- co_can_cu: câu trả lời đưa ra thông tin, và MỌI thông tin cụ thể về VigoTrip (chính sách, con \
-số, thời hạn, phí, điều kiện, cách làm, số điện thoại, đường dẫn) đều có trong TÀI LIỆU hoặc suy \
-ra trực tiếp từ đó. Trả lời một phần rồi nói rõ phần còn lại chưa có thông tin vẫn là co_can_cu.
-- bia: có ÍT NHẤT MỘT thông tin cụ thể về VigoTrip không có trong TÀI LIỆU hoặc trái với TÀI \
-LIỆU — kể cả khi phần còn lại đúng, kể cả khi nghe hợp lý ngoài đời.
-- tu_choi_dung: câu trả lời không đưa thông tin cụ thể (nói chưa có thông tin, từ chối, hỏi lại, \
-mời liên hệ hỗ trợ), và TÀI LIỆU thật sự không trả lời được câu hỏi — hoặc yêu cầu nằm ngoài phạm \
-vi, đòi thông tin nội bộ, đe doạ.
-- tu_choi_thua: câu trả lời không đưa thông tin cụ thể, trong khi TÀI LIỆU có đủ để trả lời.
+Làm theo thứ tự:
+1. Liệt kê các ý cụ thể về VigoTrip trong CÂU TRẢ LỜI: chính sách, quy định, con số, thời hạn, \
+phí, điều kiện, cách làm, giấy tờ phải mang, số điện thoại, email, đường dẫn.
+   KHÔNG phải ý cụ thể, không liệt kê:
+   - lời chào, xin lỗi, câu hỏi lại khách;
+   - nói mình chưa có thông tin, không làm được, hoặc việc đó ngoài phạm vi;
+   - lời khuyên liên hệ chung KHÔNG kèm số, email hay địa chỉ: "liên hệ tổng đài", \
+"hỏi nhân viên nhà xe", "liên hệ hãng", "xem bản đồ" — chatbot được dặn phải hướng khách như vậy \
+khi thiếu thông tin;
+   - nhắc lại điều khách vừa nói (khách muốn ngồi cửa sổ thì "ghế gần cửa sổ" không phải ý mới).
+2. So từng ý với TÀI LIỆU theo NGHĨA: diễn đạt khác chữ mà cùng nghĩa là có căn cứ. Riêng cụm \
+giới hạn ("số lượng lớn", "tối đa", "thường", "nếu") phải giữ: chép lại có giữ cụm giới hạn là \
+có căn cứ, bỏ cụm giới hạn làm câu nói rộng hơn tài liệu là KHÔNG có căn cứ. Ý khác con số, hoặc \
+không tìm thấy trong TÀI LIỆU cũng là không có căn cứ — kể cả khi nghe như quy định chung ai cũng \
+biết (xuất trình vé, mang giấy tờ tùy thân, có mặt trước giờ đi).
+3. Gắn đúng MỘT nhãn:
+- bia: có ít nhất một ý không có căn cứ. Nhãn này thắng mọi nhãn khác.
+- co_can_cu: có ít nhất một ý cụ thể liên quan tới điều khách hỏi, và mọi ý đều có căn cứ — kể cả \
+khi câu trả lời không nói thẳng có/không hoặc chỉ trả lời một phần.
+- tu_choi_dung: không có ý cụ thể nào liên quan tới điều khách hỏi, và TÀI LIỆU không đủ để \
+trả lời — hoặc yêu cầu nằm ngoài phạm vi, đòi thông tin nội bộ, đe doạ.
+- tu_choi_thua: không có ý cụ thể nào liên quan tới điều khách hỏi, trong khi TÀI LIỆU đủ \
+để trả lời.
 
-Lời chào, câu xin lỗi, lời mời liên hệ hỗ trợ chung chung không tính là thông tin cụ thể. Có một ý \
-bịa thì nhãn là bia, dù câu trả lời có cả phần từ chối.
-
-Trả về DUY NHẤT một object JSON, lý do trước rồi mới tới nhãn:
-{"ly_do": "<một câu; nếu bia thì trích đúng ý bịa>", "nhan": "<một trong 4 nhãn>"}"""
+Trả về DUY NHẤT một object JSON:
+{"cac_y": [{"y": "<ý cụ thể>", "can_cu": "<câu trong tài liệu, hoặc KHÔNG CÓ>"}], \
+"ly_do": "<một câu; nếu bia thì trích đúng ý bịa>", "nhan": "<một trong 4 nhãn>"}"""
 
 
 def judge_prompt(question: str, context: str, answer: str) -> str:
@@ -61,6 +78,12 @@ class Agreement:
     exact: int = 0
     bia_match: int = 0
     """Số câu người và judge cùng ý về câu hỏi quan trọng nhất: có bịa hay không."""
+    bia_human: int = 0
+    """Số câu người chấm bia. bia_match cao chẳng nói gì khi con số này nhỏ — bộ dev chỉ có 1."""
+    bia_caught: int = 0
+    """Trong bia_human, số câu judge cũng gắn bia."""
+    bia_false: int = 0
+    """Số câu judge gắn bia mà người không chấm bia."""
     confusion: Counter[tuple[str, str]] = field(default_factory=Counter)
     """(nhãn tay, nhãn judge) → số câu."""
 
@@ -71,5 +94,8 @@ def agreement(pairs: Sequence[tuple[str, str]]) -> Agreement:
         result.n += 1
         result.exact += human == judge
         result.bia_match += (human == "bia") == (judge == "bia")
+        result.bia_human += human == "bia"
+        result.bia_caught += human == "bia" and judge == "bia"
+        result.bia_false += human != "bia" and judge == "bia"
         result.confusion[(human, judge)] += 1
     return result

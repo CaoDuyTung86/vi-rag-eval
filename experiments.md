@@ -807,6 +807,34 @@ thì làm judge v4 — nhưng chỉ đo trên một bộ xác nhận MỚI.
 
 ---
 
+## 2026-09-15 — Bảng live Java sau khi port Bù BM25
+
+**Vì sao.** Bù BM25 đã port sang `HybridRetriever.fuse` (WebProject `4204242`), test offline xanh, 10
+dòng BM25 vẫn trùng. Nhưng 20 dòng live chưa đối chiếu lại. Tuần 10 so model local với Gemini trên
+đường truy hồi của VigoTrip — nếu Java lệch Python mà không ai biết, phần lệch sẽ bị tính nhầm cho
+model.
+
+**Giả thuyết** (viết trước khi chạy).
+
+- Cả 20 dòng Vector / Vector + lọc lang / Hybrid / Hybrid + lọc lang, theo từng ngôn ngữ lẫn gộp,
+  trùng từng chữ số ở cả 6 cột giữa `RAG_EVAL_LIVE=1` bên Java và `python -m eval.harness --live`.
+- Hybrid + lọc lang trùng Vector + lọc lang trên bộ vàng: với 132 câu, Vector gần như luôn trả đủ
+  top-k trên ngưỡng 0.55 nên BM25 không có chỗ để lấp.
+- Python chạy từ cache, 0 lời gọi API.
+
+**Kết quả (15/09) — chưa đối chiếu được.**
+
+- Python: 0 lời gọi API, 0 lần 429. Hybrid + lọc lang trùng Vector + lọc lang ở cả 5 dòng (gộp: P@1
+  95.5%, R@3 99.2%, MRR 0.975), Hybrid trùng Vector ở cả 5 dòng không lọc — **đúng** giả thuyết 2 và 3.
+- Java: **hỏng**. Lô embedding đầu dính 429 cả 4 lần thử (30 s, 60 s, 90 s). Không phải giới hạn theo
+  phút như lần 14/09, mà hết hạn mức ngày: `EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`,
+  1000 lượt. Bảng live Java không in dòng nào — giả thuyết 1 chưa kiểm được.
+
+Việc còn lại: chạy lại `RAG_EVAL_LIVE=1` bên WebProject sau khi hạn mức ngày hồi (Google tính theo
+giờ Thái Bình Dương). Không gọi thêm lượt nào tới lúc đó.
+
+---
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn

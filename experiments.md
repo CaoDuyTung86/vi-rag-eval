@@ -850,6 +850,143 @@ từ cache; chỉ khi đổi knowledge base hoặc bộ câu hỏi mới cần g
 
 ---
 
+## 2026-09-15 — Embedding tự host: `bge-m3` so với `gemini-embedding-001`
+
+**Vì sao.** Hạn mức embedding Gemini hết ngày 15/09 (1000/1000 lượt), và mọi lần đổi knowledge base
+đều phải gọi lại. Tuần 7 còn treo Contextual Retrieval — nó nhúng lại cả 224 chunk mỗi lần thử. Cần
+biết một model nhúng chạy trên RTX 4060 kém Gemini bao nhiêu trên chính các bộ câu này, trước khi dùng
+nó cho bất kỳ thí nghiệm nào.
+
+Đây là thí nghiệm mới, KHÔNG phải chạy lại: đổi model là đổi toàn bộ vector, nên số của `bge-m3` chỉ so
+được với bảng Gemini chạy cùng ngày trên cùng dữ liệu, không thay được bảng nào ở trên.
+
+**Cách đo.**
+
+- Model: `bge-m3` qua Ollama 0.34.0 (bản F16, khoảng 568 triệu tham số, 1024 chiều cố định, 664 MB
+  VRAM). Gọi qua endpoint tương thích OpenAI, không sửa `rag/embed.py`:
+  `EMBEDDING_BASE_URL=http://127.0.0.1:11434/v1`, `EMBEDDING_MODEL=bge-m3`, `EMBEDDING_DIMENSIONS=0`
+  (không gửi `dimensions`), `EMBEDDING_MIN_INTERVAL_S=0`, key giả. Khoá cache có tên model, nên vector
+  hai model không đè nhau.
+- Giữ nguyên: 4 file `data/kb/faq-*.yml`, văn bản đem nhúng `title. content` (dài 37–470 ký tự, không
+  chunk nào bị cắt), BM25, Bù BM25, 10 ứng viên mỗi nhánh, top-5.
+- Gemini: chạy lại từ cache cùng ngày, 0 lời gọi API, để hai bảng đặt cạnh nhau.
+- Bộ câu: `golden.yml` (132, 4 ngôn ngữ) để so; `holdout.yml` (104 vi: 55 Claude viết, 49 người thật
+  gõ) và `holdout_codes.yml` (32 vi) chạy **một lần** để xác nhận.
+- Đọc bảng ở đường production (Hybrid + lọc lang) và Vector + lọc lang.
+- **Ngưỡng cosine.** 0.55 được chọn cho Gemini bên Java; `bge-m3` có thang cosine khác. Bảng chính giữ
+  0.55 để chỉ đổi một biến là model. Chạy thêm một lượt `--min-similarity 0` cho CẢ HAI model, để tách
+  "xếp hạng kém" khỏi "ngưỡng không hợp". Không chọn ngưỡng mới cho `bge-m3` trong mục này. Nếu cần
+  chọn thì mở mục riêng, chọn trên golden.
+- Độ trễ: nhúng từng câu hỏi một (như lượt chat thật), GPU đã nạp model, lấy p50/p95 trên 132 câu
+  golden. Gemini hết hạn mức nên chưa có độ trễ để so. Ghi riêng số của `bge-m3`.
+- Tách câu vi theo dấu: "không dấu" là câu mà bỏ dấu xong vẫn y nguyên.
+
+Thứ duy nhất đã thấy trước khi viết mục này là lần thử máy chạy: hai câu tự đặt, không thuộc bộ nào,
+cosine 0.911, lần gọi nóng 74–106 ms cho cả cặp.
+
+**Giả thuyết** (viết trước khi chạy).
+
+1. **Golden.** `bge-m3` kém Gemini nhưng không nhiều: P@1 gộp của Hybrid + lọc lang ≥ 123/132, tức
+   kém Gemini (126) không quá 3 câu. R@3 gộp ≥ 97%.
+2. **Câu người thật gõ và câu không dấu.** Khoảng cách lớn hơn golden: trên holdout vi, `bge-m3` kém
+   Gemini (88/104) từ 4 câu P@1 trở lên. Phần lớn chênh lệch nằm ở câu không dấu: tính theo tỉ lệ,
+   khoảng cách ở câu không dấu lớn hơn ở câu có dấu. Lý do: tokenizer của `bge-m3` thấy "huy ve" và
+   "hủy vé" là hai chuỗi token khác hẳn, còn Gemini được train trên nhiều văn bản web tiếng Việt gõ
+   không dấu hơn.
+3. **Ngưỡng.** Cosine của `bge-m3` dồn lên cao hơn Gemini, nên 0.55 gần như không chặn gì. Với
+   `bge-m3`, bảng 0.55 và bảng 0 chênh không quá 1 câu P@1 trên mỗi bộ. Với Gemini thì có thể chênh
+   nhiều hơn: ở bộ có mã, Bù BM25 đã lấp đúng chỗ ngưỡng chặn.
+4. **Độ trễ.** Nhúng một câu hỏi trên RTX 4060: p50 ≤ 50 ms, p95 ≤ 150 ms. Nhúng cả 224 chunk dưới
+   30 giây.
+
+**Tiêu chí dùng** (chốt trước khi chạy):
+
+- **Dùng được cho thí nghiệm offline** (Contextual Retrieval, đổi chunk, lúc hết hạn mức) nếu P@1 gộp
+  golden ≥ Gemini − 3 câu VÀ holdout vi ≥ Gemini − 5/104. Kết luận của thí nghiệm nào dùng `bge-m3` vẫn
+  phải kiểm lại một lần trên Gemini trước khi port sang VigoTrip.
+- **Chưa đạt** thì chỉ dùng để thử máy và đo độ trễ, không dùng để chọn cấu hình.
+- **Không** thay Gemini trong VigoTrip ở mục này, kể cả khi `bge-m3` thắng. Đổi production kéo theo
+  chạy Ollama trên máy chủ, nhúng lại toàn bộ KB và có một ngưỡng mới, nên là quyết định riêng. Nếu
+  `bge-m3` hơn Gemini từ 3 câu ở cả golden lẫn holdout thì ghi lại làm ứng viên.
+
+**Thay đổi.** `scripts/embed_compare.py` in bảng hai ngưỡng × ba bộ × tách dấu, và đo độ trễ khi có
+cờ `--latency`. Không đổi gì trong `rag/`.
+
+Một lỗi bắt được trước khi đọc số: lượt Gemini đầu tiên dựng client không có key nên `available`
+bằng False. `HybridRetriever` lặng lẽ bỏ nhánh Vector, và cột "Hybrid" in ra đúng số BM25 (golden
+76.5%). Đã sửa bằng client chỉ đọc cache, thêm chốt "Vector trả rỗng mọi câu thì báo hỏng". Số bên
+dưới là của lượt sau khi sửa.
+
+**Kết quả** (15/09; Gemini 0 lời gọi API; `bge-m3` 17 lời gọi Ollama, 0 lỗi; + lọc lang).
+
+P@1 theo ngưỡng. "Hybrid" là Bù BM25, đường production:
+
+| Bộ | Gemini Hybrid 0.55 | bge-m3 Hybrid 0.55 | bge-m3 Vector 0.55 | bge-m3 Vector 0 |
+|---|---|---|---|---|
+| golden gộp (132) | 95.5% (126) · R@3 99.2% | **92.4% (122)** · R@3 99.2% | 83.3% (110) | 85.6% (113) |
+| golden vi (59) | 94.9% (56) | 88.1% (52) | 67.8% (40) | 72.9% (43) |
+| holdout vi (104) | 84.6% (88) · R@3 97.1% | **67.3% (70)** · R@3 89.4% | 56.7% (59) | 68.3% (71) |
+| holdout_codes vi (32) | 90.6% (29) | 65.6% (21) | 37.5% (12) | 59.4% (19) |
+
+Gemini ở ngưỡng 0 trùng ngưỡng 0.55 trên golden và holdout, bộ có mã chỉ lệch 1 câu (Vector 28 → 29).
+Với Gemini, Hybrid và Vector trùng nhau ở ngưỡng 0.
+
+Tách câu vi theo dấu, P@1 (R@3), đường production (Hybrid 0.55):
+
+| Bộ | Gemini có dấu | bge-m3 có dấu | Gemini không dấu | bge-m3 không dấu |
+|---|---|---|---|---|
+| golden | 97.9% (46/47) | 89.4% (42/47) | 83.3% (10/12) | 83.3% (10/12) |
+| holdout | 84.7% (72/85) | 74.1% (63/85) | 84.2% (16/19) | 36.8% (7/19) |
+| holdout_codes | 90.5% (19/21) | 71.4% (15/21) | 90.9% (10/11) | 54.5% (6/11) |
+
+Cosine hạng 1 của 195 câu vi (gộp ba bộ, so với chunk vi):
+
+| Model | Có dấu: trung vị (min–max) | ≥ 0.55 | Không dấu: trung vị (min–max) | ≥ 0.55 |
+|---|---|---|---|---|
+| Gemini | 0.779 (0.606–0.897) | 153/153 | 0.711 (0.523–0.869) | 41/42 |
+| bge-m3 | 0.659 (0.377–0.810) | 133/153 | 0.382 (0.306–0.525) | **0/42** |
+
+Độ trễ `bge-m3` trên RTX 4060 (GPU đã nạp, 664 MB VRAM): nhúng từng câu hỏi p50 45 ms, p95 53 ms,
+max 165 ms (132 câu); 224 chunk theo lô 32 mất 3.5 s.
+
+**Đối chiếu giả thuyết.**
+
+1. Golden kém Gemini không quá 3 câu — **sai**: kém 4 (122 so với 126). R@3 gộp ≥ 97% — **đúng**,
+   99.2%.
+2. Holdout kém từ 4 câu trở lên — **đúng**, và nặng hơn nhiều: kém 18 câu. Khoảng cách ở câu không dấu
+   lớn hơn câu có dấu — **đúng**: holdout có dấu kém 10.6 điểm, không dấu kém 47.4 điểm. Nhưng câu có
+   dấu cũng kém thật, ở cả ba bộ (8.5–19.1 điểm), không chỉ vì chuyện dấu.
+3. Cosine của `bge-m3` dồn lên cao nên 0.55 gần như không chặn gì — **sai, và ngược chiều**. Cosine của
+   `bge-m3` THẤP hơn Gemini. Ngưỡng 0.55 chặn sạch 42/42 câu không dấu và 20/153 câu có dấu. Bảng 0.55
+   và bảng 0 chênh tới 9 câu Hybrid ở golden, 1 ở holdout, 2 ở bộ có mã.
+4. p50 ≤ 50 ms, p95 ≤ 150 ms, 224 chunk dưới 30 s — **đúng**: 45 ms, 53 ms, 3.5 s.
+
+**Chuyện gì xảy ra với câu không dấu.** Ở ngưỡng 0.55, nhánh Vector của `bge-m3` trả rỗng mọi câu
+không dấu. Bù BM25 lùi hẳn về BM25, nên cột "bge-m3 không dấu" chính là số BM25 (holdout 36.8%, trùng
+BM25 của Gemini). Hạ ngưỡng về 0 cũng không cứu được: Vector không dấu còn 1/12 golden, 7/19 holdout,
+1/11 bộ có mã. Tức là `bge-m3` thật sự không hiểu tiếng Việt gõ không dấu, chứ không chỉ do ngưỡng
+chọn sai. Trên golden, ngưỡng 0.55 còn giúp: nó đẩy câu không dấu sang BM25, tốt hơn để Vector xếp
+bừa. Đó là lý do Hybrid 0.55 (122) hơn Hybrid 0 (113).
+
+**Kết luận.** **Chưa đạt** cả hai tiêu chí dùng: golden kém 4 câu (ngưỡng 3), holdout kém 18/104
+(ngưỡng 5). Theo tiêu chí đã chốt, `bge-m3` chỉ dùng để thử máy và đo độ trễ, KHÔNG dùng để chọn cấu
+hình, kể cả cho thí nghiệm offline như Contextual Retrieval.
+
+Khách VigoTrip gõ không dấu khá nhiều: 19/104 câu holdout, và phần người thật gõ là nguồn chính. Một
+model nhúng không hiểu tiếng Việt không dấu thì không thay được Gemini, dù nhanh và miễn phí.
+
+Không chọn ngưỡng mới cho `bge-m3`, đúng như đã chốt. Bảng ngưỡng 0 cho thấy chỉnh ngưỡng không cứu
+được câu không dấu.
+
+Đổi ý nếu:
+
+- Một model nhúng local khác (ví dụ `multilingual-e5-large`, hoặc model mới hơn có tiếng Việt) qua cả
+  hai tiêu chí trên cùng bảng này. Chạy lại bằng `scripts/embed_compare.py`, mục riêng.
+- Hoặc thêm bước khôi phục dấu cho câu hỏi trước khi nhúng. Đó là một biến mới, cần mục riêng, chọn
+  trên golden.
+
+---
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn

@@ -127,8 +127,8 @@
   latency_ms: 2189
   completion_tokens: 69
   tokens_per_s: 31.5
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: co_can_cu
+  ghi_chu: Các ý cụ thể đều có trong pets-bus; nhắc kiểm tra hãng là lời khuyên chung
   nhan_judge: bia
   ly_do_judge: Có ý 'Bạn vui lòng kiểm tra quy định cụ thể của từng hãng vận chuyển trước khi đặt vé nhé'
     không có căn cứ trong tài liệu.
@@ -223,8 +223,9 @@
   latency_ms: 1718
   completion_tokens: 51
   tokens_per_s: 29.7
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: bia
+  ghi_chu: Bịa trẻ 2 đến dưới 5 tuổi miễn vé; tài liệu quy định 2-12 tuổi 75% vé, dưới 2 tuổi mới miễn
+    vé
   nhan_judge: bia
   ly_do_judge: Ý 'trẻ em từ 2 đến dưới 5 tuổi được miễn vé và ngồi cùng người lớn đi kèm, không có ghế
     riêng' không có căn cứ trong tài liệu.
@@ -246,8 +247,9 @@
   latency_ms: 1527
   completion_tokens: 44
   tokens_per_s: 28.8
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: bia
+  ghi_chu: Tài liệu nói nên đăng ký (không có thì khó khăn hơn), bot khẳng định bắt buộc phải đăng ký
+    trước
   nhan_judge: bia
   ly_do_judge: Ý "Bạn vẫn có thể đặt vé mà chưa cần đăng ký tài khoản" không có căn cứ trong tài liệu
   rubric: v3
@@ -269,8 +271,8 @@
   latency_ms: 2075
   completion_tokens: 65
   tokens_per_s: 31.3
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: co_can_cu
+  ghi_chu: Có căn cứ trong support-review; câu cuối là câu hỏi lại khách
   nhan_judge: bia
   ly_do_judge: Ý 3 không có căn cứ trong tài liệu.
   rubric: v3
@@ -361,8 +363,8 @@
   latency_ms: 1960
   completion_tokens: 60
   tokens_per_s: 30.6
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: co_can_cu
+  ghi_chu: Có căn cứ trong seat-selection; phần còn lại là từ chối và nhắc lại câu hỏi
   nhan_judge: bia
   ly_do_judge: Ý 'hiện mình chưa có thông tin cụ thể về sơ đồ chỗ ngồi của chuyến đi bạn quan tâm' không
     có căn cứ trong tài liệu.
@@ -453,8 +455,8 @@
   latency_ms: 2366
   completion_tokens: 75
   tokens_per_s: 31.7
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: tu_choi_dung
+  ghi_chu: Hỏi địa chỉ bến xe ngoài KB, bot từ chối vì chưa có thông tin
   nhan_judge: bia
   ly_do_judge: Ý 'Kiểm tra lại trong phần Lịch sử đặt vé hoặc email xác nhận để biết nơi đón trả khách'
     không có căn cứ trong tài liệu.
@@ -567,8 +569,8 @@
   latency_ms: 2060
   completion_tokens: 62
   tokens_per_s: 30.1
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: tu_choi_dung
+  ghi_chu: Hỏi thiếu ngữ cảnh ngày đi/chuyến đi, bot từ chối vì chưa có thông tin
   nhan_judge: bia
   ly_do_judge: Chatbot đề nghị khách truy cập trang chi tiết chuyến, nhưng tài liệu không có thông tin
     này.
@@ -590,8 +592,8 @@
   latency_ms: 2119
   completion_tokens: 65
   tokens_per_s: 30.7
-  nhan_tay: ''
-  ghi_chu: ''
+  nhan_tay: tu_choi_dung
+  ghi_chu: Hỏi xóa dữ liệu ngoài phạm vi, bot từ chối vì chưa có thông tin
   nhan_judge: bia
   ly_do_judge: Khách nên kiểm tra trạng thái đăng nhập và thử đăng xuất rồi đăng nhập lại
   rubric: v3

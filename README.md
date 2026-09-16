@@ -21,7 +21,8 @@ so được với hệ thống đang chạy thật. Thay đổi nào thắng ở
 | Baseline nhánh Vector / Hybrid | xong, khớp Java — 20 dòng live trùng `RagRetrievalQualityTest` từng chữ số (14/09/2026) |
 | `learn/` — mạng nơ-ron numpy trên MNIST | bài tập nền tảng, không thuộc pipeline |
 | Tầng sinh + judge v3 (tuần 9) | xong; judge chỉ dùng làm bộ lọc, câu nó gắn bịa phải chấm tay |
-| So model ở tầng sinh (tuần 10) | `qwen3.5:9b` Q4 trên RTX 4060 đạt 3/4 tiêu chí — còn chờ chấm tay 8 câu |
+| So model ở tầng sinh (tuần 10) | xong — `qwen3.5:9b` Q4 trên RTX 4060 đạt cả 4 tiêu chí, đủ làm đường lui cho `CHAT` |
+| Tool calling (tuần 10) | xong — qwen ngang Gemini trên 53 ca `tool-eval.yml`; chi tiết ở `experiments.md` 16/09 (b) |
 
 135 test, không test nào gọi mạng.
 
@@ -32,10 +33,30 @@ Cùng 30 câu và cùng chunk của `data/faithfulness.yml`, chỉ đổi model 
 | Model | Bịa (judge) | Bịa (tay) | `tu_choi_thua` | token/giây | p50 | p95 | VRAM |
 |---|---|---|---|---|---|---|---|
 | `gemini-flash-lite-latest` | 3/30 | 1 | 0 | — | 1125 ms | 1663 ms | — |
-| `qwen3.5:9b` Q4_K_M, suy nghĩ tắt | 8/30 | *chờ chấm 8 câu* | 0 | 30.7 | 2150 ms | 3367 ms | 5.5 GB · 100% GPU |
+| `qwen3.5:9b` Q4_K_M, suy nghĩ tắt | 8/30 | **2** | 0 | 30.7 | 2150 ms | 3367 ms | 5.5 GB · 100% GPU |
+
+Cả 4 tiêu chí chốt trước khi chạy đều đạt: bịa 2/30 (ngưỡng ≤ 3), `tu_choi_thua` 0 (≤ 3),
+30.7 token/giây (≥ 15) với p95 3.4 s (≤ 10 s), 5.5 GB VRAM (≤ 7.5 GB). Đủ làm đường lui cho tầng
+`CHAT` khi Gemini hết hạn mức — chưa suy ra được gì cho `ANALYSIS`, và tool calling chưa đo.
+
+Judge v3 gắn bịa 8 câu, chấm tay còn 2: khoảng 3/4 số câu nó gắn là báo nhầm, luôn nhầm theo hướng
+gắn thừa. Đúng cách dùng đã chốt ở tuần 9 — judge làm bộ lọc, không làm thước.
 
 Model local phải chạy với `reasoning_effort: "none"`, nếu không nó tiêu hết `max_tokens` cho phần
 `reasoning` và trả `content` rỗng. Chi tiết ở `experiments.md`, mục 16/09.
+
+### Tuần 10 (b) — gọi tool, đo bằng `ToolSelectionQualityTest` bên WebProject
+
+53 ca `tool-eval.yml`, cùng prompt và `temperature` 0.7 của production, chỉ đổi nhà cung cấp.
+
+| Cấu hình | Khớp bộ | Gọi thừa | Args | Tham số bị cấm |
+|---|---|---|---|---|
+| gemini-flash-lite · gộp | 98.1% | 0/14 | 98.1% | **3** |
+| `qwen3.5:9b` Q4 · gộp | 98.1% | 0/14 | 98.1% | **0** |
+
+Ngang nhau trên cả ba chỉ số, và trong mẻ đo này Gemini bịa mã điểm (`Quy Nhơn` → `QNH`, vốn là
+Quảng Ninh) còn model local thì không. Một mẻ đo ở `temperature` 0.7 chưa nói được về độ ổn định —
+xem ba điều kiện kèm theo ở `experiments.md`.
 
 ## Kết quả nhánh BM25
 

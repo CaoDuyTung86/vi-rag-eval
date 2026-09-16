@@ -1059,24 +1059,26 @@ model mở thì đó là mục riêng.
 | Model | Bịa (judge) | Bịa (xác nhận tay) | tu_choi_thua | co_can_cu | token/giây | p50 (ms) | p95 (ms) | VRAM |
 |---|---|---|---|---|---|---|---|---|
 | gemini-flash-lite-latest | 3/30 | **1** | 0 | 15 | — (cache tuần 9 không ghi usage) | 1125 | 1663 | — |
-| qwen3.5:9b Q4_K_M (suy nghĩ tắt) | 8/30 | *8 câu chờ chấm tay* | 0 | 12 | **30.7** | **2150** | **3367** | **5.5 GB · 100% GPU** |
+| qwen3.5:9b Q4_K_M (suy nghĩ tắt) | 8/30 | **2** | 0 | 15 | **30.7** | **2150** | **3367** | **5.5 GB · 100% GPU** |
 
-Judge gắn bịa 8 câu cho qwen: `g05 g09 g10 g11 g15 u04 u09 u10`. Chưa được đọc con số 8 này là
-tỉ lệ bịa: ở chính bộ này judge gắn bịa 3 câu cho Gemini nhưng chấm tay chỉ còn 1 (`g12`), tức là
-tỉ lệ báo nhầm của nó khoảng 2/3 ở nhóm bị gắn. `g15` bị gắn ở CẢ hai model và tuần 9 đã bác — nó
-là kiểu câu judge hay nhầm.
+Judge gắn bịa 8 câu cho qwen: `g05 g09 g10 g11 g15 u04 u09 u10`. Chấm tay 16/09 giữ lại **2**:
 
-Đọc lướt 8 lý do judge đưa ra thì thấy hai nhóm khác hẳn nhau:
+- `g09` — tài liệu ghi *dưới 2 tuổi miễn phí*, *2–12 tuổi tính 75% và có ghế riêng*. Qwen trả lời
+  "trẻ từ 2 đến dưới 5 tuổi được miễn vé, không có ghế riêng": trộn hai chunk thành một chính sách
+  không tồn tại. Kiểu lỗi đáng sợ nhất — trôi chảy, sai ở con số.
+- `g10` — chunk chỉ nói *nên* đăng ký, không có tài khoản thì tra cứu và hủy vé khó hơn. Qwen đẩy
+  thành hai khẳng định mạnh hơn hẳn tài liệu: đặt vé không cần tài khoản *được*, và muốn nhận mã QR
+  hay hoàn tiền thì *bắt buộc* phải đăng ký. Cùng câu hỏi đó Gemini bám sát chunk và được
+  `co_can_cu`.
 
-- **Câu khuyên chung chung**, kiểu "bạn kiểm tra lại quy định của từng hãng", "xem trong Lịch sử
-  đặt vé" — không có trong chunk thật, nhưng cũng không khẳng định chính sách nào. 7/8 câu thuộc
-  nhóm này.
-- **Bịa thật**: `g09`. Tài liệu ghi *dưới 2 tuổi miễn phí*, *2–12 tuổi tính 75% và có ghế riêng*.
-  Qwen trả lời "trẻ từ 2 đến dưới 5 tuổi được miễn vé, không có ghế riêng" — trộn hai chunk thành
-  một chính sách không tồn tại. Đây đúng là kiểu lỗi đáng sợ nhất: nghe rất trôi chảy, sai ở con số.
+Sáu câu còn lại là judge báo nhầm, chia làm hai kiểu: `g05 g11 g15` — các ý cụ thể đều có trong
+chunk, phần judge chỉ trích là lời khuyên chung hoặc câu hỏi lại khách; `u04 u09 u10` — khách hỏi
+ngoài phạm vi và bot từ chối đúng, tức `tu_choi_dung` chứ không phải bịa.
 
-Nhận xét trên là đọc lướt, KHÔNG phải nhãn. Nhãn phải do người chấm — `gen_compare.py cham
---model qwen3.5:9b` in từng câu kèm đúng chunk nó đọc.
+**Tỉ lệ báo nhầm của judge v3 giờ đo được trên hai model:** Gemini 3 gắn → 1 thật, qwen 8 gắn →
+2 thật. Tức khoảng **3/4 số câu nó gắn bịa là báo nhầm**, và nhầm theo đúng một hướng (thà gắn thừa
+còn hơn bỏ sót). Đúng cách dùng đã chốt ở tuần 9: **judge làm bộ lọc, không làm thước**. `g15` bị
+gắn ở CẢ hai model và cả hai lần chấm tay đều bác.
 
 Hai tiêu chí về máy đã có đáp án, và cả hai đều **đạt**:
 
@@ -1087,14 +1089,142 @@ Hai tiêu chí về máy đã có đáp án, và cả hai đều **đạt**:
   phải model. Đọc số của `ollama ps` chứ đừng đọc `nvidia-smi` cho tiêu chí này.
 
 Tiêu chí 2 (`tu_choi_thua`) cũng đã có: **0 câu**, bằng Gemini — giả thuyết ban đầu đoán model nhỏ
-sẽ hay trả lời lảng, và nó **sai**. Qwen từ chối 10 câu, đúng nhóm câu ngoài phạm vi.
+sẽ hay trả lời lảng, và nó **sai**. Qwen từ chối 13 câu, tất cả đều đúng nhóm ngoài phạm vi.
 
-Tiêu chí 1 (bịa) còn chờ chấm tay 8 câu. Ngưỡng đã chốt trước khi chạy: không nhiều hơn Gemini quá
-2 câu, tức **≤ 3/30 sau khi xác nhận tay** thì đạt.
+Tiêu chí 1 (bịa): **2/30**, ngưỡng đã chốt trước khi chạy là ≤ 3/30. Đạt.
 
-**Kết luận.** *(chưa có — chờ tiêu chí 1)* Ba trong bốn tiêu chí đã đạt. Nếu chấm tay ra ≤ 3 câu
-bịa thì `qwen3.5:9b` Q4 đủ làm đường lui cho tầng `CHAT` khi Gemini hết hạn mức, và bước tiếp là
-cắm vào VigoTrip qua `OpenAiCompatibleProvider` rồi chạy `tool-eval.yml`.
+**Kết luận. Cả 4 tiêu chí đều đạt.**
+
+| Tiêu chí | Ngưỡng chốt trước | Đo được | |
+|---|---|---|---|
+| 1 · bịa (xác nhận tay) | ≤ 3/30 | 2/30 | đạt |
+| 2 · `tu_choi_thua` | ≤ 3 | 0 | đạt |
+| 3 · đủ nhanh cho `CHAT` | ≥ 15 tok/s, p95 ≤ 10 s | 30.7 tok/s, p95 3.4 s | đạt |
+| 4 · chạy trọn GPU | VRAM ≤ 7.5 GB | 5.5 GB, 100% GPU | đạt |
+
+Nói gọn một câu: **`qwen3.5:9b` Q4_K_M chạy trên RTX 4060 8 GB bịa 2/30 câu so với 1/30 của Gemini
+Flash-Lite, chạy 30.7 token/giây với p95 3.4 giây, tốn 5.5 GB VRAM — đủ tốt để làm đường lui cho
+tầng `CHAT` khi Gemini hết hạn mức.**
+
+Ba điều kiện kèm theo, phải ghi cùng kết luận:
+
+1. **Chỉ đúng cho tầng `CHAT` với RAG.** Việc ở đây là đọc 4 chunk rồi tóm lại. Không suy ra được
+   gì cho `ANALYSIS` (ngữ cảnh dài) hay cho câu hỏi cần kiến thức ngoài tài liệu.
+2. **Chưa đo tool calling.** `CHAT` của VigoTrip còn phải gọi đúng tool. Model có `capabilities:
+   tools` nhưng có gọi đúng hay không thì `tool-eval.yml` mới trả lời. Chưa chạy.
+3. **Suy nghĩ đang tắt.** Số trên là của `reasoning_effort: "none"`. Bật suy nghĩ có thể bớt bịa
+   nhưng đổi lại độ trễ — thí nghiệm riêng, chưa làm.
+
+Hai chỗ nó thua đều là cùng một kiểu, và đáng ghi lại: `g09` và `g10` không phải bịa ra thông tin
+từ hư không, mà là **nói mạnh hơn tài liệu** — biến "nên" thành "bắt buộc", trộn ngưỡng tuổi của
+hai chunk thành một. Đây là chỗ prompt có thể chữa được (thêm ràng buộc "không suy rộng quá tài
+liệu, giữ nguyên mức độ chắc chắn của câu gốc"), và nếu làm thì là thí nghiệm có mục riêng.
+
+
+## 2026-09-16 (b) — Model local có gọi đúng tool không (tuần 10, phần cuối)
+
+**Vì sao.** Kết luận buổi sáng chỉ nói về tầng sinh: qwen3.5:9b đọc 4 chunk rồi tóm lại tốt gần
+bằng Gemini. Nhưng tầng `CHAT` của VigoTrip không chỉ tóm tài liệu — nó còn phải chọn đúng tool và
+điền đúng tham số. Chưa đo cái đó thì chưa được nói "dùng làm đường lui cho `CHAT`".
+
+**Chặn kỹ thuật phải gỡ trước.** Trang lộ trình ghi cắm model local vào VigoTrip "chỉ là sửa
+`application.yml`". Sai với model biết suy nghĩ: `OpenAiCompatibleProvider` dựng thân request cứng
+(`model`, `messages`, `max_tokens`, `temperature`, `tools`), không có đường đẩy `reasoning_effort`
+từ YAML xuống, nên cắm thẳng vào thì VigoTrip nhận `content` rỗng. Thử lối vòng không đụng code —
+`ollama create` với `PARAMETER think false` — Ollama trả `unknown parameter 'think'`.
+
+Nên thêm `extra-body` vào `LlmProperties.Provider`, đổ vào thân request TRƯỚC các trường cố định
+(một khoá gõ nhầm trong YAML không đè được `model` hay `messages`). Ba chỗ sửa bên WebProject:
+`LlmProperties.java`, `OpenAiCompatibleProvider.java`, `application.yml` (thêm nhà cung cấp
+`ollama` đứng CUỐI chuỗi `chat`, `api-key` để trống nên mặc định bị loại lúc khởi động — không
+đặt `OLLAMA_API_KEY` thì hệ thống chạy y như trước).
+
+**Giả thuyết.** Chọn đúng tool là việc khó hơn tóm tài liệu: model phải đọc mô tả nhiều tool, so
+với câu hỏi, rồi quyết định. Đoán qwen3.5:9b tụt nhiều hơn ở đây so với mức tụt ở tầng sinh
+(2/30 so với 1/30), và tụt mạnh nhất ở **14 ca không được gọi tool** — model nhỏ hay "sốt sắng",
+thấy có tool là gọi.
+
+**Thay đổi.** Đúng một biến: nhà cung cấp. Cùng 53 ca `tool-eval.yml`, cùng prompt hệ thống lấy
+từ `ChatService.toolUsageGuide`, cùng `temperature` 0.7 của production. Model local chạy với
+`extra-body: {reasoning_effort: none}` — đúng cấu hình đã đo ở mục trước.
+
+**Tiêu chí dùng** — chốt TRƯỚC khi nhìn số:
+
+1. **Khớp bộ** (gọi đúng TẬP tool, không thiếu không thừa) không kém Gemini quá **10 điểm phần trăm**.
+2. **Gọi thừa** trên 14 ca không được gọi tool: không nhiều hơn Gemini quá **2 ca**.
+3. **Args** (tham số khớp) không kém Gemini quá **10 điểm phần trăm**.
+
+Qua cả 3 thì kết luận buổi sáng đứng vững, bỏ được cảnh báo "tool calling chưa đo". Trượt tiêu chí
+2 là nặng nhất: gọi tool khi không nên là đường prompt injection đi vào.
+
+**Hai cái bẫy vận hành gặp trước khi có số** — cùng một kiểu, khác nhà cung cấp:
+
+1. **Throttle nhanh hơn hạn mức không phải là chạy nhanh hơn.** Bộ đo để
+   `MIN_INTERVAL_MS = 1_500` (40 lượt/phút) trong khi Flash-Lite free tier cho 15 lượt/phút.
+   Gần như lượt nào cũng ăn 429, mỗi lần lại nằm chờ `RETRY_AFTER_429_MS` = 20 giây: chạy gần
+   một tiếng vẫn chưa xong nhà cung cấp đầu. Đổi về 4.000 ms (đúng nhịp 15 lượt/phút) thì cả 53
+   ca xong trong khoảng 7 phút và chỉ dính 429 **một lần**.
+2. **Groq đã cạn token ngày** (`TPD: Limit 200000, Used 198752`). Mỗi ca ăn trọn 20+40+60 giây
+   backoff rồi vẫn hỏng, mà Ollama đứng SAU Groq trong hàng nên không bao giờ tới lượt. Bỏ Groq
+   khỏi chuỗi đo — mất mát bằng không, vì nó dùng đúng model mà judge dùng nên tuần 9 đã xếp nó
+   là dòng tham khảo.
+
+**Kết quả** (16/09, `temperature` 0.7 của production, 53 ca, Gemini 105 lời gọi / Ollama 96).
+
+| Cấu hình | Câu | Khớp bộ | F1 vi mô | macroF1 | Gọi thừa | Bỏ tra | Args |
+|---|---|---|---|---|---|---|---|
+| gemini · vi | 29 | 96.6% | 0.978 | 0.958 | 0/9 | 3.4% | 96.9% |
+| gemini · en | 12 | 100% | 1.000 | 1.000 | 0/3 | 0.0% | 100% |
+| **gemini · gộp** | **53** | **98.1%** | **0.988** | **0.975** | **0/14** | **1.9%** | **98.1%** |
+| ollama · vi | 29 | **100%** | 1.000 | 1.000 | 0/9 | 0.0% | 96.9% |
+| ollama · en | 12 | 91.7% | 0.889 | 0.917 | 0/3 | 8.3% | 100% |
+| **ollama · gộp** | **53** | **98.1%** | **0.976** | **0.981** | **0/14** | **1.9%** | **98.1%** |
+
+Đối chiếu ba tiêu chí đã chốt: **đạt cả ba, và không phải đạt sát nút mà là ngang bằng.**
+
+| Tiêu chí | Ngưỡng | Đo được | |
+|---|---|---|---|
+| 1 · Khớp bộ | kém Gemini ≤ 10 điểm | 98.1% so với 98.1% — bằng nhau | đạt |
+| 2 · Gọi thừa | nhiều hơn Gemini ≤ 2 ca | 0/14 so với 0/14 | đạt |
+| 3 · Args | kém Gemini ≤ 10 điểm | 98.1% so với 98.1% | đạt |
+
+**Giả thuyết sai, và sai ở chỗ đáng chú ý.** Đoán qwen sẽ tụt mạnh nhất ở 14 ca không được gọi
+tool vì "model nhỏ hay sốt sắng". Thực tế **cả hai đều 0/14**, không model nào gọi thừa một lần.
+Đây là lần thứ hai trong tuần 10 giả thuyết "model nhỏ sẽ hỏng ở chỗ X" bị số đo bác — lần đầu là
+`tu_choi_thua` ở tầng sinh.
+
+**Hai model sai ở hai chỗ khác hẳn nhau, và đây mới là phần đáng đọc:**
+
+- **Gemini bịa mã điểm.** Ca `"tìm vé đi Quy Nhơn"`: Quy Nhơn không có trong bảng quy đổi, Gemini
+  truyền `destination = QNH` — mã của **Quảng Ninh**, cách đó hơn 800 km. Ba lần liên tiếp. Đây
+  là trường `forbid` trong `tool-eval.yml`, và nó làm **bộ đo FAIL**: ngưỡng tham số bị cấm là 0,
+  đo được 3. Kiểu lỗi tệ nhất trong tool calling — gọi đúng tool, tra sai chỗ, không ném ra ngoại
+  lệ nào, nên không có log lỗi nào để mà phát hiện.
+- **qwen không bịa tham số nào.** 0 lần truyền tham số bị cấm. Hai ca nó trượt đều là kiểu "thiếu"
+  chứ không phải "sai": để trống `departureDate` khi khách nói "tối nay", và bỏ hẳn chuỗi hai bước
+  ở bản tiếng Anh (`"my next trip is coming up, what will the weather be like there"` — phải đọc
+  đơn hàng xong mới biết hỏi thời tiết ở đâu).
+
+**Kết luận. Đạt cả ba tiêu chí.** Nói gọn: **`qwen3.5:9b` Q4 chọn tool ngang Gemini Flash-Lite
+trên bộ 53 ca — cùng 98.1% khớp bộ, cùng 0/14 gọi thừa, cùng 98.1% tham số đúng — và trong mẻ đo
+này nó KHÔNG bịa tham số, còn Gemini bịa 3 lần.** Cảnh báo "tool calling chưa đo" của kết luận
+buổi sáng được gỡ.
+
+Ba điều kiện kèm theo:
+
+1. **Một mẻ đo không phải một kết luận về độ ổn định.** `temperature` giữ 0.7 của production nên
+   kết quả không tất định. Mẻ chạy dở trước đó Gemini đạt F1 1.000 trên cả 8 tool, không có ca
+   Quy Nhơn nào sai. Muốn nói "Gemini hay bịa mã điểm" thì phải chạy lại nhiều lần — đó là mục
+   riêng. Ở đây chỉ được nói: lỗi ĐÓ CÓ THẬT và bộ đo bắt được.
+2. **Prompt không phải bản đầy đủ.** Bộ đo không nhét tri thức RAG và danh sách voucher cá nhân
+   hoá (chúng phụ thuộc nội dung cơ sở dữ liệu). Hai thứ đó đẩy theo chiều dễ đoán: có sẵn tri
+   thức thì model gọi tool ÍT hơn, nên "gọi thừa" ở đây là chặn trên.
+3. **Vẫn chỉ nói về `CHAT`.** `ANALYSIS` (ngữ cảnh dài) chưa đo, và kết luận này không suy ra
+   được cho nó.
+
+**Điều đáng giá nhất của mục này không phải điểm của qwen, mà là ca Quy Nhơn.** Bộ đo được dựng
+để chấm model local, và thứ nó bắt được lại là một lỗi của model đang chạy production. Cây thước
+chỉ có ích khi nó đo được cả cái mình không định đo.
 
 ---
 

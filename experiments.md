@@ -1210,6 +1210,11 @@ trên bộ 53 ca — cùng 98.1% khớp bộ, cùng 0/14 gọi thừa, cùng 98.
 này nó KHÔNG bịa tham số, còn Gemini bịa 3 lần.** Cảnh báo "tool calling chưa đo" của kết luận
 buổi sáng được gỡ.
 
+> **Đính chính 16/09, sau mục (d).** Vế cuối — "qwen không bịa, Gemini bịa" — **không đứng vững**.
+> Mẻ thứ ba cho kết quả ngược: qwen truyền `QNH`, Gemini thì không. Điều còn đúng là **cả hai đều
+> mắc**, và một mẻ ở `temperature` 0.7 không xếp hạng được hai model sát nhau đến thế. Xem mục (d).
+> Ba con số 98.1% cũng chỉ là của mẻ hôm đó, không phải hằng số.
+
 Ba điều kiện kèm theo:
 
 1. **Một mẻ đo không phải một kết luận về độ ổn định.** `temperature` giữ 0.7 của production nên
@@ -1225,6 +1230,231 @@ Ba điều kiện kèm theo:
 **Điều đáng giá nhất của mục này không phải điểm của qwen, mà là ca Quy Nhơn.** Bộ đo được dựng
 để chấm model local, và thứ nó bắt được lại là một lỗi của model đang chạy production. Cây thước
 chỉ có ích khi nó đo được cả cái mình không định đo.
+
+
+## 2026-09-16 (c) — Gemini bịa mã điểm có tái lập không (thăm dò ca Quy Nhơn)
+
+**Vì sao.** Mục 16/09 (b) chạy `tool-eval` một mẻ và bắt được Gemini truyền
+`search_trips.destination = QNH` cho câu `"tìm vé đi Quy Nhơn"`. QNH là mã **Quảng Ninh**, cách
+Quy Nhơn hơn 800 km. Nếu lỗi này tái lập được thì nó KHÔNG phải chuyện của model local — nó là lỗi
+đang chạy trên production của VigoTrip, và nghiêm trọng hơn mọi con số khác của tuần 10: gọi đúng
+tool, tra sai tỉnh, **không ném ra ngoại lệ nào** nên không có log lỗi nào để phát hiện. Khách hỏi
+vé đi Quy Nhơn, hệ thống tra Quảng Ninh, bot trả lời rất tự tin.
+
+Một mẻ ở `temperature` 0.7 không kết luận được gì: mẻ chạy dở ngay trước đó Gemini đạt F1 1.000
+trên cả 8 tool và không sai ca này. Nên phải hỏi đúng câu: **tái lập được không, và ở nhiệt độ nào.**
+
+**Giả thuyết.** Quy Nhơn không có trong bảng mã điểm nhồi vào prompt. Khi thiếu mã đúng, model
+chọn thứ *trông giống nhất* thay vì nói chưa hỗ trợ — và "QNH" giống "Quy Nhơn" ở ba chữ cái đầu.
+Nếu đúng vậy thì đây là xu hướng có hệ thống chứ không phải rủi ro sampling, nên **sẽ tái lập cả ở
+`temperature` 0**.
+
+Đoán thêm: qwen3.5:9b tránh được không phải vì giỏi hơn, mà vì nó thiên về *bỏ trống tham số* —
+đúng kiểu lỗi "thiếu chứ không sai" đã thấy ở mục (b).
+
+**Thay đổi.** Không sửa gì trong sản phẩm. Thêm một test thăm dò tách riêng trong
+`ToolSelectionQualityTest` (bật bằng `TOOL_EVAL_PROBE`), chạy ĐÚNG một ca lặp nhiều lần và in ra
+giá trị tham số của từng lần. Tách khỏi test chính vì nó không có ngưỡng và không nên làm bẩn bảng
+điểm.
+
+**Cách đo.** 12 lần mỗi nhiệt độ, `temperature` 0.7 (bản production) và 0.0, trên Gemini và trên
+`qwen3.5:9b`. Gemini tốn khoảng 48 lượt; qwen miễn phí.
+
+**Đọc kết quả thế nào** — chốt TRƯỚC khi chạy, để không nhìn số rồi mới nới:
+
+- **≥ 3/12 ở `temperature` 0.7** → lỗi tái lập được. Mở một mục riêng để sửa bằng prompt (thêm
+  ràng buộc: không có mã trong bảng thì nói chưa hỗ trợ, tuyệt đối không suy ra mã gần giống), rồi
+  đo lại bằng chính bộ này.
+- **1–2/12** → hiếm nhưng có thật. Ghi vào phần điểm yếu đang mở, chưa sửa vội.
+- **0/12** → mẻ ngày 16/09 là ngoại lệ. Ghi lại là "đã thấy một lần", không kết luận gì thêm.
+- **Bịa ở `temperature` 0** nặng hơn hẳn bịa ở 0.7: ở 0 thì không còn đổ cho ngẫu nhiên được, đó
+  là lựa chọn đầu bảng của model.
+
+**Kết quả** (16/09, 12 lần mỗi ô).
+
+| Model | Nhiệt độ | Truyền `QNH` | Hành vi áp đảo |
+|---|---|---|---|
+| gemini-flash-lite | 0.7 | **2/12** | `destination=UIH` 10/12 |
+| gemini-flash-lite | 0.0 | **0/12** | `destination=UIH` 12/12 |
+| qwen3.5:9b Q4 | 0.7 | 0/12 | không gọi tool lần nào |
+| qwen3.5:9b Q4 | 0.0 | 0/12 | không gọi tool lần nào |
+
+**Theo tiêu chí đã chốt: rơi vào vùng 1–2/12 — hiếm nhưng có thật.** Nghĩa là KHÔNG mở mục sửa
+prompt chỉ vì `QNH`. Ghi vào phần điểm yếu đang mở và đi tiếp.
+
+**Giả thuyết sai.** Đoán lỗi sẽ tái lập cả ở `temperature` 0 vì đó là xu hướng có hệ thống. Thực
+tế `temperature` 0 cho **0/12**: `QNH` không phải lựa chọn đầu bảng của model, nó là thứ chỉ xuất
+hiện khi sampling đi chệch. Đọc lệch chỗ này thì đã đi sửa nhầm bệnh.
+
+**Nhưng probe lộ ra một lỗi khác, lớn hơn hẳn, mà tiêu chí ở trên không hỏi tới.**
+
+Hành vi áp đảo không phải `QNH` mà là **`destination=UIH`** — 10/12 ở nhiệt độ 0.7 và **12/12 ở
+nhiệt độ 0**. `UIH` là mã IATA thật của sân bay Phù Cát, Quy Nhơn. Tức là model **đúng về thế giới
+nhưng sai về hệ thống**: nó lấy kiến thức có sẵn ra dùng, mà `UIH` không nằm trong danh sách mã
+đang hoạt động (`HAN, SGN, DAD, HPH, HUE, VIN, SAP, QNH, NTR, DLT, PQC, VCL`).
+
+Hai hệ quả:
+
+1. **Ca đo này chấm thiếu.** `forbid` chỉ cấm đúng `QNH`, nên 12/12 lần truyền `UIH` đều được
+   tính là *đạt*. Cây thước bỏ lọt hành vi xảy ra gần như mọi lần, và chỉ bắt được biến thể hiếm.
+2. **Cơ chế sinh ra `QNH` giờ đã rõ.** Lần thứ 12 ở nhiệt độ 0.7 gọi `search_trips` **hai lần**:
+   `UIH` trước, rồi `QNH` sau. Model thử mã đúng ngoài đời, không ra chuyến nào, rồi **lùi về mã
+   trông giống nhất trong danh sách được phép**. `QNH` không phải nhầm lẫn ngẫu nhiên — nó là bước
+   lùi sau khi `UIH` thất bại. Điều đó cũng giải thích vì sao ở nhiệt độ 0 không thấy: ở đó model
+   không đi tới vòng thứ hai.
+
+**Nguyên nhân gốc, đọc thẳng từ prompt** (`ChatService.toolUsageGuide`, `ChatService.java:808`):
+danh sách nhồi vào là **mã trần, không kèm tên tỉnh**, kèm đúng một ví dụ, và **không có luật cho
+trường hợp tỉnh khách hỏi không có trong bảng**. Model không có cách nào biết `QNH` là Quảng Ninh,
+cũng không được phép nói "chưa hỗ trợ". Thêm một chuyện nhỏ: `activeLocations` là `HashSet`
+(`ChatService.java:944`) nên thứ tự mã đổi mỗi lần khởi động — prompt đổi mà không ai chủ ý đổi.
+
+**qwen3.5:9b không gọi tool lần nào**, ở cả hai nhiệt độ. Theo ghi chú của ca đo thì đó là hành vi
+chấp nhận được. Nhưng đừng đọc thành "qwen cẩn thận hơn": nó khớp đúng kiểu lỗi đã thấy ở mục (b)
+— thiên về **không hành động** khi thiếu thông tin. Cùng một thiên hướng, ở ca này thành ra đúng,
+ở ca `"tối nay"` thành ra bỏ trống `departureDate`. Probe không ghi lại phần trả lời bằng chữ nên
+**chưa biết nó có nói với khách là chưa hỗ trợ hay không** — đó là câu hỏi còn mở.
+
+**Kết luận.**
+
+1. Câu hỏi ban đầu — `QNH` có tái lập không — trả lời xong: **2/12 ở nhiệt độ production, 0/12 ở
+   nhiệt độ 0.** Hiếm nhưng có thật. Theo tiêu chí đã chốt thì chưa đủ để mở mục sửa.
+2. Nhưng probe trả lời luôn một câu chưa ai hỏi, và câu đó mới đáng sửa: **model truyền mã điểm
+   không tồn tại trong hệ thống ở gần như 100% số lần**, và bộ đo hiện tại không bắt được.
+3. Việc tiếp theo KHÔNG phải sửa prompt ngay, mà là **sửa cây thước trước**: thêm ràng buộc
+   `destination` phải nằm trong danh sách mã đang hoạt động vào ca này. Có thước đo đúng rồi mới
+   đo được prompt mới có tốt hơn không. Sửa prompt trước thì lại rơi vào đúng cái bẫy "đổi rồi
+   tin là tốt hơn" mà cả dự án này dựng lên để tránh.
+4. Đã đọc `ChatService.handleToolCall` (`ChatService.java:109`): **mã điểm không được kiểm tra
+   gì cả** — `destination` lấy thẳng từ tham số model truyền rồi đưa vào truy vấn. Mã lạ thì
+   không khớp tuyến nào, trả rỗng êm đẹp, không ngoại lệ. Nhưng nó còn được **ghi vào
+   `sessionCache`** (`ChatService.java:184`), nên một mã bịa còn đọng lại làm điểm đến mặc định
+   cho các lượt hỏi sau trong cùng phiên.
+
+   Mở ra một hướng sửa mạnh hơn sửa prompt: **chặn ở code**. Mã không nằm trong danh sách đang
+   hoạt động thì trả về cho model một câu kiểu "mã này không có trong hệ thống, các mã đang có
+   là …" thay vì một kết quả rỗng vô nghĩa. Model đọc câu đó rồi tự nói lại với khách. Prompt
+   là lời khuyên, kiểm tra ở code là ràng buộc — và ràng buộc thì không phụ thuộc nhiệt độ.
+
+
+## 2026-09-16 (d) — Sửa cây thước: chấm mã điểm theo luật, không theo danh sách cấm
+
+**Vì sao.** Mục (c) cho thấy ca Quy Nhơn cấm đúng một chuỗi `QNH`, nên bộ đo chấm ĐẠT cho 12/12
+lần model truyền `UIH`. Cấm theo từng giá trị chỉ bắt được những gì mình đã nghĩ ra trước — mà cái
+model làm lại là thứ không ai nghĩ tới. Đây là việc phải làm TRƯỚC khi sửa prompt: không có thước
+đúng thì sửa xong cũng không biết có tốt hơn không.
+
+**Thay đổi** (chỉ trong test, không đụng sản phẩm):
+
+- `ACTIVE_CODES` — tách sẵn đúng tập mã mà prompt nói là "đang hoạt động".
+- Luật áp cho **cả 53 ca**: `search_trips` nhận `origin` hoặc `destination` không nằm trong tập đó
+  thì đếm là **mã lạ**, in kèm giá trị thật và cả danh sách mã đang có.
+- Hai cột mới trong bảng chính: `Cấm` và `Mã lạ`. `forbidHits` trước đây được tính nhưng không in
+  ra bảng, phải đọc dòng chi tiết mới thấy.
+- Ngưỡng `maLaHits == 0`, cùng hạng với `forbidHits`.
+
+Kiểm tra trước để chắc luật mới không tạo báo động giả: quét toàn bộ `tool-eval.yml`, mọi giá trị
+`origin`/`destination` trong `args` và `forbid` đều nằm trong tập mã. Không ca nào bị oan.
+
+**Kết quả — thước mới bắt đúng thứ nó sinh ra để bắt.** Ca Quy Nhơn, Gemini:
+
+```
+MÃ KHÔNG CÓ TRONG HỆ THỐNG: destination = UIH (đang hoạt động: HAN, SGN, DAD, ...)
+```
+
+và bộ đo **đỏ**: `gemini · vi` truyền 1 lần mã không có trong hệ thống, ngưỡng 0. Đúng ý đồ — lỗi
+có thật thì cây thước phải kêu, và test đỏ chính là phiếu việc. Bộ đo live chỉ chạy khi có
+`TOOL_EVAL_LIVE=1` nên CI thường vẫn xanh.
+
+**Nhưng mẻ này còn trả lời một câu quan trọng hơn: hai model sát nhau đến mức một mẻ đo không xếp
+hạng được.** Giờ đã có ba mẻ trên cùng bộ 53 ca, cùng `temperature` 0.7:
+
+| | Khớp bộ (gộp) | Args | Cấm | Mã lạ |
+|---|---|---|---|---|
+| Gemini · mẻ A | mọi tool F1 1.000 | — | 0 | (chưa đo) |
+| Gemini · mẻ B | 98.1% | 98.1% | **3** (`QNH`) | (chưa đo) |
+| Gemini · mẻ C | **100%** | 98.1% | 0 | **1** (`UIH`) |
+| qwen · mẻ B | 98.1% | 98.1% | 0 | (chưa đo) |
+| qwen · mẻ C | **92.5%** | **86.5%** | **1** (`QNH`) | 0 |
+
+Hai điều rút ra, và điều thứ hai đắt hơn:
+
+1. **Đính chính mục (b).** Câu "qwen không bịa tham số, Gemini bịa" không đứng vững — mẻ C ngược
+   hẳn: qwen truyền `QNH`, Gemini thì không. Cái còn đúng là **cả hai đều mắc**. Mục (b) đã ghi
+   sẵn điều kiện "một mẻ không nói được về độ ổn định"; giờ có số để chứng minh điều kiện đó
+   không phải lời rào đón.
+2. **Chênh lệch giữa hai mẻ của CÙNG một model lớn hơn chênh lệch giữa hai model.** qwen tụt từ
+   98.1% xuống 92.5% khớp bộ và 98.1% xuống 86.5% Args, chỉ vì chạy lại. Nên mọi so sánh
+   "model X hơn model Y bao nhiêu điểm" trên một mẻ ở `temperature` 0.7 đều **không đọc được**.
+
+**Kết luận.**
+
+1. Cây thước đã sửa và đã chứng minh bắt được thứ trước đây lọt lưới.
+2. Kết luận tuần 10 giữ nguyên ở mức đã phát biểu: qwen **ngang** Gemini về chọn tool, đủ làm
+   đường lui cho `CHAT`. Không được đọc mạnh hơn thế — cụ thể là không được nói model nào ít bịa
+   tham số hơn.
+3. **Việc tiếp theo không phải sửa prompt mà là sửa cách đo**: chạy bộ đo N mẻ rồi lấy trung
+   bình và khoảng, hoặc hạ `temperature` về 0 cho bảng so sánh (và giữ 0.7 cho bảng "khách hàng
+   đang gặp gì"). Chưa làm thì mọi con số so model đều chỉ là một mẫu.
+4. Sau đó mới tới sửa `search_trips`: chặn mã lạ ngay ở `ChatService.handleToolCall` thay vì để
+   truy vấn trả rỗng — xem mục (c) điểm 4.
+
+
+## 2026-09-16 (e) — Chạy N mẻ: trung bình đi kèm khoảng
+
+**Vì sao.** Mục (d) cho thấy chênh lệch giữa hai mẻ của cùng một model lớn hơn chênh lệch giữa hai
+model. Mọi so sánh trên một mẻ vì thế không đọc được, kể cả so sánh để quyết định có sửa prompt hay
+không. Phải sửa cách đo trước khi đo thêm bất cứ thứ gì.
+
+**Thay đổi** (chỉ trong test):
+
+- `TOOL_EVAL_RUNS=N` — chạy cả 53 ca N mẻ cho mỗi nhà cung cấp.
+- Bảng chính thành **trung bình**, thêm bảng **Độ tản** in khoảng nhỏ nhất–lớn nhất.
+- Quy tắc gộp cố ý khác nhau: tỉ lệ lấy **trung bình** ("thường đúng bao nhiêu phần trăm" chỉ có
+  nghĩa trên nhiều mẻ), còn `Cấm` và `Mã lạ` lấy **TỔNG** — ở đó câu hỏi không phải "thường xuyên
+  đến đâu" mà là "có xảy ra không". Một lần tra sai tỉnh là một lần khách bị trả lời sai.
+- Chi tiết ca lỗi gộp lại kèm tần suất `[2/5 mẻ]`, phân biệt được lỗi luôn xảy ra với lỗi thỉnh
+  thoảng — thông tin mà một mẻ đơn không thể có.
+- **Throttle 4 giây chỉ áp cho nhà cung cấp TỪ XA.** Model local không có hạn mức để tôn trọng, mà
+  4 giây × 53 ca × 5 mẻ là 18 phút chờ vô nghĩa — đủ để làm người ta ngại chạy lại, tức là đủ để
+  giết chính cái kỷ luật vừa dựng lên.
+
+**Kết quả** (16/09, `qwen3.5:9b` Q4, `temperature` 0.7, 5 mẻ = 265 lượt chấm ca, 22 phút).
+
+| Cấu hình | Khớp bộ (tb) | Khoảng | Args (tb) | Khoảng | Cấm | Mã lạ |
+|---|---|---|---|---|---|---|
+| ollama · vi (29 ca) | 95.9% | 89.7 – 100% | 93.1% | 87.5 – 96.9% | 0 | 0 |
+| ollama · en (12 ca) | 91.7% | 91.7 – 91.7% | 100% | 100 – 100% | 0 | 0 |
+| ollama · ja (6 ca) | 100% | 100 – 100% | 86.7% | 83.3 – 100% | 0 | 0 |
+| ollama · zh (6 ca) | 100% | 100 – 100% | 90.0% | 75.0 – 100% | 0 | 0 |
+| **ollama · gộp** | **95.8%** | **92.5 – 98.1%** | **93.5%** | **90.4 – 96.2%** | **0** | **0** |
+
+Ba điều đọc được, không điều nào thấy được từ một mẻ:
+
+1. **Hai con số gây tranh cãi hôm nay là hai đầu của cùng một khoảng.** Mẻ B cho 98.1% và mẻ C cho
+   92.5%; năm mẻ nói sự thật là **95.8%, khoảng 92.5–98.1%**. Không có "qwen tụt hẳn ở mẻ C" — chỉ
+   có một model dao động ±3 điểm, và hai lần bốc mẫu rơi đúng hai đầu.
+2. **`Cấm` 0 và `Mã lạ` 0 trên 265 lượt chấm.** Lần qwen truyền `QNH` ở mẻ C là một lần hiếm, không
+   phải xu hướng. Đối chiếu thăm dò mục (c): Gemini truyền `UIH` **12/12 ở `temperature` 0**. Trên
+   trục bịa mã điểm, hai model **không giống nhau** — nhưng muốn phát biểu tử tế thì còn thiếu N mẻ
+   của Gemini.
+3. **Số theo từng ngôn ngữ trên 6 ca gần như vô nghĩa.** `zh` có Args dao động 75–100%, `ja` 83–100%
+   — với 6 ca thì một ca lệch đã là 16.7 điểm. Bảng gộp 53 ca dao động 5.6 điểm, hẹp hơn nhiều. Bài
+   học cũ của bộ đo RAG lặp lại: mẫu số nhỏ thì đừng đọc con số, hãy đọc khoảng.
+
+**Chưa làm được hôm nay.** N mẻ cho Gemini tốn 5 × 105 = 525 lượt, vượt hạn mức ngày 500 mà hôm nay
+đã dùng khoảng 400 (ba lần chạy 53 ca cộng 48 lượt thăm dò). Để sang ngày sau. Khi chạy thì chạy cả
+`temperature` 0 để tách phần dao động do sampling khỏi phần do model.
+
+**Kết luận.**
+
+1. Cách đo đã sửa: mọi bảng so model từ nay phải là N mẻ, trung bình kèm khoảng. Một mẻ chỉ dùng
+   để xem hệ thống còn chạy, không dùng để so.
+2. `qwen3.5:9b` chọn tool **95.8% khớp bộ, khoảng 92.5–98.1%** trên 5 mẻ. Đây là con số thay cho
+   mọi con số một mẻ đã ghi ở mục (b) và (d).
+3. Còn nợ: N mẻ của Gemini. Trước khi có nó, **không được phát biểu model nào hơn model nào** —
+   kể cả theo hướng có lợi cho kết luận tuần 10.
+4. Sau đó mới tới sửa `ChatService` chặn mã lạ, và đo bản sửa bằng chính cách đo này.
 
 ---
 

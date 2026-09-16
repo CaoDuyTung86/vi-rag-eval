@@ -49,14 +49,26 @@ Model local phải chạy với `reasoning_effort: "none"`, nếu không nó ti�
 
 53 ca `tool-eval.yml`, cùng prompt và `temperature` 0.7 của production, chỉ đổi nhà cung cấp.
 
-| Cấu hình | Khớp bộ | Gọi thừa | Args | Tham số bị cấm |
-|---|---|---|---|---|
-| gemini-flash-lite · gộp | 98.1% | 0/14 | 98.1% | **3** |
-| `qwen3.5:9b` Q4 · gộp | 98.1% | 0/14 | 98.1% | **0** |
+| Cấu hình | Khớp bộ | Gọi thừa | Args | Cấm | Mã lạ |
+|---|---|---|---|---|---|
+| gemini-flash-lite · mẻ B | 98.1% | 0/14 | 98.1% | 3 | — |
+| gemini-flash-lite · mẻ C | 100% | 0/14 | 98.1% | 0 | 1 |
+| `qwen3.5:9b` Q4 · mẻ B | 98.1% | 0/14 | 98.1% | 0 | — |
+| `qwen3.5:9b` Q4 · mẻ C | 92.5% | 0/14 | 86.5% | 1 | 0 |
 
-Ngang nhau trên cả ba chỉ số, và trong mẻ đo này Gemini bịa mã điểm (`Quy Nhơn` → `QNH`, vốn là
-Quảng Ninh) còn model local thì không. Một mẻ đo ở `temperature` 0.7 chưa nói được về độ ổn định —
-xem ba điều kiện kèm theo ở `experiments.md`.
+Kết luận đọc được: hai model **ngang nhau** về chọn tool, đủ để model local làm đường lui cho
+`CHAT`. Không đọc mạnh hơn thế — ở `temperature` 0.7 của production, **chênh lệch giữa hai mẻ của
+cùng một model lớn hơn chênh lệch giữa hai model**, nên một mẻ không xếp hạng được. Chi tiết và
+hướng sửa cách đo ở `experiments.md` mục 16/09 (b), (c), (d).
+
+Từ 16/09 bảng so model phải chạy **N mẻ** (`TOOL_EVAL_RUNS=5`) và đọc trung bình kèm khoảng: ở
+`temperature` 0.7, qwen dao động 92.5–98.1% khớp bộ giữa các mẻ, rộng hơn khoảng cách giữa hai
+model. Một mẻ chỉ dùng để xem hệ thống còn chạy. Năm mẻ của qwen: **95.8% khớp bộ (92.5–98.1%),
+93.5% Args, 0 lần bịa mã điểm trên 265 lượt chấm ca**.
+
+Cột `Mã lạ` là luật thêm ngày 16/09: `search_trips` nhận mã điểm không có trong hệ thống thì bị
+đếm. Nó bắt được thứ danh sách cấm bỏ lọt — Gemini truyền `UIH` (mã thật của Quy Nhơn ngoài đời,
+nhưng hệ thống không có tuyến) ở gần như mọi lần chạy thăm dò.
 
 ## Kết quả nhánh BM25
 
@@ -127,7 +139,6 @@ python scripts/faithfulness.py gen --bo xacnhan --env-file ../WebProject/.env   
 python scripts/faithfulness.py judge --bo xacnhan --env-file ../WebProject/.env  # sau khi chấm tay: tiêu chí đạt
 
 # tuần 10 — đổi model ở tầng sinh, giữ nguyên chunk của tuần 9 (0 lời gọi embedding)
-ollama serve                                                     # phải chạy trước, cho model local
 python scripts/gen_compare.py gen   --model qwen3.5:9b           # sinh 30 câu bằng model trên máy
 python scripts/gen_compare.py gen   --model gemini               # đọc cache tuần 9, 0 lời gọi
 python scripts/gen_compare.py judge --model qwen3.5:9b --env-file ../WebProject/.env

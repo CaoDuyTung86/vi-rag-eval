@@ -62,6 +62,10 @@ class Reply:
     latency_ms: float
     """Độ trễ của lời gọi thật đã sinh ra câu này; đọc từ cache thì vẫn là con số lúc đó."""
     cached: bool
+    completion_tokens: int | None = None
+    """Số token model sinh ra, đọc từ `usage` của phản hồi. Tuần 10 chia nó cho latency để ra
+    token/giây. None khi endpoint không trả `usage`, hoặc khi đọc từ cache ghi trước tuần 10."""
+    prompt_tokens: int | None = None
 
 
 class ChatClient:
@@ -109,13 +113,13 @@ class ChatClient:
             return hit
         if not self.available:
             raise LlmError(f"Chưa có API key cho {self.model}")
-        text, latency_ms = self._call_api(body)
+        text, latency_ms, usage = self._call_api(body)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path.write_text(
-            json.dumps({"text": text, "latency_ms": latency_ms}, ensure_ascii=False),
+            json.dumps({"text": text, "latency_ms": latency_ms, **usage}, ensure_ascii=False),
             encoding="utf-8",
         )
-        return Reply(text, latency_ms, cached=False)
+        return Reply(text, latency_ms, cached=False, **usage)
 
     # ------------------------------------------------------------------ gọi API
 
@@ -150,7 +154,19 @@ class ChatClient:
         except ValueError:
             return float(min(60, 10 * 2 ** (attempt - 1)))
 
-    def _call_api(self, body: dict[str, object]) -> tuple[str, float]:
+    @staticmethod
+    def _usage(payload: object) -> dict[str, int | None]:
+        """Đọc usage.*_tokens nếu có. Endpoint nào không trả thì để None, không đoán bằng len()."""
+        usage = payload.get("usage") if isinstance(payload, dict) else None
+        if not isinstance(usage, dict):
+            return {"completion_tokens": None, "prompt_tokens": None}
+        out: dict[str, int | None] = {}
+        for key in ("completion_tokens", "prompt_tokens"):
+            value = usage.get(key)
+            out[key] = int(value) if isinstance(value, (int, float)) else None
+        return out
+
+    def _call_api(self, body: dict[str, object]) -> tuple[str, float, dict[str, int | None]]:
         headers = {"Authorization": f"Bearer {self.api_key}"}
         url = f"{self.base_url}/chat/completions"
         attempt = 0
@@ -182,7 +198,8 @@ class ChatClient:
             break
 
         try:
-            choice = response.json()["choices"][0]
+            payload = response.json()
+            choice = payload["choices"][0]
             content = choice["message"].get("content")
         except (ValueError, KeyError, IndexError, TypeError, AttributeError) as error:
             raise LlmError(f"Phản hồi của {self.model} sai định dạng") from error
@@ -191,7 +208,7 @@ class ChatClient:
             raise LlmError(
                 f"{self.model} trả nội dung rỗng (finish_reason={choice.get('finish_reason')})"
             )
-        return content, latency_ms
+        return content, latency_ms, self._usage(payload)
 
     # ------------------------------------------------------------------ cache đĩa
 
@@ -207,7 +224,11 @@ class ChatClient:
             return None
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            return Reply(str(data["text"]), float(data["latency_ms"]), cached=True)
+            tokens = {
+                key: (int(v) if isinstance(v := data.get(key), (int, float)) else None)
+                for key in ("completion_tokens", "prompt_tokens")
+            }
+            return Reply(str(data["text"]), float(data["latency_ms"]), cached=True, **tokens)
         except (json.JSONDecodeError, KeyError, TypeError, ValueError):
             path.unlink(missing_ok=True)
             return None

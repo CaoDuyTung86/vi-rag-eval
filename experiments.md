@@ -985,7 +985,119 @@ Không chọn ngưỡng mới cho `bge-m3`, đúng như đã chốt. Bảng ngư
 - Hoặc thêm bước khôi phục dấu cho câu hỏi trước khi nhúng. Đó là một biến mới, cần mục riêng, chọn
   trên golden.
 
+## 2026-09-16 — Model mở đã quantize so với Gemini ở tầng sinh (tuần 10)
+
+**Vì sao.** Tuần 9 đã trả lời "bot có bịa không" cho đúng một model: `gemini-flash-lite-latest`.
+Câu hỏi của tuần 10 khác hẳn — một model chạy trên máy mình, không hạn mức, không gửi dữ liệu khách
+ra ngoài, thì kém bao nhiêu. VigoTrip gọi LLM qua `OpenAiCompatibleProvider`, nên nếu số đo chấp
+nhận được thì việc cắm model local vào gần như chỉ là sửa `application.yml`.
+
+Đây là thí nghiệm mới, KHÔNG phải chạy lại: đổi model sinh là đổi toàn bộ câu trả lời.
+
+**Giả thuyết.** Model mở 7–9B bản Q4 giữ được phần lớn độ trung thực của Gemini trên cùng 30 câu
+bộ dev, vì việc ở đây là đọc 4 chunk rồi tóm lại — không cần kiến thức rộng, chỉ cần bám tài liệu.
+Chỗ nó thua sẽ không phải bịa nhiều hơn, mà là **từ chối thừa**: model nhỏ hay trả lời lảng khi
+tài liệu có nhưng viết vòng vo.
+
+**Thay đổi.** Đúng MỘT biến: model ở tầng sinh. Giữ nguyên tuyệt đối mọi thứ khác —
+
+- 30 câu bộ dev `data/faithfulness.yml`, đã có `nhan_tay` từ tuần 9;
+- **chính các `chunks` đã ghi trong file đó**, không chạy lại retrieval. Nên thí nghiệm này tốn
+  **0 lời gọi embedding**, và chênh lệch không thể do bốc tài liệu khác;
+- prompt `data/prompts/vigotrip_chat.txt`, `FIXED_NOW`, top-4, temperature 0.7, tối đa 800 token;
+- judge: Groq `gpt-oss-120b` rubric v3, temperature 0 — giữ nguyên bộ chấm của tuần 9.
+
+**Model đem so.** Gemini Flash-Lite (đọc cache tuần 9, 0 lời gọi) · Groq `gpt-oss-120b` · và ba
+model local qua Ollama: `qwen3.5:9b`, `qwen3:8b`, `glm4:9b`. Cả ba đều gọi được tool — tuần 12 dùng
+lại đúng ba model này cho `tool-eval.yml`, nên chọn model biết gọi tool ngay từ tuần 10.
+
+**Groq tự chấm bài mình.** Bên sinh của dòng Groq là `openai/gpt-oss-120b` — đúng model judge
+đang dùng. Tuần 9 cố ý chọn judge khác họ với bên sinh vì lý do này. Nên dòng Groq chỉ để tham
+khảo về tốc độ và giá, KHÔNG dùng để kết luận model nào bịa ít hơn. Nếu sau này cần một dòng
+"model mạnh làm mốc" chấm được đàng hoàng thì phải đổi judge sang họ khác, và đó là thí nghiệm riêng.
+
+**Judge chỉ là bộ lọc.** Kết luận tuần 9: judge v3 trượt tiêu chí 2 (báo bịa giả 3 câu trên bộ xác
+nhận). Nên ở đây nó nói *không bịa* thì tin, nói *bịa* thì câu đó phải chấm tay. Bảng dưới ghi cả
+hai con số: judge gắn bịa, và số còn lại sau khi người xác nhận.
+
+**Tiêu chí dùng** — chốt TRƯỚC khi chạy, để không nhìn số rồi mới nới:
+
+1. Bịa (đã xác nhận tay) không nhiều hơn Gemini quá **2 câu** trên 30. Gemini tuần 9: 1/30.
+2. `tu_choi_thua` không nhiều hơn Gemini quá **3 câu** — đây là chỗ giả thuyết đoán nó sẽ thua.
+3. Đủ nhanh cho tầng `CHAT`: **≥ 15 token/giây** và **p95 ≤ 10 giây**.
+4. Chạy trọn GPU: **VRAM ≤ 7.5 GB**, không tràn sang RAM.
+
+Qua cả 4 thì đủ làm đường lui cho `CHAT` khi Gemini hết hạn mức. Trượt 1 hoặc 2 thì không dùng cho
+`CHAT`, ghi rõ trượt cái nào. Trượt 3 hoặc 4 thì chỉ còn dùng được cho việc chạy nền (`ANALYSIS`).
+
+**Cách đo.** `scripts/gen_compare.py gen --model <tên>` rồi `judge --model <tên>`, ghi ra
+`data/gen_compare/<model>.yml`. Token/giây lấy từ `usage.completion_tokens` chia thời gian thật của
+lời gọi, chỉ tính lời gọi mới (đọc cache thì không tính). VRAM đọc bằng `ollama ps` lúc model đang nạp.
+
+**Hai chuyện phát hiện lúc chạy, phải xử lý trước khi có số** —
+
+*1. Model local mặc định BẬT suy nghĩ, và nó ăn hết ngân sách token.* `qwen3.5:9b` có
+`capabilities: [vision, completion, tools, thinking]`. Gọi thẳng như tuần 9 thì 800 token
+`max_tokens` bị tiêu hết cho phần `reasoning`, `content` trả về **rỗng** — `ChatClient` ném
+`LlmError` ngay câu đầu. Thử ba cách tắt ở đường `/v1`: `think: false` và
+`chat_template_kwargs.enable_thinking` đều bị Ollama bỏ qua; chỉ `reasoning_effort: "none"` ăn.
+Chọn tắt suy nghĩ vì hai lý do: Gemini Flash-Lite tuần 9 chạy không có ngân sách suy nghĩ nên để
+bật là so hai thứ khác nhau, và tầng `CHAT` của VigoTrip cần nhanh. **Bật suy nghĩ là một dòng
+riêng, một thí nghiệm riêng** — chưa làm.
+
+*2. Dòng gemini không cần chấm lại.* 30 câu sinh từ cache tuần 9 trùng NGUYÊN VĂN 30/30, nên
+`judge --model gemini` chép thẳng nhãn v3 và nhãn tay của tuần 9 sang: **0 lời gọi Groq**, và hai
+bảng chắc chắn dùng đúng một bộ nhãn.
+
+**Thu hẹp còn một model local.** Kế hoạch ban đầu ghi ba tag `qwen3.5:9b`, `qwen3:8b`, `glm4:9b`.
+Trên máy chỉ có sẵn `qwen3.5:9b`; chốt ngày 16/09 là dừng ở một model, vì câu hỏi của tuần 10 là
+"model local có dùng được không", không phải "model local nào tốt nhất". Muốn xếp hạng giữa các
+model mở thì đó là mục riêng.
+
+**Kết quả.**
+
+| Model | Bịa (judge) | Bịa (xác nhận tay) | tu_choi_thua | co_can_cu | token/giây | p50 (ms) | p95 (ms) | VRAM |
+|---|---|---|---|---|---|---|---|---|
+| gemini-flash-lite-latest | 3/30 | **1** | 0 | 15 | — (cache tuần 9 không ghi usage) | 1125 | 1663 | — |
+| qwen3.5:9b Q4_K_M (suy nghĩ tắt) | 8/30 | *8 câu chờ chấm tay* | 0 | 12 | **30.7** | **2150** | **3367** | **5.5 GB · 100% GPU** |
+
+Judge gắn bịa 8 câu cho qwen: `g05 g09 g10 g11 g15 u04 u09 u10`. Chưa được đọc con số 8 này là
+tỉ lệ bịa: ở chính bộ này judge gắn bịa 3 câu cho Gemini nhưng chấm tay chỉ còn 1 (`g12`), tức là
+tỉ lệ báo nhầm của nó khoảng 2/3 ở nhóm bị gắn. `g15` bị gắn ở CẢ hai model và tuần 9 đã bác — nó
+là kiểu câu judge hay nhầm.
+
+Đọc lướt 8 lý do judge đưa ra thì thấy hai nhóm khác hẳn nhau:
+
+- **Câu khuyên chung chung**, kiểu "bạn kiểm tra lại quy định của từng hãng", "xem trong Lịch sử
+  đặt vé" — không có trong chunk thật, nhưng cũng không khẳng định chính sách nào. 7/8 câu thuộc
+  nhóm này.
+- **Bịa thật**: `g09`. Tài liệu ghi *dưới 2 tuổi miễn phí*, *2–12 tuổi tính 75% và có ghế riêng*.
+  Qwen trả lời "trẻ từ 2 đến dưới 5 tuổi được miễn vé, không có ghế riêng" — trộn hai chunk thành
+  một chính sách không tồn tại. Đây đúng là kiểu lỗi đáng sợ nhất: nghe rất trôi chảy, sai ở con số.
+
+Nhận xét trên là đọc lướt, KHÔNG phải nhãn. Nhãn phải do người chấm — `gen_compare.py cham
+--model qwen3.5:9b` in từng câu kèm đúng chunk nó đọc.
+
+Hai tiêu chí về máy đã có đáp án, và cả hai đều **đạt**:
+
+- Tiêu chí 3 (đủ nhanh cho `CHAT`): 30.7 token/giây ≥ 15, p95 3.4 s ≤ 10 s. Chậm hơn Gemini
+  khoảng 2 lần ở p50 (2150 so với 1125 ms) nhưng vẫn dưới ngưỡng.
+- Tiêu chí 4 (chạy trọn GPU): `ollama ps` báo 5.5 GB · 100% GPU · context 4096, dưới trần 7.5 GB.
+  `nvidia-smi` lúc đó báo 7.4/8.2 GB toàn máy — phần dôi là màn hình Windows và trình duyệt, không
+  phải model. Đọc số của `ollama ps` chứ đừng đọc `nvidia-smi` cho tiêu chí này.
+
+Tiêu chí 2 (`tu_choi_thua`) cũng đã có: **0 câu**, bằng Gemini — giả thuyết ban đầu đoán model nhỏ
+sẽ hay trả lời lảng, và nó **sai**. Qwen từ chối 10 câu, đúng nhóm câu ngoài phạm vi.
+
+Tiêu chí 1 (bịa) còn chờ chấm tay 8 câu. Ngưỡng đã chốt trước khi chạy: không nhiều hơn Gemini quá
+2 câu, tức **≤ 3/30 sau khi xác nhận tay** thì đạt.
+
+**Kết luận.** *(chưa có — chờ tiêu chí 1)* Ba trong bốn tiêu chí đã đạt. Nếu chấm tay ra ≤ 3 câu
+bịa thì `qwen3.5:9b` Q4 đủ làm đường lui cho tầng `CHAT` khi Gemini hết hạn mức, và bước tiếp là
+cắm vào VigoTrip qua `OpenAiCompatibleProvider` rồi chạy `tool-eval.yml`.
+
 ---
+
 
 ## Mẫu
 

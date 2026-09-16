@@ -20,8 +20,22 @@ so được với hệ thống đang chạy thật. Thay đổi nào thắng ở
 | `eval/` — chỉ số, harness, cổng ngưỡng | xong |
 | Baseline nhánh Vector / Hybrid | xong, khớp Java — 20 dòng live trùng `RagRetrievalQualityTest` từng chữ số (14/09/2026) |
 | `learn/` — mạng nơ-ron numpy trên MNIST | bài tập nền tảng, không thuộc pipeline |
+| Tầng sinh + judge v3 (tuần 9) | xong; judge chỉ dùng làm bộ lọc, câu nó gắn bịa phải chấm tay |
+| So model ở tầng sinh (tuần 10) | `qwen3.5:9b` Q4 trên RTX 4060 đạt 3/4 tiêu chí — còn chờ chấm tay 8 câu |
 
-125 test, không test nào gọi mạng.
+135 test, không test nào gọi mạng.
+
+### Tuần 10 — model local so với Gemini ở tầng sinh
+
+Cùng 30 câu và cùng chunk của `data/faithfulness.yml`, chỉ đổi model sinh câu trả lời.
+
+| Model | Bịa (judge) | Bịa (tay) | `tu_choi_thua` | token/giây | p50 | p95 | VRAM |
+|---|---|---|---|---|---|---|---|
+| `gemini-flash-lite-latest` | 3/30 | 1 | 0 | — | 1125 ms | 1663 ms | — |
+| `qwen3.5:9b` Q4_K_M, suy nghĩ tắt | 8/30 | *chờ chấm 8 câu* | 0 | 30.7 | 2150 ms | 3367 ms | 5.5 GB · 100% GPU |
+
+Model local phải chạy với `reasoning_effort: "none"`, nếu không nó tiêu hết `max_tokens` cho phần
+`reasoning` và trả `content` rỗng. Chi tiết ở `experiments.md`, mục 16/09.
 
 ## Kết quả nhánh BM25
 
@@ -90,6 +104,14 @@ python scripts/p1_diff.py                 # câu nào Vector đúng hạng 1 mà
 python scripts/by_category.py             # điểm theo category + câu sai hạng 1, chỉ đọc cache
 python scripts/faithfulness.py gen --bo xacnhan --env-file ../WebProject/.env    # tuần 9: bộ xác nhận, 8 câu cài bịa
 python scripts/faithfulness.py judge --bo xacnhan --env-file ../WebProject/.env  # sau khi chấm tay: tiêu chí đạt
+
+# tuần 10 — đổi model ở tầng sinh, giữ nguyên chunk của tuần 9 (0 lời gọi embedding)
+ollama serve                                                     # phải chạy trước, cho model local
+python scripts/gen_compare.py gen   --model qwen3.5:9b           # sinh 30 câu bằng model trên máy
+python scripts/gen_compare.py gen   --model gemini               # đọc cache tuần 9, 0 lời gọi
+python scripts/gen_compare.py judge --model qwen3.5:9b --env-file ../WebProject/.env
+python scripts/gen_compare.py cham  --model qwen3.5:9b           # in các câu chờ chấm tay + chunk
+python scripts/gen_compare.py bang                               # bảng so tất cả model đã chạy
 ```
 
 Mã thoát: `0` đạt · `1` tụt dưới ngưỡng (recall@3 < 0.85 hoặc MRR < 0.70 ở bất kỳ ngôn ngữ

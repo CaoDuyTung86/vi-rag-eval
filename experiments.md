@@ -1536,6 +1536,281 @@ về X" là phát biểu về *bot*, không phải về *thế giới* — nó k
    thước mà cùng mù ở đúng chỗ đó thì không phải trùng hợp.
 
 
+## 2026-09-16 (g) — Rubric v4: "tôi chưa có thông tin về X" không thể là bịa
+
+**Vì sao.** Mục (f) tìm ra một lỗi LOGIC trong rubric v3, không phải lỗi đọc hiểu của model: judge
+đòi TÀI LIỆU phải **xác nhận sự vắng mặt** của chính nó. Câu "mình chưa có thông tin về chính sách
+sinh viên" là phát biểu về *chatbot*, không phải về *thế giới* — nó không thể sai với tài liệu,
+vì tài liệu không nói gì về việc chatbot biết hay không biết. Bằng chứng lỗi này nằm ở rubric chứ
+không ở model: Groq 120 tỷ và qwen 9,7 tỷ tham số **báo bịa giả ở cùng một tập câu**, và qwen chỉ
+là tập cha của Groq. Chênh 12 lần kích thước mua được 2 câu; sửa rubric có thể mua được cả 5.
+
+**Thay đổi.** Rubric **v4** = v3 cộng **đúng một luật trừ**, đặt ngay trước bước gắn nhãn:
+
+> Câu kiểu "mình chưa có thông tin về X", "hệ thống chưa hỗ trợ X", "việc đó ngoài phạm vi" là
+> phát biểu về CHÍNH CHATBOT, không phải về thế giới. Nó KHÔNG BAO GIỜ là ý không có căn cứ, và
+> một mình nó KHÔNG BAO GIỜ làm câu trả lời thành `bia`. TÀI LIỆU không cần chứa câu nào xác nhận
+> sự vắng mặt của X. TÀI LIỆU thật sự có X thì là `tu_choi_thua`; không có X thì là `tu_choi_dung`.
+> Luật chỉ xét riêng câu "chưa có thông tin": còn ý cụ thể KHÁC không có căn cứ thì vẫn là `bia`.
+
+v3 đã xếp loại phát biểu này ở bước 1 rồi, nhưng chỉ ở dạng "không liệt kê ra". Không đủ — cả hai
+judge vẫn liệt kê rồi gắn `bia`. v4 nâng nó thành luật có tên, nói thẳng nhãn thay thế là gì.
+
+Kèm theo một thay đổi hạ tầng, không ảnh hưởng số: judge chạy với rubric **đang thử** ghi sang
+`data/judge_compare/{bộ}_{model}_{rubric}.yml`, không đè nhãn trong `data/faithfulness_*.yml`.
+Mốc đã commit là judge Groq với rubric `RUBRIC_DA_CHOT` — chốt v4 thì sửa hằng số đó rồi chạy lại.
+
+**Cách đo.** Vẫn bộ xác nhận 20 câu, 8 câu cài bịa, nhãn tay không đổi. Chạy lại **cả hai** judge:
+Groq `gpt-oss-120b` và `qwen3.5:9b` Q4 local, temperature 0, cùng prompt. So thẳng với bảng (f).
+
+**Giả thuyết, ghi TRƯỚC khi chạy** — cụ thể tới từng câu, để không thể diễn giải lại sau:
+
+1. **qwen: 3 câu đổi nhãn, đúng 3 câu đó.** `x15`, `x19`, `x20` — cả ba đều bị gắn `bia` vì đúng
+   cụm "chưa có thông tin", đọc thẳng từ `ly_do_judge`. Cả ba về `tu_choi_dung`. Báo bịa giả
+   **5 → 2** (còn `x01`, `x13`), cùng nhãn **13/20 → 16/20 = 80%**, bắt bịa giữ **7/8**.
+2. **Groq: gần như KHÔNG đổi.** Đây là chỗ dễ đoán nhầm. Ba câu báo bịa giả của Groq là `x01`,
+   `x13`, `x19` — nhưng lý do Groq đưa ra **không câu nào** chê cụm "chưa có thông tin": `x01` nó
+   chê câu trấn an "VigoTrip luôn đặt bảo mật lên hàng đầu", `x13` chê "đợi trong giây lát",
+   `x19` chê "Mời bạn truy cập trang tìm kiếm chuyến bay". Dự đoán Groq giữ nguyên **80%, báo bịa
+   giả 3**. Nếu Groq cũng tốt lên thì luật đã lan rộng hơn thứ nó được phép đụng vào — phải đọc
+   lại `ly_do_judge` chứ không được mừng.
+3. **`x05` vẫn bị bỏ sót ở cả hai.** Nó là kiểu `doi_so`; luật v4 không đụng gì tới loại đó.
+
+**Rủi ro phải canh.** Luật trừ nào cũng có thể bị judge nới ra thành "câu từ chối thì tha". Cái
+giá nếu vậy là bỏ sót câu bịa thật — đúng thứ làm judge mất hết giá trị. Vì vậy tiêu chí chặn là
+**bắt bịa không được tụt dưới 7/8 ở cả hai judge**. Tụt là v4 hại nhiều hơn lợi, quay lại v3.
+
+**Tiêu chí.**
+
+1. Bắt bịa **≥ 7/8** ở cả hai judge — chặn, không được đánh đổi.
+2. qwen: cùng nhãn **≥ 80%** và báo bịa giả **≤ 3**. Qua cả hai thì judge local thay được Groq ở
+   vai trò bộ lọc, và vòng lặp *sinh → chấm → đọc bảng* chạy với **0 lượt API**.
+3. Groq không tệ đi: cùng nhãn ≥ 80%, báo bịa giả ≤ 3.
+
+**Kết quả** (16/09, bộ xác nhận 20 câu, `data/judge_compare/xacnhan_qwen3.5-9b_v4.yml`).
+
+| | qwen v3 | qwen **v4** | Tiêu chí |
+|---|---|---|---|
+| Bắt bịa | 7/8 | **7/8** | ≥ 7/8 — đạt |
+| Cùng nhãn | 13/20 = 65% | **13/20 = 65%** | ≥ 80% — trượt |
+| Báo bịa giả | 5 | **5** | ≤ 3 — trượt |
+
+**Không phải "ít đổi". Là KHÔNG ĐỔI: 0/20 câu lệch nhãn giữa v3 và v4.** Cùng một tập câu báo bịa
+giả `{x01, x13, x15, x19, x20}`, cùng câu bỏ sót `x05`. Luật trừ không lay chuyển được một nhãn nào.
+
+**Groq không chạy được.** 429 liên tục, lần chờ cuối `Retry-After` **668 giây cho một lượt**. Bỏ
+dở sau ~25 phút. Nên bảng trên chỉ có một judge, và tiêu chí 3 chưa có số. Ghi lại vì nó trả lời
+thẳng câu hỏi của mục (f) theo hướng không ai mong: hôm nay judge API là thứ **không dùng được**,
+còn judge local chạy trọn 20 câu trong vài phút với 0 lượt API — kém chính xác hơn, nhưng có mặt.
+
+**Đối chiếu giả thuyết.**
+
+1. "qwen đổi đúng 3 câu `x15`, `x19`, `x20`" — **SAI hoàn toàn.** Đổi 0 câu.
+2. "Groq gần như không đổi" — **chưa đo được**, hết hạn mức.
+3. "`x05` vẫn bị bỏ sót" — **đúng**, nhưng đây là dự đoán không rủi ro: v4 không đụng tới `doi_so`.
+
+**Vì sao sai, đọc thẳng từ `ly_do_judge`.** Không phải judge không hiểu luật. Nó nhắc lại **nguyên
+văn lập luận bị cấm**, ngay sau khi đọc câu cấm:
+
+> `x20` — "Chatbot nói chưa có thông tin về dịch vụ trà sữa, nhưng *tài liệu không xác nhận sự
+> vắng mặt* của dịch vụ này nên đây là phát biểu thiếu căn cứ."
+
+Cơ chế nằm ở **trình tự rubric, không ở model**. Judge chạy bước 1 trước: nó liệt kê câu "chưa có
+thông tin" thành một ý, đóng dấu `can_cu: KHÔNG CÓ`. Bước 3 có câu "bia: có ít nhất một ý không có
+căn cứ. **Nhãn này thắng mọi nhãn khác**" — bắn ngay. Luật trừ của v4 đặt SAU bước 3, tới nơi thì
+nhãn đã chốt. Tức v4 tạo ra hai luật đá nhau trong cùng một rubric, và luật mạnh hơn thắng.
+
+v3 đã có gạch đầu dòng "không liệt kê" ở bước 1 cho đúng loại câu này. Cả hai judge đều bỏ qua nó.
+v4 lặp lại đúng sai lầm đó ở chỗ khác: thêm chữ, không đổi thứ tự.
+
+**Hai chỗ phải ghi vì làm giữa chừng.**
+
+- Bản nháp đầu của v4 chưa từng chạy xong, nên **không có số đo nào của nó**. Nó hỏng hai chỗ, cả
+  hai là lỗi diễn đạt: mapping nhãn viết thành câu ghép dài nên qwen đọc ngược (tài liệu KHÔNG có
+  X mà chấm `tu_choi_thua`), và judge suy luận dài ngay trong `ly_do` rồi quên khoá `nhan` — script
+  dừng ở câu 15. Sửa: mapping tách hai nhánh gạch đầu dòng; khối JSON siết `ly_do` một câu ≤ 40 từ
+  và `nhan` bắt buộc.
+- Nghĩa là v4 đổi **hai** thứ so với v3, không phải một: luật trừ, và hợp đồng JSON. Bình thường
+  đó là lỗi thiết kế thí nghiệm. Ở đây nó vô hại và chứng minh được: **0/20 nhãn đổi**, nên hợp
+  đồng JSON không kéo nhãn đi đâu cả.
+
+**Kết luận.**
+
+1. **v4 là số không. Không giữ, không bỏ** — giữ trong code vì luật viết ra đúng, nhưng phải hiểu
+   là nó chưa có tác dụng nào đo được. Mọi bảng số vẫn là số của v3.
+2. **Kết luận số 2 của mục (f) sai, và phải sửa lại.** (f) viết: "bottleneck là rubric, không phải
+   kích thước model — sửa rubric có thể mua được cả 5 câu". Sửa rubric bằng cách **thêm luật** mua
+   được **0 câu**. Phát biểu đúng hơn: bottleneck là **trình tự** của rubric. Một luật trừ đặt sau
+   chỗ nhãn đã chốt thì không phải là luật, chỉ là chữ.
+3. **Bài học chung, đáng giá hơn kết quả:** trong một prompt nhiều bước, chỗ ĐẶT luật quan trọng
+   ngang nội dung luật. "bia thắng mọi nhãn khác" ở bước 3 là một cửa một chiều — mọi luật trừ phải
+   nằm TRƯỚC nó, ở bước liệt kê, chứ không phải sau.
+4. **v5 đã rõ và vẫn miễn phí**: không thêm chữ nữa, **chuyển** luật trừ lên bước 1 và bước 2 —
+   cấm liệt kê câu "chưa có thông tin" thành ý, kèm lý do; và nói rõ ở bước 2 rằng ý loại này không
+   bao giờ nhận `can_cu: KHÔNG CÓ`. Giả thuyết ghi trước: qwen đổi `x15`, `x19`, `x20` về
+   `tu_choi_dung`, báo bịa giả 5 → 2, cùng nhãn 65% → 80%, bắt bịa giữ 7/8. **Đây là lần thử thứ
+   hai của cùng một ý trên cùng bộ 20 câu** — nếu v5 đạt thì con số đó không còn là bằng chứng
+   sạch, phải xác nhận lại trên một bộ mới trước khi chốt.
+5. Groq v4 còn nợ, chạy khi hạn mức Groq hồi.
+
+
+## 2026-09-16 (h) — Rubric v5: chuyển luật lên trước chỗ nhãn chốt
+
+**Vì sao.** Mục (g) đo ra số không: v4 thêm một luật trừ đúng đắn và đổi được **0/20** nhãn. Nguyên
+nhân không phải model yếu mà là **trình tự**. Judge chạy bước 1 trước, liệt kê câu "chưa có thông
+tin" thành một ý rồi đóng dấu `can_cu: KHÔNG CÓ`; bước 3 có câu "bia: có ít nhất một ý không có căn
+cứ. **Nhãn này thắng mọi nhãn khác**" nên bắn ngay; luật trừ của v4 nằm SAU bước 3, tới nơi thì nhãn
+đã chốt. Trong một prompt nhiều bước, "bia thắng mọi nhãn khác" là một **cửa một chiều** — mọi luật
+trừ phải nằm trước nó.
+
+**Thay đổi.** Cùng một luật, ba chỗ khác:
+
+1. **Bước 1** — luật trừ thành mục ĐẦU danh sách "không liệt kê", kèm lý do: câu bot nói về chính
+   nó là phát biểu về BOT, không phải về thế giới; không tìm thấy X trong TÀI LIỆU đúng là **lý do
+   để** bot nói chưa có thông tin, không phải bằng chứng bot nói sai.
+2. **Bước 2** — chặn đường vòng: thứ bước 1 đã bỏ thì không bao giờ nhận `can_cu: "KHÔNG CÓ"`.
+   Sắp viết "KHÔNG CÓ" cho một câu bot nói về chính nó nghĩa là đã liệt kê nhầm ở bước 1.
+3. **Bước 3** — mapping nhãn gắn thẳng vào định nghĩa `tu_choi_dung` và `tu_choi_thua`, đúng chỗ
+   judge đang đọc khi chọn nhãn.
+
+Khối `LUẬT TRỪ` ở cuối rubric **xoá hẳn**.
+
+**Confound phải ghi, vì nó làm yếu kết luận.** Ý định là "chỉ chuyển chỗ", nhưng chuyển chỗ kéo
+theo phần giải thích: rubric đi từ **2114 ký tự (v3) lên 3174 (v5)**. Nếu v5 đạt thì KHÔNG tách
+được "đặt đúng chỗ" với "giải thích kỹ hơn". Muốn tách phải có v6 ablation: giữ đúng vị trí của v5
+nhưng cắt phần lý do về độ dài của v4. Chỉ làm nếu v5 đạt — thất bại thì không cần tách.
+
+**Cách đo.** Vẫn bộ xác nhận 20 câu, nhãn tay không đổi, qwen3.5:9b Q4 local, temperature 0. Groq
+còn nợ từ (g): 429 với `Retry-After` tới 668 giây, chạy khi hạn mức hồi.
+
+**Giả thuyết, ghi TRƯỚC khi chạy.**
+
+1. **`x15`, `x19`, `x20` về `tu_choi_dung`.** Báo bịa giả **5 → 2** (còn `x01`, `x13`), cùng nhãn
+   **13/20 → 16/20 = 80%**, bắt bịa giữ **7/8**.
+2. **`x01`, `x13`, `x04`, `x05` không đổi.** v5 không đụng tới loại lỗi của chúng: `x01` là câu
+   trấn an "VigoTrip đặt bảo mật lên hàng đầu", `x13` là "đợi trong giây lát", `x04` là ranh giới
+   `co_can_cu`/`tu_choi_thua`, `x05` là `doi_so`.
+3. **Kiểm chứng cơ chế, không chỉ kiểm chứng số:** trong `cac_y` của `x15`, `x19`, `x20` phải
+   **không còn** dòng nào là câu "chưa có thông tin". Nếu nhãn đúng mà dòng đó vẫn nằm trong
+   `cac_y` thì judge đoán trúng chứ không phải làm theo luật — đọc là trượt.
+
+**Tiêu chí.** Bắt bịa ≥ 7/8 (chặn, không đánh đổi); cùng nhãn ≥ 80%; báo bịa giả ≤ 3.
+
+**Nợ phương pháp, nhắc lại cho rõ.** Đây là **lần thử thứ hai của cùng một ý trên cùng bộ 20 câu**.
+Bộ xác nhận đang bị đốt dần — đúng cái bẫy tuần 9 dựng nó ra để tránh. v5 đạt thì con số này KHÔNG
+phải bằng chứng sạch, chỉ là tín hiệu đáng để đi dựng bộ xác nhận 2 rồi xác nhận lại. Không được
+mang 80% này đi kết luận "judge local thay được Groq".
+
+**Kết quả** (16/09, bộ xác nhận 20 câu). Groq tốn 47 lời gọi thật cho 20 câu — 28 lần bị 429,
+`Retry-After` tới 915 giây; chạy được là nhờ cache ghi ngay sau từng câu.
+
+| | Groq v3 | Groq **v5** | qwen v3 | qwen v4 | qwen **v5** | Tiêu chí |
+|---|---|---|---|---|---|---|
+| Bắt bịa | 7/8 | **7/8** | 7/8 | 7/8 | **7/8** | ≥ 7/8 — đạt |
+| Cùng nhãn | 16/20 = 80% | **16/20 = 80%** | 65% | 65% | **14/20 = 70%** | ≥ 80% |
+| Báo bịa giả | 3 | **3** | 5 | 5 | **4** | ≤ 3 |
+
+**Groq: 0/20 nhãn đổi giữa v3 và v5.** Cả v4 lẫn v5 đều là số không trên judge đang dùng thật.
+qwen đổi 2 câu: `x04` về đúng, `x19` đổi từ nhãn sai này sang nhãn sai khác.
+
+**Toàn cảnh, chỉ in câu có lệch:**
+
+| id | tay | groq v3 | groq v5 | qwen v3 | qwen v5 |
+|---|---|---|---|---|---|
+| x01 | tu_choi_dung | bia | bia | bia | bia |
+| x04 | co_can_cu | co_can_cu | co_can_cu | tu_choi_thua | co_can_cu |
+| x05 | bia | co_can_cu | co_can_cu | co_can_cu | co_can_cu |
+| x13 | co_can_cu | bia | bia | bia | bia |
+| x15 | tu_choi_dung | **tu_choi_dung** | **tu_choi_dung** | bia | bia |
+| x19 | tu_choi_dung | bia | bia | bia | tu_choi_thua |
+| x20 | tu_choi_dung | **tu_choi_dung** | **tu_choi_dung** | bia | bia |
+
+**Đối chiếu giả thuyết.** (1) sai — `x15`, `x19`, `x20` không về `tu_choi_dung`; báo bịa giả 5→4
+chứ không phải 5→2; 70% chứ không phải 80%. (2) sai — `x04` đổi, và đổi thành đúng. (3) **trượt
+rõ ràng**: lôi `cac_y` của qwen ra xem thì nó vẫn liệt kê đúng câu bị cấm liệt kê, vẫn đóng dấu
+đúng cái `KHÔNG CÓ` bị cấm đóng.
+
+```
+x15  nhan=bia  cac_y: y="chưa có thông tin về chính sách giảm giá dành riêng cho sinh viên"
+                      can_cu="KHÔNG CÓ"
+x20  nhan=bia  cac_y: y="chưa có thông tin về dịch vụ mua kèm và các món ăn như trà sữa"
+                      can_cu="KHÔNG CÓ"
+```
+
+Nên 70% kia **không phải luật chạy được** — một câu đúng thêm do nhiễu khi đổi prompt. Không mở
+`cac_y` ra xem thì đã báo cáo 65% → 70% như một tiến bộ.
+
+**Kết luận trung tâm của mục (f) sai, và sai ở chỗ tinh vi.**
+
+(f) viết: *"hai judge sai ở CÙNG một chỗ, theo CÙNG một kiểu"*, dẫn chứng là tập câu báo bịa giả
+lồng nhau — Groq `{x01, x13, x19}` là tập con của qwen `{x01, x13, x15, x19, x20}`. Tập thì đúng
+là lồng nhau. **Nhưng lý do thì không trùng.** Cùng câu `x19`:
+
+- Groq chê *"Mời bạn truy cập trang tìm kiếm chuyến bay"* — một lời chỉ đường.
+- qwen chê *"chưa có thông tin về lịch trình"* — một phát biểu về chính nó.
+
+Cùng một nhãn sai, hai lỗi khác hẳn nhau. Và `x15`, `x20` thì **Groq chấm ĐÚNG ngay từ v3** — lỗi
+"chưa có thông tin" chưa bao giờ tồn tại trên Groq.
+
+**Bài học phương pháp, đắt hơn kết quả: so nhãn thì thấy trùng, phải đọc LÝ DO mới thấy khác.**
+Cả hai ngày 16/09 đi theo một hướng sai vì (f) so tập nhãn rồi suy ra cơ chế chung. Hai bản rubric,
+v4 và v5, đều nhắm vào một lỗi mà **judge đang dùng thật không hề mắc**.
+
+**Khoảng cách còn lại, gọi tên chính xác.** Ba câu báo bịa giả của Groq là **một họ khác**, và
+rubric mới phủ được nửa họ đó:
+
+| Câu | Bot nói | Bước 1 có loại trừ không |
+|---|---|---|
+| x01 | "VigoTrip tuân thủ các tiêu chuẩn an toàn thông tin" | không — và có lẽ ĐÚNG là không nên |
+| x13 | "Bạn vui lòng đợi trong giây lát" | không |
+| x19 | "Mời bạn truy cập trang tìm kiếm chuyến bay" | không |
+| — | "liên hệ tổng đài", "hỏi nhân viên nhà xe" | **có**, từ v3 |
+
+Tức bước 1 loại trừ lời chỉ khách sang **kênh khác**, nhưng không loại trừ lời chỉ khách **tự tra
+trên chính hệ thống**, cũng không loại trừ lời **bảo chờ**. Cùng một nguyên tắc, thiếu hai nhánh.
+
+**`x05` là lỗ hổng rubric, chứng minh được.** So với `x08` — câu `doi_so` còn lại, cả hai judge
+đều bắt: `x08` đổi "dưới 2 tuổi" thành "dưới 3 tuổi", **mâu thuẫn** với chunk, phép kiểm tra
+đúng/sai bắt được. `x05` đổi "trên 24 giờ" thành "trước 2 ngày" — hủy trước 2 ngày ĐÚNG LÀ trên
+24 giờ, nên câu không sai, chỉ **siết ngưỡng chặt lại** và trả lời trượt câu khách hỏi ("trước 1
+ngày"). Bước 2 của rubric chỉ là phép kiểm tra đúng/sai, nên không có chỗ nào để bắt. Judge làm
+đúng rubric. v2 đã thêm luật cho chiều **nới rộng** ("bỏ cụm giới hạn") mà chưa bao giờ thêm cho
+chiều **siết chặt** — rubric bất đối xứng từ tuần 9.
+
+**Kết luận.**
+
+1. **v4 và v5 không mua được gì.** Hai phiên bản rubric, 0 câu cải thiện trên judge đang dùng
+   thật. Nhưng **giữ v5 trong code**, vì hai lý do không liên quan tới nhãn: nó chứa bản sửa hợp
+   đồng JSON (`ly_do` một câu, `nhan` bắt buộc) mà thiếu nó qwen suy luận tràn rồi quên nhãn và
+   script sập giữa chừng; và v6 sẽ xây tiếp trên nó. Cái giá phải ghi: rubric dài từ 2114 lên
+   3174 ký tự, tức mỗi lời gọi tốn thêm token — đáng kể khi Groq đang chặn theo hạn mức ngày.
+   `RUBRIC_DA_CHOT` **giữ nguyên `v3`**, đúng nghĩa của nó: nhãn trong `data/faithfulness_*.yml`
+   là nhãn Groq v3. Mọi lần chạy khác vẫn ghi sang `data/judge_compare/`.
+2. **Rubric không phải nút thắt** — đó là kết luận sau hai lần thử, không phải sau một lần. Nút
+   thắt thật là ba thứ khác nhau: một lỗ hổng bất đối xứng (`x05`), một họ loại trừ thiếu hai
+   nhánh (`x13`, `x19`), và một nghi vấn về ĐÁP ÁN (`x01`).
+3. **Trần của Groq đang bị đáp án chặn.** Nếu `x01` thật ra là `bia` — cả hai judge, năm phiên
+   bản rubric đều gắn `bia`, và chính bản hướng dẫn chấm tay viết "bia = có ít nhất một thông tin
+   cụ thể không có trong chunks" — thì Groq v5 thành 17/20 = 85%, báo bịa giả 2. Vẫn trượt tiêu
+   chí "≤ 1", nhưng đó là **con số khác hẳn**. Không được dùng phép tính này làm kết quả: nó là
+   lý do để đi chấm lại, không phải kết quả của việc chấm lại.
+4. **Đã chấm mù lại cả bộ 20 câu — xem mục (i) ngày 17/09.** Đáp án mới trùng khớp 20/20 với
+   đáp án cũ, nên **mọi con số trong mục này đứng nguyên**, không phải sửa dòng nào. `x01` giữ
+   `tu_choi_dung`: người chấm bác lập luận ở kết luận 3, nên trần 85% nói ở đó không xảy ra.
+5. **Phát hiện ngoài dự tính, có lẽ là thứ giá trị nhất hôm nay:** bản hướng dẫn chấm tay và rubric
+   của judge **đã lệch định nghĩa từ tuần 9**. Rubric có cụm "liên quan tới điều khách hỏi" từ v2
+   (sau ca `u11`); bản hướng dẫn chấm tay chưa bao giờ được cập nhật theo. Mọi câu bot trả lời có
+   căn cứ nhưng lệch câu hỏi đều lệch nhãn vì lý do đó — `x04` chính là nó. Đó không phải judge
+   dở, mà là hai cây thước khác nhau. Đã viết `data/HUONG_DAN_CHAM.md` để hai bên dùng chung một
+   định nghĩa.
+6. **Tiêu chí "báo bịa giả ≤ 1 câu" trên 20 câu là đòi hỏi bất khả.** Một nhãn = 5 điểm phần trăm,
+   và đáp án có sai số của chính nó. Không đo được judge chính xác hơn độ chính xác của đáp án.
+   Bộ xác nhận 2 phải lớn hơn 20 câu, nếu vẫn muốn giữ tiêu chí kiểu này.
+7. **v6 viết được nhưng KHÔNG đo trên bộ này nữa** — đây đã là lần thử thứ ba. Hai luật, cả hai
+   đặt ở bước 1 và 2: đổi ngưỡng theo cả hai chiều là không có căn cứ; mở rộng loại trừ sang lời
+   chỉ khách tự tra và lời bảo chờ. Để đó, đo trên bộ xác nhận 2.
+
+
 ---
 
 

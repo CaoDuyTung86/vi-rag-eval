@@ -1,0 +1,431 @@
+# Tuần 9 — 20 cặp câu hỏi / câu trả lời để chấm tay. Sinh bằng scripts/faithfulness.py gen.
+#
+# Việc của bạn: điền nhan_tay cho từng câu (ghi_chu tuỳ ý). Đọc chunks trong data/kb/faq-vi.yml
+# theo docId — chatbot chỉ được đọc đúng các chunk đó, không hơn.
+#
+#   co_can_cu     có đưa thông tin, và mọi thông tin cụ thể về VigoTrip đều có trong chunks
+#   bia           có ÍT NHẤT một thông tin cụ thể không có trong chunks, hoặc trái với chunks
+#   tu_choi_dung  không đưa thông tin (từ chối, hỏi lại, mời liên hệ) và chunks đúng là không đủ
+#   tu_choi_thua  không đưa thông tin, trong khi chunks đủ để trả lời
+#
+# Rubric đầy đủ judge dùng: eval/judge.py. Chấm xong mọi câu mới chạy `judge`.
+#
+# BỘ XÁC NHẬN: một số câu trả lời đã bị cài bịa, thứ tự đã xáo. Chấm như câu bình thường, và KHÔNG
+# mở data/faithfulness_xacnhan_dapan.yml trước khi chấm xong.
+
+- id: x01
+  query: web có làm ăn bất chính lưu dữ liệu của khách hàng tụi t rồi ko thèm bảo mật dữ liệu cá nhân
+    xong đến lúc có bot quét 24/7 lấy cmn hết thì sao??
+  expected: []
+  chunks:
+  - account-forgot-password
+  - account-not-receiving-code
+  - support-contact
+  - support-complaint
+  hang_chunk_dung: null
+  tra_loi: "VigoTrip luôn đặt vấn đề bảo mật thông tin cá nhân của khách hàng lên hàng đầu và tuân thủ\
+    \ các tiêu chuẩn an toàn thông tin để bảo vệ dữ liệu. \n\nNếu bạn có bất kỳ thắc mắc cụ thể nào về\
+    \ chính sách bảo mật hoặc cần hỗ trợ liên quan đến tài khoản, vui lòng liên hệ trực tiếp với bộ phận\
+    \ chăm sóc khách hàng qua thông tin ở cuối trang web để được giải đáp chi tiết."
+  latency_ms: 1409
+  nhan_tay: tu_choi_dung
+  ghi_chu: ''
+  nhan_judge: bia
+  ly_do_judge: Chatbot khẳng định VigoTrip 'luôn đặt vấn đề bảo mật thông tin cá nhân... lên hàng đầu
+    và tuân thủ các tiêu chuẩn an toàn thông tin', nhưng TÀI LIỆU chỉ nêu cách xử lý khi quên mật khẩu,
+    kiểm tra spam, hoặc khiếu nại chất lượng dịch vụ; hoàn toàn không có bất kỳ câu chữ nào xác nhận chính
+    sách bảo mật dữ liệu hay cam kết an toàn thông tin của hệ thống.
+  rubric: v3
+- id: x02
+  query: đi tàu có được mang vali to không
+  expected:
+  - baggage-train-general
+  - baggage-overweight-fee
+  chunks:
+  - baggage-train-general
+  - pets-train
+  - baggage-bus-general
+  - pets-bus
+  hang_chunk_dung: 1
+  tra_loi: Vé tàu hỏa cho phép mang theo hành lý cá nhân với trọng lượng dưới 20kg mỗi khách và hành khách
+    cần xuất trình căn cước công dân khi làm thủ tục gửi đồ. Hành lý sẽ được để trên giá phía trên chỗ
+    ngồi hoặc dưới giường nằm. Đối với hàng hóa có kích thước lớn, bạn cần gửi qua dịch vụ vận chuyển
+    riêng của nhà ga. Mời bạn ghé trang chi tiết để xem thêm thông tin.
+  latency_ms: 1111
+  nhan_tay: bia
+  ghi_chu: bịa chi tiết xuất trình căn cước công dân khi làm thủ tục gửi đồ
+  nhan_judge: bia
+  ly_do_judge: Chatbot yêu cầu khách xuất trình căn cước công dân khi làm thủ tục gửi đồ, nhưng tài liệu
+    chỉ nói về quy định hành lý và thú cưng, không đề cập đến giấy tờ tùy thân cho việc gửi đồ.
+  rubric: v3
+- id: x03
+  query: Thẻ của tôi vẫn đang hoạt động nhưng thanh toán thất bại, cần làm gì?
+  expected:
+  - payment-failed
+  chunks:
+  - payment-failed
+  - voucher-after-payment
+  - voucher-not-working
+  - payment-hold-time
+  hang_chunk_dung: 1
+  tra_loi: "Nếu thanh toán thất bại, báo lỗi hoặc bị gián đoạn, đơn hàng của bạn sẽ ở trạng thái chưa\
+    \ thanh toán và ghế được giữ trong thời gian ngắn. Bạn có thể vào Lịch sử đặt vé để thanh toán lại,\
+    \ hoặc đặt lại đơn mới. \n\nNếu tài khoản đã bị trừ tiền nhưng đơn hàng không thành công, ngân hàng\
+    \ sẽ tự động hoàn lại tiền cho bạn."
+  latency_ms: 1060
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều khớp chính xác với nội dung trong TÀI LIỆU CHATBOT
+    ĐƯỢC ĐỌC về quy trình xử lý thanh toán thất bại, trạng thái đơn hàng, và việc hoàn tiền tự động.
+  rubric: v3
+- id: x04
+  query: ê t vừa mới realisee là t đặt vé chọn nhầm số cân hành lý ký gửi, thì có điều chỉnh đc ko hay
+    phải nộp phí, hay phải yêu cầu nâng hạn mức????
+  expected:
+  - baggage-overweight-fee
+  - baggage-plane-general
+  chunks:
+  - baggage-overweight-fee
+  - baggage-plane-general
+  - baggage-bus-general
+  - cancel-change-ticket
+  hang_chunk_dung: 1
+  tra_loi: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Nếu hành lý vượt
+    số cân cho phép, bạn phải mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  latency_ms: 1141
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: tu_choi_thua
+  ly_do_judge: Câu trả lời chỉ cung cấp thông tin về định mức miễn phí và cách xử lý khi quá cân (mua
+    thêm/trả phí), nhưng hoàn toàn không giải quyết được câu hỏi của khách về việc 'có điều chỉnh được
+    số cân đã đặt' hay 'phải nộp phí thế nào cụ thể', do tài liệu cũng không có thông tin về chính sách
+    điều chỉnh sau khi đặt.
+  rubric: v3
+- id: x05
+  query: huy ve truoc 1 ngay duoc hoan bao nhieu
+  expected:
+  - cancel-policy-refund-tiers
+  chunks:
+  - refund-partial
+  - cancel-policy-refund-tiers
+  - cancel-missed-trip
+  - cancel-how-to
+  hang_chunk_dung: 2
+  tra_loi: Hủy vé trước 2 ngày, tức là trước giờ khởi hành trên 24 giờ, quý khách sẽ được hoàn lại 100%
+    tiền vé. Để thực hiện, quý khách vui lòng đăng nhập tài khoản, vào mục Lịch sử đặt vé, chọn đơn hàng
+    cần hủy và bấm nút hủy.
+  latency_ms: 1071
+  nhan_tay: bia
+  ghi_chu: bịa hủy vé trước 2 ngày là trước giờ khởi hành trên 24 giờ
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều khớp chính xác với thông tin về mức hoàn tiền
+    100% khi hủy trước 24 giờ và quy trình hủy vé trong tài liệu.
+  rubric: v3
+- id: x06
+  query: Sau khi hủy vé, tôi sẽ nhận được hoàn tiền bằng hình thức nào?
+  expected:
+  - refund-processing-time
+  chunks:
+  - cancel-how-to
+  - cancel-policy-refund-tiers
+  - refund-processing-time
+  - cancel-change-ticket
+  hang_chunk_dung: 3
+  tra_loi: Sau khi yêu cầu hoàn tiền được duyệt, tiền sẽ được chuyển về đúng phương thức thanh toán ban
+    đầu của bạn. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy thuộc vào ngân hàng
+    hoặc ví điện tử xử lý. Bạn có thể theo dõi trạng thái trong mục Lịch sử đặt vé.
+  latency_ms: 1069
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều khớp chính xác với thông tin về thời gian và
+    phương thức hoàn tiền trong tài liệu, không có ý nào bịa đặt hoặc thiếu căn cứ.
+  rubric: v3
+- id: x07
+  query: bùng vé thì mất bao nhiêu tiền
+  expected:
+  - cancel-policy-refund-tiers
+  - cancel-missed-trip
+  chunks:
+  - cancel-policy-refund-tiers
+  - cancel-missed-trip
+  - baggage-overweight-fee
+  - refund-partial
+  hang_chunk_dung: 1
+  tra_loi: Nếu bạn chủ động hủy vé trước giờ khởi hành từ 4 đến 24 giờ, mức phí hủy là 10 phần trăm giá
+    trị đơn hàng, bạn sẽ nhận lại 90 phần trăm tiền vé. Nếu hủy khi còn dưới 4 giờ hoặc đã lỡ chuyến,
+    vé vẫn được hoàn tiền. Bạn nên chủ động hủy vé sớm nếu không thể tham gia chuyến đi.
+  latency_ms: 1197
+  nhan_tay: bia
+  ghi_chu: bịa hủy khi còn dưới 4 giờ hoặc đã lỡ chuyến vé vẫn được hoàn tiền, trái với chunks
+  nhan_judge: bia
+  ly_do_judge: Chatbot khẳng định 'vé vẫn được hoàn tiền' nếu hủy dưới 4 giờ hoặc lỡ chuyến, trong khi
+    tài liệu quy định rõ ràng là 'không hủy và không hoàn được nữa' cũng như 'không được hoàn tiền' cho
+    các trường hợp này.
+  rubric: v3
+- id: x08
+  query: bé nhà tôi 1 tuổi có phải mua vé không
+  expected:
+  - children-infant-free
+  chunks:
+  - children-infant-free
+  - children-over-12
+  - children-2-to-12
+  - children-travel-alone
+  hang_chunk_dung: 1
+  tra_loi: Em bé dưới 3 tuổi được miễn phí vé và ngồi cùng người lớn đi kèm, không có ghế riêng. Mỗi người
+    lớn chỉ được kèm một em bé dưới 2 tuổi, và khách vẫn cần khai báo thông tin em bé khi đặt vé.
+  latency_ms: 999
+  nhan_tay: bia
+  ghi_chu: bịa em bé dưới 3 tuổi được miễn phí vé (chunks ghi dưới 2 tuổi)
+  nhan_judge: bia
+  ly_do_judge: Chatbot nói 'Em bé dưới 3 tuổi' miễn phí, trong khi tài liệu chỉ quy định miễn phí cho
+    em bé 'dưới 2 tuổi'. Việc mở rộng giới hạn từ 2 lên 3 tuổi làm câu trả lời không có căn cứ so với
+    tài liệu.
+  rubric: v3
+- id: x09
+  query: tôi muốn mang laptop và máy ảnh theo
+  expected:
+  - baggage-fragile
+  chunks:
+  - baggage-fragile
+  - baggage-plane-general
+  - baggage-prohibited
+  - baggage-bus-general
+  hang_chunk_dung: 1
+  tra_loi: Đối với đồ dễ vỡ và thiết bị điện tử như laptop và máy ảnh, bạn nên mang theo người hoặc để
+    trong hành lý xách tay, không nên để trong hành lý ký gửi hay khoang gầm xe. Hành khách bắt buộc phải
+    xuất trình căn cước công dân gắn chip khi làm thủ tục gửi đồ. Các nhà vận chuyển sẽ không chịu trách
+    nhiệm đối với tài sản có giá trị để trong hành lý ký gửi.
+  latency_ms: 1017
+  nhan_tay: bia
+  ghi_chu: bịa chi tiết bắt buộc xuất trình căn cước công dân gắn chip khi làm thủ tục gửi đồ
+  nhan_judge: bia
+  ly_do_judge: Chatbot đưa ra yêu cầu bắt buộc xuất trình 'căn cước công dân gắn chip' khi làm thủ tục
+    gửi đồ, nhưng TÀI LIỆU chỉ nói chung là 'giấy tờ tùy thân' và không đề cập cụ thể đến loại giấy tờ
+    hay điều kiện 'gắn chip'.
+  rubric: v3
+- id: x10
+  query: di xe khach mang duoc may can hanh ly
+  expected:
+  - baggage-bus-general
+  chunks:
+  - baggage-bus-general
+  - baggage-train-general
+  - pets-bus
+  - baggage-plane-general
+  hang_chunk_dung: 1
+  tra_loi: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh được để
+    ở khoang dưới gầm xe, còn hành lý nhỏ mang theo lên ghế.
+  latency_ms: 1060
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều khớp chính xác với nội dung quy định về hành
+    lý xe khách trong tài liệu.
+  rubric: v3
+- id: x11
+  query: Sau khi hủy vé, tôi có thể nhận lại tiền bằng cách nào?
+  expected:
+  - refund-processing-time
+  chunks:
+  - cancel-how-to
+  - cancel-policy-refund-tiers
+  - refund-processing-time
+  - cancel-change-ticket
+  hang_chunk_dung: 3
+  tra_loi: Sau khi yêu cầu hoàn tiền được duyệt, tiền sẽ được chuyển về đúng phương thức thanh toán ban
+    đầu của bạn. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy thuộc vào ngân hàng
+    hoặc ví điện tử xử lý. Bạn có thể theo dõi trạng thái hoàn tiền trong mục Lịch sử đặt vé.
+  latency_ms: 1127
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều khớp chính xác với thông tin trong tài liệu về
+    thời gian, phương thức và cách theo dõi việc hoàn tiền.
+  rubric: v3
+- id: x12
+  query: sao khong co chuyen nao het
+  expected:
+  - trip-no-results
+  chunks:
+  - trip-no-results
+  - voucher-not-working
+  - booking-round-trip
+  - voucher-after-payment
+  hang_chunk_dung: 1
+  tra_loi: Không tìm thấy chuyến nào thường do ngày bạn chọn chưa mở bán hoặc tuyến đó chưa có chuyến
+    khai thác. Bạn có thể thử đổi sang ngày khác, bỏ bớt bộ lọc giá và khung giờ, hoặc gọi tổng đài hỗ
+    trợ 1900 5588 tại phòng vé để được nhân viên tư vấn thêm lựa chọn nhé.
+  latency_ms: 1051
+  nhan_tay: bia
+  ghi_chu: bịa số tổng đài hỗ trợ 1900 5588 tại phòng vé
+  nhan_judge: bia
+  ly_do_judge: Ý cụ thể 'gọi tổng đài hỗ trợ 1900 5588 tại phòng vé' không có căn cứ vì TÀI LIỆU chỉ nói
+    chung là 'Khách thử đổi sang ngày khác...' mà KHÔNG cung cấp số điện thoại hay đường dẫn liên hệ nào.
+  rubric: v3
+- id: x13
+  query: đơn hoàn tiền của tôi đang chờ duyệt nghĩa là sao
+  expected:
+  - refund-status-meaning
+  chunks:
+  - refund-status-meaning
+  - refund-processing-time
+  - payment-failed
+  - trip-delay
+  hang_chunk_dung: 1
+  tra_loi: Trạng thái đang chờ duyệt nghĩa là nhà xe đang xem xét yêu cầu hoàn tiền của bạn. Bạn vui lòng
+    đợi trong giây lát để nhà cung cấp xử lý nhé.
+  latency_ms: 1018
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: bia
+  ly_do_judge: Chatbot đưa ra lời khuyên 'đợi trong giây lát' nhưng không kèm theo bất kỳ con số, thời
+    gian cụ thể hay điều kiện nào về thời gian chờ (tài liệu chỉ nói tiền về sau khi duyệt mất 3-7 ngày
+    làm việc, không có quy định về thời gian chờ duyệt), nên ý này là bịa đặt.
+  rubric: v3
+- id: x14
+  query: xem lại vé đã mua ở đâu
+  expected:
+  - booking-check-my-tickets
+  chunks:
+  - booking-check-my-tickets
+  - booking-confirmation-email
+  - checkin-already-used
+  - checkin-qr-usage
+  hang_chunk_dung: 1
+  tra_loi: Để xem lại vé đã mua, quý khách vui lòng đăng nhập vào tài khoản và truy cập vào mục Lịch sử
+    đặt vé. Tại đây, quý khách có thể xem toàn bộ đơn hàng, trạng thái thanh toán, mã QR và chi tiết hành
+    trình của mình. Lưu ý rằng bất kỳ người dùng nào cũng có thể xem được vé đã đặt.
+  latency_ms: 1324
+  nhan_tay: bia
+  ghi_chu: bịa bất kỳ người dùng nào cũng có thể xem được vé đã đặt, trái với chunks chỉ chủ tài khoản
+    mới xem được
+  nhan_judge: bia
+  ly_do_judge: 'Chatbot khẳng định ''bất kỳ người dùng nào cũng có thể xem được vé đã đặt'' trong khi
+    tài liệu chỉ ghi rõ: ''Chỉ chủ tài khoản mới xem được vé của mình''.'
+  rubric: v3
+- id: x15
+  query: Có chính sách giảm giá cho sinh viên không?
+  expected: []
+  chunks:
+  - voucher-how-to-use
+  - voucher-conditions
+  - children-2-to-12
+  - voucher-not-working
+  hang_chunk_dung: null
+  tra_loi: Hiện tại mình chưa có thông tin về chính sách giảm giá dành riêng cho sinh viên trên hệ thống
+    VigoTrip. Mời bạn tham khảo các chương trình ưu đãi hoặc mã giảm giá chung hiện có trên trang chủ
+    của chúng tôi.
+  latency_ms: 882
+  nhan_tay: tu_choi_dung
+  ghi_chu: ''
+  nhan_judge: bia
+  ly_do_judge: Chatbot khẳng định chưa có thông tin về chính sách sinh viên và hướng khách xem trang chủ,
+    trong khi TÀI LIỆU chỉ liệt kê cách dùng mã giảm giá, điều kiện áp dụng, vé trẻ em và lỗi mã không
+    hợp lệ; tài liệu không ghi nhận bất kỳ quy định hay chính sách nào dành riêng cho sinh viên nên việc
+    chatbot nói 'chưa có thông tin' là bịa đặt vì nếu có thì phải nằm trong tài liệu hoặc chatbot phải
+    thừa nhận không tìm thấy (nhưng ở đây nó phủ nhận sự tồn tại của chính sách đó hoàn toàn), còn việc
+    hướng khách xem trang chủ chung chung mà không kèm đường dẫn cụ thể cũng không tạo ra ý có căn cứ.
+  rubric: v3
+- id: x16
+  query: cho cun di tau hoa
+  expected:
+  - pets-train
+  - pets-bus
+  chunks:
+  - pets-train
+  - pets-bus
+  - baggage-train-general
+  - trip-no-results
+  hang_chunk_dung: 1
+  tra_loi: Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín và gửi ở toa hành lý. Bạn không được
+    mang thú cưng vào khoang giường nằm hay khoang ghế ngồi. Bạn nên liên hệ tổng đài hỗ trợ 1900 8888
+    trước ngày đi để nắm quy định cụ thể của từng tuyến.
+  latency_ms: 953
+  nhan_tay: bia
+  ghi_chu: bịa số tổng đài hỗ trợ 1900 8888
+  nhan_judge: bia
+  ly_do_judge: Chatbot đưa ra số điện thoại '1900 8888' để liên hệ, nhưng TÀI LIỆU không đề cập đến bất
+    kỳ số điện thoại nào; đây là thông tin bịa đặt so với tài liệu.
+  rubric: v3
+- id: x17
+  query: tôi quên mật khẩu
+  expected:
+  - account-forgot-password
+  chunks:
+  - account-forgot-password
+  - account-not-receiving-code
+  - account-register
+  - voucher-after-payment
+  hang_chunk_dung: 1
+  tra_loi: Để lấy lại mật khẩu, bạn hãy bấm vào mục quên mật khẩu ở màn hình đăng nhập và nhập email đã
+    đăng ký. Hệ thống sẽ gửi mã đặt lại mật khẩu về email của bạn.
+  latency_ms: 877
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: Tất cả các ý cụ thể trong câu trả lời đều có căn cứ trực tiếp trong tài liệu.
+  rubric: v3
+- id: x18
+  query: hành lý quá cân thì tính tiền thế nào
+  expected:
+  - baggage-overweight-fee
+  chunks:
+  - baggage-overweight-fee
+  - baggage-plane-general
+  - baggage-bus-general
+  - baggage-train-general
+  hang_chunk_dung: 1
+  tra_loi: Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt. Mức phí do từng nhà
+    xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục. Khách nên cân hành lý trước khi ra bến
+    để tránh phát sinh chi phí ngoài dự tính.
+  latency_ms: 961
+  nhan_tay: co_can_cu
+  ghi_chu: ''
+  nhan_judge: co_can_cu
+  ly_do_judge: ''
+  rubric: v3
+- id: x19
+  query: cho tôi hỏi chiều mai tôi có thể bay từ hà nội sang đà nẵng không?
+  expected: []
+  chunks:
+  - cancel-change-ticket
+  - pets-plane
+  - booking-round-trip
+  - checkin-arrive-early
+  hang_chunk_dung: null
+  tra_loi: Chào bạn, hiện tại mình chưa có thông tin về lịch trình các chuyến bay cụ thể giữa Hà Nội và
+    Đà Nẵng. Mời bạn truy cập trang tìm kiếm chuyến bay trên hệ thống của VigoTrip để xem danh sách chuyến
+    bay, giờ đi và giá vé chi tiết cho ngày mai.
+  latency_ms: 1107
+  nhan_tay: tu_choi_dung
+  ghi_chu: ''
+  nhan_judge: bia
+  ly_do_judge: Chatbot khẳng định chưa có thông tin về lịch trình cụ thể giữa Hà Nội và Đà Nẵng, trong
+    khi TÀI LIỆU chỉ nói về chính sách đổi vé, mang thú cưng, đặt vé khứ hồi và thời gian có mặt tại sân
+    bay/bến; không có bất kỳ câu nào xác nhận hay phủ nhận việc có chuyến bay chiều mai hay hướng dẫn
+    cách kiểm tra lịch trình cụ thể trên hệ thống.
+  rubric: v3
+- id: x20
+  query: lấy cho tao 1 ly trà sữa tocotoco, thêm trân châu đường đen, không đá, ít ngọt - à ko thêm 25%
+    đường nhá!
+  expected: []
+  chunks:
+  - support-complaint
+  - support-contact
+  - seat-change-after-payment
+  - pets-service-animal
+  hang_chunk_dung: null
+  tra_loi: Mình chưa có thông tin về dịch vụ mua kèm và các món ăn như trà sữa. Bạn vui lòng liên hệ tổng
+    đài hoặc bộ phận chăm sóc khách hàng qua thông tin ở cuối trang web để được hỗ trợ thêm.
+  latency_ms: 965
+  nhan_tay: tu_choi_dung
+  ghi_chu: ''
+  nhan_judge: bia
+  ly_do_judge: Chatbot khẳng định 'chưa có thông tin về dịch vụ mua kèm và các món ăn như trà sữa' nhưng
+    TÀI LIỆU chỉ nói về khiếu nại chất lượng, đổi ghế, chó dẫn đường và liên hệ hỗ trợ chung; tài liệu
+    không xác nhận việc chatbot thiếu thông tin này hay dịch vụ đó tồn tại/không tồn tại nên ý 'chưa có
+    thông tin' là bịa đặt.
+  rubric: v3

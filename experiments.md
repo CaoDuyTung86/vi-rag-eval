@@ -1456,6 +1456,86 @@ Ba điều đọc được, không điều nào thấy được từ một mẻ:
    kể cả theo hướng có lợi cho kết luận tuần 10.
 4. Sau đó mới tới sửa `ChatService` chặn mã lạ, và đo bản sửa bằng chính cách đo này.
 
+
+## 2026-09-16 (f) — Judge chạy trên máy mình: phòng thí nghiệm có thoát được API không
+
+**Vì sao.** Hết hạn mức Gemini là dừng việc — hôm nay đã chứng minh điều đó ba lần. Tuần 10 đã có
+bản local cho **tầng sinh** (`qwen3.5:9b`) và đã thử **tầng nhúng** (`bge-m3`, trượt). Chỗ cuối
+cùng còn buộc phải gọi ra ngoài là **judge**: Groq `gpt-oss-120b`. Nếu judge chạy được trên máy thì
+toàn bộ vòng lặp *sinh → chấm → đọc bảng* chạy không cần một lượt API nào, và việc "hết hạn mức thì
+nghỉ" biến mất.
+
+**Giả thuyết.** Chấm khó hơn sinh. Sinh chỉ cần đọc 4 đoạn rồi diễn đạt lại; chấm phải đọc rubric,
+liệt kê từng ý trong câu trả lời, đối chiếu từng ý với tài liệu, rồi kết luận. Đoán model 9,7 tỷ
+tham số sẽ **dễ dãi hơn** Groq 120 tỷ: bỏ sót câu bịa chứ không phải báo bịa giả thêm. Cụ thể:
+bắt được **≤ 6/8** câu bịa, tức trượt tiêu chí 1.
+
+**Thay đổi.** Thêm `--judge-model` vào `scripts/faithfulness.py`: `groq` (mặc định) hoặc một tag
+Ollama. Judge khác mặc định **ghi ra `data/judge_compare/`**, không đè nhãn judge v3 trên Groq —
+nhãn đó là mốc đã commit. Rubric, nhiệt độ 0, `response_format` JSON giữ nguyên; model local thêm
+`reasoning_effort: none` như tuần 10.
+
+**Cách đo.** Bộ xác nhận 20 câu (`data/faithfulness_xacnhan.yml`), 8 câu cài bịa theo 4 kiểu, đã có
+nhãn tay. Đây là bộ dựng riêng để chấm judge, dùng lại nguyên vẹn — không cần chấm tay thêm gì.
+
+**Tiêu chí dùng** — so với chính Groq v3 trên cùng bộ đó (bắt 7/8, cùng nhãn 80%, báo bịa giả 3):
+
+1. Bắt bịa **≥ 7/8** — không kém Groq.
+2. Cùng nhãn **≥ 80%**.
+3. Báo bịa giả **≤ 3** — không tệ hơn Groq.
+
+Qua cả ba thì judge local thay được Groq ở vai trò bộ lọc, và phòng thí nghiệm chạy được với 0 lượt
+API. Trượt tiêu chí 1 là nặng nhất: judge bỏ sót câu bịa thì nó không còn là bộ lọc, vì cả giá trị
+của nó nằm ở chỗ "nó nói không bịa thì tin được".
+
+**Kết quả** (16/09, 20 câu, 0 lượt API — chạy trọn trên RTX 4060).
+
+| | Groq `gpt-oss-120b` | `qwen3.5:9b` Q4 | Tiêu chí |
+|---|---|---|---|
+| Bắt bịa | 7/8 | **7/8** | ≥ 7/8 — **đạt** |
+| Cùng nhãn | 16/20 = 80% | **13/20 = 65%** | ≥ 80% — trượt |
+| Báo bịa giả | 3 | **5** | ≤ 3 — trượt |
+
+**Giả thuyết sai, và sai ngược chiều.** Đoán model nhỏ sẽ **dễ dãi** — bỏ sót câu bịa. Thực tế nó
+bắt **đúng 7/8 như Groq**, không sót thêm câu nào. Chỗ nó thua là **quá nghiêm**: gắn `bia` cho
+câu bot từ chối đúng.
+
+**Và đây mới là phần đáng giá: hai judge sai ở CÙNG một chỗ, theo CÙNG một kiểu.**
+
+- Câu báo bịa giả của Groq: `{x01, x13, x19}`. Của qwen: `{x01, x13, x15, x19, x20}` — **tập cha**
+  của Groq, không phải một tập khác.
+- Câu bịa bị bỏ sót: **cả hai đều đúng một câu, và là cùng câu `x05`.**
+
+Tức là 12 lần chênh lệch kích thước (120 tỷ so với 9,7 tỷ tham số) đổi lấy đúng **2 câu báo bịa giả
+ít hơn**, còn kiểu sai thì y hệt. Không phải hai bộ chấm khác nhau về chất — là cùng một bộ chấm,
+một bên đỡ ồn hơn.
+
+**Nguyên nhân gốc đọc thẳng từ lý do judge đưa ra**, và nó là lỗi LOGIC chứ không phải lỗi đọc
+hiểu. Bốn câu `tu_choi_dung` bị gắn `bia` đều cùng một lập luận:
+
+> `x20` — "Chatbot khẳng định *chưa có thông tin về dịch vụ mua kèm* nhưng TÀI LIỆU chỉ nói về
+> khiếu nại chất lượng, đổi ghế… nên ý *chưa có thông tin* là bịa đặt."
+
+Judge đang đòi tài liệu phải **xác nhận sự vắng mặt** của chính nó. Nhưng "tôi không có thông tin
+về X" là phát biểu về *bot*, không phải về *thế giới* — nó không thể bịa được. Rubric v3 bảo judge
+đối chiếu từng ý với tài liệu và không có luật trừ cho loại phát biểu này, nên judge áp máy móc.
+
+**Kết luận.**
+
+1. **Trượt tiêu chí 2 và 3 — chưa thay được Groq.** Nhưng trượt theo hướng an toàn: nó không bỏ
+   sót thêm câu bịa nào, chỉ ồn hơn. Ở vai trò *bộ lọc* (nói không bịa thì tin, nói bịa thì người
+   chấm lại) thì cái giá của báo bịa giả là **công chấm tay**, không phải sai kết luận.
+2. **Bottleneck là RUBRIC, không phải kích thước model.** Cả hai judge sai cùng chỗ, bỏ sót cùng
+   câu. Đổi sang model to hơn chỉ mua được 2 câu; sửa rubric có thể sửa được cả 5.
+3. Thí nghiệm tiếp theo đã rõ và nó **miễn phí**: rubric **v4**, thêm đúng một luật — *"tôi không
+   có thông tin về X" không bao giờ là `bia`; nếu tài liệu THẬT SỰ có X thì đó là `tu_choi_thua`,
+   còn không thì là `tu_choi_dung`* — rồi chạy lại cả hai judge trên cùng 20 câu. Nếu v4 kéo qwen
+   lên ≥ 80% thì phòng thí nghiệm chạy được với 0 lượt API.
+4. Câu `x05` cả hai cùng bỏ sót đáng một mục riêng: nó là kiểu bịa `doi_so` (đổi con số cạnh một
+   diễn giải đúng) — đúng kiểu đã làm judge v3 trượt từ tuần 9. Hai model khác hẳn nhau về kích
+   thước mà cùng mù ở đúng chỗ đó thì không phải trùng hợp.
+
+
 ---
 
 

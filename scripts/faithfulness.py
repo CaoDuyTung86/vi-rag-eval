@@ -348,6 +348,43 @@ def cmd_gen(args: argparse.Namespace) -> int:
     return 0
 
 
+JUDGE_COMPARE_DIR = ROOT / "data" / "judge_compare"
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1")
+# Nhãn judge trong data/faithfulness*.yml là MỐC đã commit: judge Groq, rubric đã chốt. Mọi tổ hợp
+# khác — judge khác, hoặc rubric đang thử — ghi sang data/judge_compare/ để mốc không bị một lần
+# thử nghiệm đè lên. Chốt rubric mới thì sửa hằng số này rồi chạy lại để làm mới mốc.
+RUBRIC_DA_CHOT = "v3"
+
+
+def judge_client(name: str) -> ChatClient:
+    """Judge mặc định là Groq. Tên khác được hiểu là tag Ollama, tức judge chạy trên máy mình.
+
+    Có để trả lời câu "phòng thí nghiệm này chạy được khi không còn hạn mức API nào không".
+    Tầng sinh và tầng nhúng đã có bản local; judge là chỗ cuối cùng còn buộc phải gọi ra ngoài.
+    """
+    if name == "groq":
+        return ChatClient(
+            os.environ.get("GROQ_API_KEY"),
+            model=JUDGE_MODEL,
+            base_url=GROQ_BASE_URL,
+            # Rubric bắt judge liệt kê từng ý, medium nghĩ lâu hơn low: 2000 token dễ hết dở.
+            max_tokens=4000,
+            temperature=0,
+            extra_body={"reasoning_effort": "medium", "response_format": {"type": "json_object"}},
+        )
+    return ChatClient(
+        "ollama",
+        model=name,
+        base_url=OLLAMA_BASE_URL,
+        max_tokens=4000,
+        temperature=0,
+        # Tắt suy nghĩ như tuần 10, và ép JSON để parse_label không phải đoán.
+        extra_body={"reasoning_effort": "none", "response_format": {"type": "json_object"}},
+        min_interval_s=0.0,
+        timeout_s=600.0,
+    )
+
+
 def cmd_judge(args: argparse.Namespace) -> int:
     path = BO[args.bo]
     items = read_items(path)
@@ -357,15 +394,12 @@ def cmd_judge(args: argparse.Namespace) -> int:
         return 2
 
     by_id = {chunk.doc_id: chunk for chunk in load_kb()}
-    judge = ChatClient(
-        os.environ.get("GROQ_API_KEY"),
-        model=JUDGE_MODEL,
-        base_url=GROQ_BASE_URL,
-        # Rubric bắt judge liệt kê từng ý, và medium nghĩ lâu hơn low: 2000 token dễ hết giữa chừng.
-        max_tokens=4000,
-        temperature=0,
-        extra_body={"reasoning_effort": "medium", "response_format": {"type": "json_object"}},
-    )
+    judge = judge_client(args.judge_model)
+    # Judge khác, hoặc rubric đang thử, thì GHI RA CHỖ KHÁC — xem RUBRIC_DA_CHOT.
+    if args.judge_model != "groq" or RUBRIC_VERSION != RUBRIC_DA_CHOT:
+        JUDGE_COMPARE_DIR.mkdir(parents=True, exist_ok=True)
+        slug = args.judge_model.replace(":", "-")
+        path = JUDGE_COMPARE_DIR / f"{args.bo}_{slug}_{RUBRIC_VERSION}.yml"
     for item in items:
         context = rag_context([by_id[d] for d in item["chunks"]])
         try:
@@ -379,7 +413,10 @@ def cmd_judge(args: argparse.Namespace) -> int:
     write_items(path, items, header)
 
     r = agreement([(item["nhan_tay"], item["nhan_judge"]) for item in items])
-    print(f"\nJudge {JUDGE_MODEL} rubric {RUBRIC_VERSION}, bộ {args.bo}, {r.n} câu:")
+    print(
+        f"\nJudge {judge.model} rubric {RUBRIC_VERSION}, bộ {args.bo}, "
+        f"{r.n} câu, {judge.api_calls} lời gọi thật:"
+    )
     print(f"  cùng nhãn        {r.exact}/{r.n} = {r.exact / r.n:.0%}")
     print(f"  bắt bịa          {r.bia_caught}/{r.bia_human} câu bạn chấm bia")
     print(f"  báo bịa giả      {r.bia_false} câu")
@@ -428,6 +465,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("command", choices=("gen", "judge"))
     parser.add_argument("--bo", choices=tuple(BO), default="dev", help="bộ câu hỏi")
     parser.add_argument("--env-file", help="file .env chứa GEMINI_API_KEY / GROQ_API_KEY")
+    parser.add_argument(
+        "--judge-model",
+        default="groq",
+        help="groq (mặc định) hoặc tag Ollama, ví dụ qwen3.5:9b — judge chạy trên máy mình",
+    )
     parser.add_argument("--force", action="store_true", help="gen: ghi đè cả khi đã có nhãn tay")
     args = parser.parse_args(argv)
     if args.env_file:

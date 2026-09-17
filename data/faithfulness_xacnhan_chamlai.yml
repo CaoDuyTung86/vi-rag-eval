@@ -1,0 +1,637 @@
+# CHẤM MÙ LẠI — bộ xacnhan, 20 câu, seed 16
+# Giải thích đầy đủ: data/HUONG_DAN_CHAM.md
+#
+# Mỗi câu đi từ trên xuống, khớp ở đâu dừng ở đó:
+#
+#   1. Bot nói điều gì mà chunks KHÔNG đỡ được?      -> bia
+#   2. Bot nói được thứ ĐÚNG Ý khách hỏi?            -> co_can_cu
+#   3. Bot không trả lời. Chunks có sẵn câu trả lời?
+#        có     -> tu_choi_thua
+#        không  -> tu_choi_dung
+#
+# KHÔNG tính là "bot nói": chào hỏi, xin lỗi, hỏi lại khách, "mình chưa có thông tin",
+# "liên hệ tổng đài" chung chung, nhắc lại lời khách vừa nói.
+#
+# chac_chan: cao / thap. Phân vân cứ ghi thap và nói vì sao ở ghi_chu — câu thap được tính
+# riêng chứ không bị vứt. Phân vân nhiều là KẾT QUẢ, không phải bạn chấm kém.
+#
+# Chấm xong hết mới mở: faithfulness_xacnhan.yml, judge_compare/, faithfulness_xacnhan_dapan.yml, faithfulness_xacnhan_chamlai_map.yml
+- id: c01
+  query: đi tàu có được mang vali to không
+  tra_loi: Vé tàu hỏa cho phép mang theo hành lý cá nhân với trọng lượng dưới 20kg mỗi khách và hành khách
+    cần xuất trình căn cước công dân khi làm thủ tục gửi đồ. Hành lý sẽ được để trên giá phía trên chỗ
+    ngồi hoặc dưới giường nằm. Đối với hàng hóa có kích thước lớn, bạn cần gửi qua dịch vụ vận chuyển
+    riêng của nhà ga. Mời bạn ghé trang chi tiết để xem thêm thông tin.
+  chunks_day_du:
+  - docId: baggage-train-general
+    title: Quy định hành lý tàu hỏa
+    content: Vé tàu hỏa cho phép mang theo hành lý cá nhân trong khoang, dưới 20kg mỗi khách. Hành lý
+      để trên giá phía trên chỗ ngồi hoặc dưới giường nằm. Hàng hóa kích thước lớn cần gửi qua dịch vụ
+      vận chuyển riêng của nhà ga.
+  - docId: pets-train
+    title: Mang thú cưng lên tàu hỏa
+    content: Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín, gửi ở toa hành lý. Không mang thú
+      cưng vào khoang giường nằm hay khoang ghế ngồi. Khách nên liên hệ nhà ga trước ngày đi để nắm quy
+      định cụ thể của từng tuyến.
+  - docId: baggage-bus-general
+    title: Quy định hành lý xe khách
+    content: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh để ở
+      khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế. Không tính thêm phí nếu tổng hành lý nằm trong
+      định mức 20kg.
+  - docId: pets-bus
+    title: Mang thú cưng lên xe khách
+    content: Xe khách cho phép mang theo thú cưng nhỏ như chó, mèo, cún với điều kiện phải để trong lồng
+      chuyên dụng và xếp ở khoang hành lý dưới gầm xe. Không được để thú cưng trên ghế ngồi hoặc thả rông
+      trong khoang hành khách.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: vali to là hành lý cá nhân, không phải hàng hóa kích thước lớn. Miễn dưới 20kg là được mang
+    theo. Nhưng câu trả lời của bot lại nói cần xuất trình căn cước công dân khi làm thủ tục gửi đồ, trong
+    khi chunks không nói gì về việc này. Câu trả lời cũng không nhắc đến việc hành lý cồng kềnh để ở khoang
+    dưới gầm xe hay hành lý nhỏ mang theo lên ghế, mà chỉ nói chung chung về hành lý cá nhân dưới 20kg.
+- id: c02
+  query: lấy cho tao 1 ly trà sữa tocotoco, thêm trân châu đường đen, không đá, ít ngọt - à ko thêm 25%
+    đường nhá!
+  tra_loi: Mình chưa có thông tin về dịch vụ mua kèm và các món ăn như trà sữa. Bạn vui lòng liên hệ tổng
+    đài hoặc bộ phận chăm sóc khách hàng qua thông tin ở cuối trang web để được hỗ trợ thêm.
+  chunks_day_du:
+  - docId: support-complaint
+    title: Khiếu nại về chất lượng dịch vụ
+    content: Khiếu nại về chất lượng phục vụ trên hành trình được chuyển tới nhà xe hoặc hãng vận chuyển
+      tương ứng. Khách gửi kèm mã đơn hàng, ngày đi và mô tả cụ thể sự việc. Khách cũng có thể để lại
+      đánh giá cho chuyến đi đã hoàn thành.
+  - docId: support-contact
+    title: Liên hệ hỗ trợ
+    content: Khách cần hỗ trợ trực tiếp có thể gọi tổng đài hoặc liên hệ bộ phận chăm sóc khách hàng qua
+      thông tin ở cuối trang web. Khi liên hệ nên cung cấp sẵn mã đơn hàng để được tra cứu nhanh.
+  - docId: seat-change-after-payment
+    title: Đổi ghế sau khi đã thanh toán
+    content: Sau khi thanh toán thành công, ghế đã gán cố định cho vé và không đổi được trên hệ thống.
+      Trường hợp cần đổi chỗ, khách liên hệ trực tiếp nhân viên nhà xe trước giờ khởi hành.
+  - docId: pets-service-animal
+    title: Chó dẫn đường cho người khiếm thị
+    content: Chó dẫn đường hỗ trợ người khiếm thị được xem xét riêng, không áp dụng quy định thú cưng
+      thông thường. Khách cần báo trước cho nhà vận chuyển và mang theo giấy tờ chứng minh đây là động
+      vật hỗ trợ đã qua huấn luyện.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: tu_choi_dung
+  chac_chan: cao
+  ghi_chu: chunks ko có câu trả lời về trà sữa
+- id: c03
+  query: hành lý quá cân thì tính tiền thế nào
+  tra_loi: Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt. Mức phí do từng nhà
+    xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục. Khách nên cân hành lý trước khi ra bến
+    để tránh phát sinh chi phí ngoài dự tính.
+  chunks_day_du:
+  - docId: baggage-overweight-fee
+    title: Hành lý quá cân tính phí thế nào
+    content: Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt. Mức phí do từng
+      nhà xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục. Khách nên cân hành lý trước khi
+      ra bến để tránh phát sinh chi phí ngoài dự tính.
+  - docId: baggage-plane-general
+    title: Quy định hành lý máy bay
+    content: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Hành lý xách tay
+      phải để vừa ngăn hành lý phía trên hoặc dưới ghế ngồi. Nếu hành lý vượt số cân cho phép, khách phải
+      mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  - docId: baggage-bus-general
+    title: Quy định hành lý xe khách
+    content: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh để ở
+      khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế. Không tính thêm phí nếu tổng hành lý nằm trong
+      định mức 20kg.
+  - docId: baggage-train-general
+    title: Quy định hành lý tàu hỏa
+    content: Vé tàu hỏa cho phép mang theo hành lý cá nhân trong khoang, dưới 20kg mỗi khách. Hành lý
+      để trên giá phía trên chỗ ngồi hoặc dưới giường nằm. Hàng hóa kích thước lớn cần gửi qua dịch vụ
+      vận chuyển riêng của nhà ga.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: đúng ngay từ chunk đầu
+- id: c04
+  query: tôi quên mật khẩu
+  tra_loi: Để lấy lại mật khẩu, bạn hãy bấm vào mục quên mật khẩu ở màn hình đăng nhập và nhập email đã
+    đăng ký. Hệ thống sẽ gửi mã đặt lại mật khẩu về email của bạn.
+  chunks_day_du:
+  - docId: account-forgot-password
+    title: Quên mật khẩu
+    content: Khách bấm quên mật khẩu ở màn hình đăng nhập và nhập email đã đăng ký. Hệ thống gửi mã đặt
+      lại mật khẩu về email đó. Số lần yêu cầu gửi mã bị giới hạn trong mỗi khoảng thời gian để chống
+      lạm dụng.
+  - docId: account-not-receiving-code
+    title: Không nhận được mã xác thực qua email
+    content: Mã xác thực có thể rơi vào hộp thư rác. Khách kiểm tra mục spam và quảng cáo trước. Nếu vẫn
+      chưa nhận được, đợi vài phút rồi yêu cầu gửi lại, và kiểm tra kỹ email đã nhập đúng chưa.
+  - docId: account-register
+    title: Đăng ký tài khoản
+    content: Khách đăng ký bằng email và mật khẩu, hoặc đăng nhập nhanh bằng tài khoản Google. Với cách
+      đăng ký bằng email, hệ thống gửi mã xác thực về hộp thư để kích hoạt tài khoản.
+  - docId: voucher-after-payment
+    title: Quên nhập mã giảm giá trước khi thanh toán
+    content: Mã giảm giá phải nhập trước khi xác nhận thanh toán. Đơn hàng đã thanh toán xong thì không
+      áp dụng bù mã giảm giá được nữa.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: đúng ngay từ chunk đầu
+- id: c05
+  query: Sau khi hủy vé, tôi sẽ nhận được hoàn tiền bằng hình thức nào?
+  tra_loi: Sau khi yêu cầu hoàn tiền được duyệt, tiền sẽ được chuyển về đúng phương thức thanh toán ban
+    đầu của bạn. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy thuộc vào ngân hàng
+    hoặc ví điện tử xử lý. Bạn có thể theo dõi trạng thái trong mục Lịch sử đặt vé.
+  chunks_day_du:
+  - docId: cancel-how-to
+    title: Cách hủy vé đã đặt
+    content: Để hủy vé, khách đăng nhập rồi vào mục Lịch sử đặt vé, chọn đơn hàng cần hủy và bấm nút hủy.
+      Hệ thống sẽ hiển thị số tiền được hoàn trước khi khách xác nhận. Chỉ chủ tài khoản đã đặt vé mới
+      hủy được đơn hàng đó.
+  - docId: cancel-policy-refund-tiers
+    title: Chính sách hủy vé và mức hoàn tiền
+    content: Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé. Hủy trong khoảng
+      4 đến 24 giờ trước giờ khởi hành chịu phí hủy 10 phần trăm, tức là được hoàn 90 phần trăm giá trị
+      đơn hàng. Khi chỉ còn dưới 4 giờ là tới giờ khởi hành thì không hủy và không hoàn được nữa. Vé đã
+      soát tại bến cũng không hủy hoàn được, dù còn cách giờ khởi hành bao lâu.
+  - docId: refund-processing-time
+    title: Thời gian nhận lại tiền hoàn
+    content: Sau khi yêu cầu hoàn tiền được duyệt, tiền được chuyển về đúng phương thức thanh toán ban
+      đầu. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy ngân hàng hoặc ví điện tử
+      xử lý. Khách theo dõi trạng thái trong mục Lịch sử đặt vé.
+  - docId: cancel-change-ticket
+    title: Đổi vé sang chuyến khác
+    content: Hệ thống hiện chưa hỗ trợ đổi trực tiếp sang chuyến khác. Khách cần hủy vé cũ theo chính
+      sách hoàn tiền hiện hành rồi đặt lại vé mới cho chuyến mong muốn.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: chunk 3 đúng
+- id: c06
+  query: Thẻ của tôi vẫn đang hoạt động nhưng thanh toán thất bại, cần làm gì?
+  tra_loi: "Nếu thanh toán thất bại, báo lỗi hoặc bị gián đoạn, đơn hàng của bạn sẽ ở trạng thái chưa\
+    \ thanh toán và ghế được giữ trong thời gian ngắn. Bạn có thể vào Lịch sử đặt vé để thanh toán lại,\
+    \ hoặc đặt lại đơn mới. \n\nNếu tài khoản đã bị trừ tiền nhưng đơn hàng không thành công, ngân hàng\
+    \ sẽ tự động hoàn lại tiền cho bạn."
+  chunks_day_du:
+  - docId: payment-failed
+    title: Thanh toán thất bại phải làm sao
+    content: Nếu thanh toán thất bại, báo lỗi hoặc bị gián đoạn, đơn hàng sẽ ở trạng thái chưa thanh toán
+      và ghế được giữ trong thời gian ngắn. Khách vào Lịch sử đặt vé để thanh toán lại, hoặc đặt lại đơn
+      mới. Tiền bị trừ mà đơn không thành công sẽ được ngân hàng hoàn tự động.
+  - docId: voucher-after-payment
+    title: Quên nhập mã giảm giá trước khi thanh toán
+    content: Mã giảm giá phải nhập trước khi xác nhận thanh toán. Đơn hàng đã thanh toán xong thì không
+      áp dụng bù mã giảm giá được nữa.
+  - docId: voucher-not-working
+    title: Mã giảm giá báo không hợp lệ
+    content: Mã báo không hợp lệ thường do đã hết hạn, đã dùng hết lượt, đơn hàng chưa đạt giá trị tối
+      thiểu, hoặc mã chỉ áp dụng cho một nhà xe cụ thể. Khách kiểm tra lại điều kiện của mã hoặc chọn
+      mã khác đang còn hiệu lực.
+  - docId: payment-hold-time
+    title: Thời gian giữ chỗ chờ thanh toán
+    content: Ghế đã chọn chỉ được giữ trong một khoảng thời gian ngắn để khách hoàn tất thanh toán. Quá
+      thời gian này, hệ thống tự động hủy đơn chưa thanh toán và mở lại ghế cho khách khác. Vì vậy nên
+      hoàn tất thanh toán ngay sau khi chọn ghế.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: đúng từ chunk 1
+- id: c07
+  query: đơn hoàn tiền của tôi đang chờ duyệt nghĩa là sao
+  tra_loi: Trạng thái đang chờ duyệt nghĩa là nhà xe đang xem xét yêu cầu hoàn tiền của bạn. Bạn vui lòng
+    đợi trong giây lát để nhà cung cấp xử lý nhé.
+  chunks_day_du:
+  - docId: refund-status-meaning
+    title: Ý nghĩa các trạng thái hoàn tiền
+    content: Yêu cầu hoàn tiền có các trạng thái chính, gồm đang chờ duyệt, đã duyệt và bị từ chối. Đang
+      chờ duyệt nghĩa là nhà xe đang xem xét. Đã duyệt nghĩa là tiền đang trên đường về tài khoản. Bị
+      từ chối sẽ kèm lý do cụ thể từ nhà cung cấp.
+  - docId: refund-processing-time
+    title: Thời gian nhận lại tiền hoàn
+    content: Sau khi yêu cầu hoàn tiền được duyệt, tiền được chuyển về đúng phương thức thanh toán ban
+      đầu. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy ngân hàng hoặc ví điện tử
+      xử lý. Khách theo dõi trạng thái trong mục Lịch sử đặt vé.
+  - docId: payment-failed
+    title: Thanh toán thất bại phải làm sao
+    content: Nếu thanh toán thất bại, báo lỗi hoặc bị gián đoạn, đơn hàng sẽ ở trạng thái chưa thanh toán
+      và ghế được giữ trong thời gian ngắn. Khách vào Lịch sử đặt vé để thanh toán lại, hoặc đặt lại đơn
+      mới. Tiền bị trừ mà đơn không thành công sẽ được ngân hàng hoàn tự động.
+  - docId: trip-delay
+    title: Chuyến bị hoãn hoặc đổi giờ
+    content: Khi chuyến bị hoãn hoặc đổi giờ, hệ thống sẽ thông báo tới email đã đăng ký. Khách nên kiểm
+      tra lại trạng thái chuyến trong Lịch sử đặt vé trước khi ra bến. Trường hợp nhà xe hủy chuyến, khách
+      được hoàn tiền theo quy định của nhà cung cấp.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: đúng từ chunk 1
+- id: c08
+  query: tôi muốn mang laptop và máy ảnh theo
+  tra_loi: Đối với đồ dễ vỡ và thiết bị điện tử như laptop và máy ảnh, bạn nên mang theo người hoặc để
+    trong hành lý xách tay, không nên để trong hành lý ký gửi hay khoang gầm xe. Hành khách bắt buộc phải
+    xuất trình căn cước công dân gắn chip khi làm thủ tục gửi đồ. Các nhà vận chuyển sẽ không chịu trách
+    nhiệm đối với tài sản có giá trị để trong hành lý ký gửi.
+  chunks_day_du:
+  - docId: baggage-fragile
+    title: Mang đồ dễ vỡ và đồ có giá trị
+    content: Đồ dễ vỡ, thiết bị điện tử, tiền mặt và giấy tờ tùy thân nên mang theo người, không để trong
+      hành lý ký gửi hay khoang gầm xe. Nhà vận chuyển không chịu trách nhiệm với tài sản có giá trị để
+      trong hành lý ký gửi.
+  - docId: baggage-plane-general
+    title: Quy định hành lý máy bay
+    content: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Hành lý xách tay
+      phải để vừa ngăn hành lý phía trên hoặc dưới ghế ngồi. Nếu hành lý vượt số cân cho phép, khách phải
+      mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  - docId: baggage-prohibited
+    title: Đồ vật bị cấm mang theo
+    content: Không được mang chất cháy nổ, vũ khí, hóa chất độc hại, pháo, bật lửa số lượng lớn và hàng
+      cấm lên mọi phương tiện. Với máy bay, chất lỏng xách tay bị giới hạn dung tích theo quy định an
+      ninh hàng không. Vi phạm sẽ bị từ chối vận chuyển và không được hoàn tiền.
+  - docId: baggage-bus-general
+    title: Quy định hành lý xe khách
+    content: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh để ở
+      khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế. Không tính thêm phí nếu tổng hành lý nằm trong
+      định mức 20kg.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: nói đúng ý nhưng thừa đoạn "bắt buộc...", nếu đúng mà thừa vẫn đúng thì oke nhỉ, nhưng tôi
+    sẽ ko sửa lại câu 1  || SỬA 17/09 -> bia. "bắt buộc xuất trình căn cước công dân gắn chip khi làm
+    thủ tục gửi đồ" không có trong chunk nào. Thiếu sót không phải bịa, nhưng THÊM thì là bịa. Chính khẳng
+    định này đã được chấm bia ở c01 trong cùng lần chấm.
+- id: c09
+  query: Có chính sách giảm giá cho sinh viên không?
+  tra_loi: Hiện tại mình chưa có thông tin về chính sách giảm giá dành riêng cho sinh viên trên hệ thống
+    VigoTrip. Mời bạn tham khảo các chương trình ưu đãi hoặc mã giảm giá chung hiện có trên trang chủ
+    của chúng tôi.
+  chunks_day_du:
+  - docId: voucher-how-to-use
+    title: Cách dùng mã giảm giá
+    content: Khách nhập mã giảm giá ở bước thanh toán, trước khi xác nhận đơn hàng. Hệ thống sẽ kiểm tra
+      điều kiện áp dụng và trừ trực tiếp vào tổng tiền. Mỗi đơn hàng chỉ áp dụng được một mã giảm giá.
+  - docId: voucher-conditions
+    title: Điều kiện áp dụng mã giảm giá
+    content: Mã giảm giá có thể kèm điều kiện về giá trị đơn tối thiểu, mức giảm tối đa, thời hạn sử dụng
+      và số lượt dùng còn lại. Mã hết hạn, hết lượt hoặc đơn chưa đạt giá trị tối thiểu sẽ không áp dụng
+      được.
+  - docId: children-2-to-12
+    title: Vé trẻ em từ 2 đến 12 tuổi
+    content: Trẻ em từ 2 đến 12 tuổi được tính 75 phần trăm giá vé người lớn và có ghế ngồi riêng. Khi
+      đặt vé, khách chọn loại hành khách là trẻ em để hệ thống áp dụng đúng mức giá.
+  - docId: voucher-not-working
+    title: Mã giảm giá báo không hợp lệ
+    content: Mã báo không hợp lệ thường do đã hết hạn, đã dùng hết lượt, đơn hàng chưa đạt giá trị tối
+      thiểu, hoặc mã chỉ áp dụng cho một nhà xe cụ thể. Khách kiểm tra lại điều kiện của mã hoặc chọn
+      mã khác đang còn hiệu lực.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: tu_choi_dung
+  chac_chan: cao
+  ghi_chu: vì ko có chunk nào liên quan đến sinh viên
+- id: c10
+  query: huy ve truoc 1 ngay duoc hoan bao nhieu
+  tra_loi: Hủy vé trước 2 ngày, tức là trước giờ khởi hành trên 24 giờ, quý khách sẽ được hoàn lại 100%
+    tiền vé. Để thực hiện, quý khách vui lòng đăng nhập tài khoản, vào mục Lịch sử đặt vé, chọn đơn hàng
+    cần hủy và bấm nút hủy.
+  chunks_day_du:
+  - docId: refund-partial
+    title: Vì sao chỉ được hoàn một phần tiền
+    content: Số tiền hoàn phụ thuộc thời điểm hủy so với giờ khởi hành. Hủy trong khoảng 4 đến 24 giờ
+      trước giờ đi chịu phí hủy 10 phần trăm, nên khách chỉ nhận lại 90 phần trăm giá trị đơn hàng chứ
+      không phải toàn bộ. Phần phí dịch vụ và các dịch vụ bổ sung đã sử dụng có thể không nằm trong khoản
+      hoàn.
+  - docId: cancel-policy-refund-tiers
+    title: Chính sách hủy vé và mức hoàn tiền
+    content: Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé. Hủy trong khoảng
+      4 đến 24 giờ trước giờ khởi hành chịu phí hủy 10 phần trăm, tức là được hoàn 90 phần trăm giá trị
+      đơn hàng. Khi chỉ còn dưới 4 giờ là tới giờ khởi hành thì không hủy và không hoàn được nữa. Vé đã
+      soát tại bến cũng không hủy hoàn được, dù còn cách giờ khởi hành bao lâu.
+  - docId: cancel-missed-trip
+    title: Lỡ chuyến, trễ giờ khởi hành
+    content: Khách đến muộn và lỡ chuyến thì không được hoàn tiền, vì hạn chót hủy vé đã đóng từ lúc còn
+      4 giờ trước giờ khởi hành. Vé đã soát cũng không hoàn được. Nếu biết trước mình không đi được, hãy
+      chủ động hủy vé càng sớm càng tốt để hưởng mức hoàn tiền cao hơn. Nên có mặt tại bến trước giờ khởi
+      hành ít nhất 30 phút.
+  - docId: cancel-how-to
+    title: Cách hủy vé đã đặt
+    content: Để hủy vé, khách đăng nhập rồi vào mục Lịch sử đặt vé, chọn đơn hàng cần hủy và bấm nút hủy.
+      Hệ thống sẽ hiển thị số tiền được hoàn trước khi khách xác nhận. Chỉ chủ tài khoản đã đặt vé mới
+      hủy được đơn hàng đó.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: tôi chưa hiểu lắm, thay vì nới rộng và làm phức tạp lên thành 2 ngày, tức trên 24h... thì sao
+    ko chỉ nói là trên 24h là đc hoàn 100% nhỉ.  || SỬA 17/09 -> bia. Tài liệu đặt ngưỡng "trên 24 giờ",
+    bot đặt ngưỡng "2 ngày" — khác con số. Cụm "tức là" khẳng định hai ngưỡng tương đương, mà điều đó
+    sai (25 giờ thoả vế sau, không thoả vế trước), và nó trả lời trượt câu khách hỏi là trước 1 ngày.
+- id: c11
+  query: Sau khi hủy vé, tôi có thể nhận lại tiền bằng cách nào?
+  tra_loi: Sau khi yêu cầu hoàn tiền được duyệt, tiền sẽ được chuyển về đúng phương thức thanh toán ban
+    đầu của bạn. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy thuộc vào ngân hàng
+    hoặc ví điện tử xử lý. Bạn có thể theo dõi trạng thái hoàn tiền trong mục Lịch sử đặt vé.
+  chunks_day_du:
+  - docId: cancel-how-to
+    title: Cách hủy vé đã đặt
+    content: Để hủy vé, khách đăng nhập rồi vào mục Lịch sử đặt vé, chọn đơn hàng cần hủy và bấm nút hủy.
+      Hệ thống sẽ hiển thị số tiền được hoàn trước khi khách xác nhận. Chỉ chủ tài khoản đã đặt vé mới
+      hủy được đơn hàng đó.
+  - docId: cancel-policy-refund-tiers
+    title: Chính sách hủy vé và mức hoàn tiền
+    content: Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé. Hủy trong khoảng
+      4 đến 24 giờ trước giờ khởi hành chịu phí hủy 10 phần trăm, tức là được hoàn 90 phần trăm giá trị
+      đơn hàng. Khi chỉ còn dưới 4 giờ là tới giờ khởi hành thì không hủy và không hoàn được nữa. Vé đã
+      soát tại bến cũng không hủy hoàn được, dù còn cách giờ khởi hành bao lâu.
+  - docId: refund-processing-time
+    title: Thời gian nhận lại tiền hoàn
+    content: Sau khi yêu cầu hoàn tiền được duyệt, tiền được chuyển về đúng phương thức thanh toán ban
+      đầu. Thời gian tiền về tài khoản thường từ 3 đến 7 ngày làm việc, tùy ngân hàng hoặc ví điện tử
+      xử lý. Khách theo dõi trạng thái trong mục Lịch sử đặt vé.
+  - docId: cancel-change-ticket
+    title: Đổi vé sang chuyến khác
+    content: Hệ thống hiện chưa hỗ trợ đổi trực tiếp sang chuyến khác. Khách cần hủy vé cũ theo chính
+      sách hoàn tiền hiện hành rồi đặt lại vé mới cho chuyến mong muốn.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: chunk 3 đúng
+- id: c12
+  query: bùng vé thì mất bao nhiêu tiền
+  tra_loi: Nếu bạn chủ động hủy vé trước giờ khởi hành từ 4 đến 24 giờ, mức phí hủy là 10 phần trăm giá
+    trị đơn hàng, bạn sẽ nhận lại 90 phần trăm tiền vé. Nếu hủy khi còn dưới 4 giờ hoặc đã lỡ chuyến,
+    vé vẫn được hoàn tiền. Bạn nên chủ động hủy vé sớm nếu không thể tham gia chuyến đi.
+  chunks_day_du:
+  - docId: cancel-policy-refund-tiers
+    title: Chính sách hủy vé và mức hoàn tiền
+    content: Hủy vé trước giờ khởi hành trên 24 giờ được hoàn 100 phần trăm tiền vé. Hủy trong khoảng
+      4 đến 24 giờ trước giờ khởi hành chịu phí hủy 10 phần trăm, tức là được hoàn 90 phần trăm giá trị
+      đơn hàng. Khi chỉ còn dưới 4 giờ là tới giờ khởi hành thì không hủy và không hoàn được nữa. Vé đã
+      soát tại bến cũng không hủy hoàn được, dù còn cách giờ khởi hành bao lâu.
+  - docId: cancel-missed-trip
+    title: Lỡ chuyến, trễ giờ khởi hành
+    content: Khách đến muộn và lỡ chuyến thì không được hoàn tiền, vì hạn chót hủy vé đã đóng từ lúc còn
+      4 giờ trước giờ khởi hành. Vé đã soát cũng không hoàn được. Nếu biết trước mình không đi được, hãy
+      chủ động hủy vé càng sớm càng tốt để hưởng mức hoàn tiền cao hơn. Nên có mặt tại bến trước giờ khởi
+      hành ít nhất 30 phút.
+  - docId: baggage-overweight-fee
+    title: Hành lý quá cân tính phí thế nào
+    content: Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt. Mức phí do từng
+      nhà xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục. Khách nên cân hành lý trước khi
+      ra bến để tránh phát sinh chi phí ngoài dự tính.
+  - docId: refund-partial
+    title: Vì sao chỉ được hoàn một phần tiền
+    content: Số tiền hoàn phụ thuộc thời điểm hủy so với giờ khởi hành. Hủy trong khoảng 4 đến 24 giờ
+      trước giờ đi chịu phí hủy 10 phần trăm, nên khách chỉ nhận lại 90 phần trăm giá trị đơn hàng chứ
+      không phải toàn bộ. Phần phí dịch vụ và các dịch vụ bổ sung đã sử dụng có thể không nằm trong khoản
+      hoàn.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: dưới 4h là ko đc hoàn nữa rồi
+- id: c13
+  query: web có làm ăn bất chính lưu dữ liệu của khách hàng tụi t rồi ko thèm bảo mật dữ liệu cá nhân
+    xong đến lúc có bot quét 24/7 lấy cmn hết thì sao??
+  tra_loi: "VigoTrip luôn đặt vấn đề bảo mật thông tin cá nhân của khách hàng lên hàng đầu và tuân thủ\
+    \ các tiêu chuẩn an toàn thông tin để bảo vệ dữ liệu. \n\nNếu bạn có bất kỳ thắc mắc cụ thể nào về\
+    \ chính sách bảo mật hoặc cần hỗ trợ liên quan đến tài khoản, vui lòng liên hệ trực tiếp với bộ phận\
+    \ chăm sóc khách hàng qua thông tin ở cuối trang web để được giải đáp chi tiết."
+  chunks_day_du:
+  - docId: account-forgot-password
+    title: Quên mật khẩu
+    content: Khách bấm quên mật khẩu ở màn hình đăng nhập và nhập email đã đăng ký. Hệ thống gửi mã đặt
+      lại mật khẩu về email đó. Số lần yêu cầu gửi mã bị giới hạn trong mỗi khoảng thời gian để chống
+      lạm dụng.
+  - docId: account-not-receiving-code
+    title: Không nhận được mã xác thực qua email
+    content: Mã xác thực có thể rơi vào hộp thư rác. Khách kiểm tra mục spam và quảng cáo trước. Nếu vẫn
+      chưa nhận được, đợi vài phút rồi yêu cầu gửi lại, và kiểm tra kỹ email đã nhập đúng chưa.
+  - docId: support-contact
+    title: Liên hệ hỗ trợ
+    content: Khách cần hỗ trợ trực tiếp có thể gọi tổng đài hoặc liên hệ bộ phận chăm sóc khách hàng qua
+      thông tin ở cuối trang web. Khi liên hệ nên cung cấp sẵn mã đơn hàng để được tra cứu nhanh.
+  - docId: support-complaint
+    title: Khiếu nại về chất lượng dịch vụ
+    content: Khiếu nại về chất lượng phục vụ trên hành trình được chuyển tới nhà xe hoặc hãng vận chuyển
+      tương ứng. Khách gửi kèm mã đơn hàng, ngày đi và mô tả cụ thể sự việc. Khách cũng có thể để lại
+      đánh giá cho chuyến đi đã hoàn thành.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: tu_choi_dung
+  chac_chan: cao
+  ghi_chu: ko có chunk nào về bảo mật thông tin
+- id: c14
+  query: bé nhà tôi 1 tuổi có phải mua vé không
+  tra_loi: Em bé dưới 3 tuổi được miễn phí vé và ngồi cùng người lớn đi kèm, không có ghế riêng. Mỗi người
+    lớn chỉ được kèm một em bé dưới 2 tuổi, và khách vẫn cần khai báo thông tin em bé khi đặt vé.
+  chunks_day_du:
+  - docId: children-infant-free
+    title: Vé cho em bé dưới 2 tuổi
+    content: Em bé dưới 2 tuổi được miễn phí vé và ngồi cùng người lớn đi kèm, không có ghế riêng. Mỗi
+      người lớn chỉ được kèm một em bé dưới 2 tuổi. Khách vẫn cần khai báo thông tin em bé khi đặt vé.
+  - docId: children-over-12
+    title: Trẻ trên 12 tuổi tính vé thế nào
+    content: Hành khách từ 12 tuổi trở lên tính giá vé người lớn đầy đủ, không còn được giảm theo diện
+      trẻ em.
+  - docId: children-2-to-12
+    title: Vé trẻ em từ 2 đến 12 tuổi
+    content: Trẻ em từ 2 đến 12 tuổi được tính 75 phần trăm giá vé người lớn và có ghế ngồi riêng. Khi
+      đặt vé, khách chọn loại hành khách là trẻ em để hệ thống áp dụng đúng mức giá.
+  - docId: children-travel-alone
+    title: Trẻ em đi một mình
+    content: Trẻ em dưới 12 tuổi cần có người lớn đi kèm. Trường hợp trẻ đi một mình, khách phải liên
+      hệ trực tiếp nhà xe hoặc hãng để đăng ký dịch vụ trông giữ trẻ trong hành trình, hệ thống đặt vé
+      trực tuyến không tự xử lý trường hợp này.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: chunk ghi dưới 2 tuổi mà vẫn nói ra con số dưới 3 tuổi
+- id: c15
+  query: ê t vừa mới realisee là t đặt vé chọn nhầm số cân hành lý ký gửi, thì có điều chỉnh đc ko hay
+    phải nộp phí, hay phải yêu cầu nâng hạn mức????
+  tra_loi: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Nếu hành lý vượt
+    số cân cho phép, bạn phải mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  chunks_day_du:
+  - docId: baggage-overweight-fee
+    title: Hành lý quá cân tính phí thế nào
+    content: Hành lý vượt định mức miễn phí sẽ bị tính phí quá cân theo từng kg vượt. Mức phí do từng
+      nhà xe, hãng bay quy định và thu trực tiếp tại quầy làm thủ tục. Khách nên cân hành lý trước khi
+      ra bến để tránh phát sinh chi phí ngoài dự tính.
+  - docId: baggage-plane-general
+    title: Quy định hành lý máy bay
+    content: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Hành lý xách tay
+      phải để vừa ngăn hành lý phía trên hoặc dưới ghế ngồi. Nếu hành lý vượt số cân cho phép, khách phải
+      mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  - docId: baggage-bus-general
+    title: Quy định hành lý xe khách
+    content: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh để ở
+      khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế. Không tính thêm phí nếu tổng hành lý nằm trong
+      định mức 20kg.
+  - docId: cancel-change-ticket
+    title: Đổi vé sang chuyến khác
+    content: Hệ thống hiện chưa hỗ trợ đổi trực tiếp sang chuyến khác. Khách cần hủy vé cũ theo chính
+      sách hoàn tiền hiện hành rồi đặt lại vé mới cho chuyến mong muốn.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: thap
+  ghi_chu: mặc dù có chunk 2,3 đúng, chỉ là tôi chưa rõ lắm về việc khách ko nói cụ thể phương tiện, chatbot
+    cũng chỉ nhắc dến mỗi máy bay, nếu AI đc lấy mỗi chunk 1 ít thông tin rồi ghép lại hoàn chỉnh thì
+    chắc chắn cao giúp tôi :d.
+- id: c16
+  query: xem lại vé đã mua ở đâu
+  tra_loi: Để xem lại vé đã mua, quý khách vui lòng đăng nhập vào tài khoản và truy cập vào mục Lịch sử
+    đặt vé. Tại đây, quý khách có thể xem toàn bộ đơn hàng, trạng thái thanh toán, mã QR và chi tiết hành
+    trình của mình. Lưu ý rằng bất kỳ người dùng nào cũng có thể xem được vé đã đặt.
+  chunks_day_du:
+  - docId: booking-check-my-tickets
+    title: Xem lại vé đã đặt
+    content: Khách đăng nhập rồi vào mục Lịch sử đặt vé để xem toàn bộ đơn hàng, trạng thái thanh toán,
+      mã QR và chi tiết hành trình. Chỉ chủ tài khoản mới xem được vé của mình.
+  - docId: booking-confirmation-email
+    title: Không nhận được email xác nhận vé
+    content: Email xác nhận, hay mail vé, thường tới trong vài phút sau khi thanh toán thành công. Nếu
+      chưa thấy, khách kiểm tra hộp thư rác và mục quảng cáo. Vé luôn xem được trong mục Lịch sử đặt vé
+      của tài khoản, kể cả khi email chưa tới.
+  - docId: checkin-already-used
+    title: Vé đã check-in rồi có dùng lại được không
+    content: Mỗi vé chỉ check-in được một lần. Sau khi đã quét mã thành công, vé chuyển sang trạng thái
+      đã sử dụng và không quét lại được, nhằm chống dùng chung hoặc làm giả vé.
+  - docId: checkin-qr-usage
+    title: Dùng mã QR để lên xe
+    content: Mỗi vé có một mã QR riêng. Khi tới bến, khách đưa mã QR trên điện thoại cho nhân viên soát
+      vé quét để xác thực. Không cần in vé giấy. Mã QR nằm trong email xác nhận và trong mục Lịch sử đặt
+      vé.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: đúng từ chunk 1  || SỬA 17/09 -> bia. Câu cuối "bất kỳ người dùng nào cũng có thể xem được
+    vé đã đặt" ngược hẳn chunk "Chỉ chủ tài khoản mới xem được vé của mình". Hai câu đầu đúng, câu thứ
+    ba đảo ngược quy định.
+- id: c17
+  query: di xe khach mang duoc may can hanh ly
+  tra_loi: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh được để
+    ở khoang dưới gầm xe, còn hành lý nhỏ mang theo lên ghế.
+  chunks_day_du:
+  - docId: baggage-bus-general
+    title: Quy định hành lý xe khách
+    content: Vé xe khách được miễn phí tối đa 20kg hành lý cho mỗi hành khách. Hành lý cồng kềnh để ở
+      khoang dưới gầm xe, hành lý nhỏ mang theo lên ghế. Không tính thêm phí nếu tổng hành lý nằm trong
+      định mức 20kg.
+  - docId: baggage-train-general
+    title: Quy định hành lý tàu hỏa
+    content: Vé tàu hỏa cho phép mang theo hành lý cá nhân trong khoang, dưới 20kg mỗi khách. Hành lý
+      để trên giá phía trên chỗ ngồi hoặc dưới giường nằm. Hàng hóa kích thước lớn cần gửi qua dịch vụ
+      vận chuyển riêng của nhà ga.
+  - docId: pets-bus
+    title: Mang thú cưng lên xe khách
+    content: Xe khách cho phép mang theo thú cưng nhỏ như chó, mèo, cún với điều kiện phải để trong lồng
+      chuyên dụng và xếp ở khoang hành lý dưới gầm xe. Không được để thú cưng trên ghế ngồi hoặc thả rông
+      trong khoang hành khách.
+  - docId: baggage-plane-general
+    title: Quy định hành lý máy bay
+    content: Vé máy bay tiêu chuẩn bao gồm 7kg hành lý xách tay và 20kg hành lý ký gửi. Hành lý xách tay
+      phải để vừa ngăn hành lý phía trên hoặc dưới ghế ngồi. Nếu hành lý vượt số cân cho phép, khách phải
+      mua thêm gói hành lý tại quầy hoặc trả phí quá cân theo biểu giá của hãng.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: co_can_cu
+  chac_chan: cao
+  ghi_chu: đúng từ chunk 1
+- id: c18
+  query: cho tôi hỏi chiều mai tôi có thể bay từ hà nội sang đà nẵng không?
+  tra_loi: Chào bạn, hiện tại mình chưa có thông tin về lịch trình các chuyến bay cụ thể giữa Hà Nội và
+    Đà Nẵng. Mời bạn truy cập trang tìm kiếm chuyến bay trên hệ thống của VigoTrip để xem danh sách chuyến
+    bay, giờ đi và giá vé chi tiết cho ngày mai.
+  chunks_day_du:
+  - docId: cancel-change-ticket
+    title: Đổi vé sang chuyến khác
+    content: Hệ thống hiện chưa hỗ trợ đổi trực tiếp sang chuyến khác. Khách cần hủy vé cũ theo chính
+      sách hoàn tiền hiện hành rồi đặt lại vé mới cho chuyến mong muốn.
+  - docId: pets-plane
+    title: Mang thú cưng lên máy bay
+    content: Máy bay không cho phép mang thú cưng, chó, mèo lên khoang hành khách. Khách có nhu cầu vận
+      chuyển thú cưng cần liên hệ trực tiếp hãng hàng không để dùng dịch vụ vận chuyển động vật riêng,
+      đặt trước và có giấy tờ thú y hợp lệ.
+  - docId: booking-round-trip
+    title: Đặt vé khứ hồi
+    content: Tính năng đặt vé khứ hồi, tức là mua vé đi và về cùng lúc trong một lần, hiện đang bảo trì.
+      Khách vui lòng đặt riêng hai vé một chiều cho lượt đi và lượt về.
+  - docId: checkin-arrive-early
+    title: Nên có mặt trước giờ khởi hành bao lâu
+    content: Với xe khách và tàu hỏa, khách nên có mặt tại bến trước giờ khởi hành ít nhất 30 phút. Với
+      máy bay, nên tới sân bay trước ít nhất 2 tiếng cho chuyến nội địa để kịp làm thủ tục và qua kiểm
+      tra an ninh.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: tu_choi_dung
+  chac_chan: cao
+  ghi_chu: hm tôi tưởng cnay thuộc phạm vi phải gọi tool search trips, nhưng nó vẫn đúng vì ko có chunk
+    nào về HN hay ĐN
+- id: c19
+  query: cho cun di tau hoa
+  tra_loi: Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín và gửi ở toa hành lý. Bạn không được
+    mang thú cưng vào khoang giường nằm hay khoang ghế ngồi. Bạn nên liên hệ tổng đài hỗ trợ 1900 8888
+    trước ngày đi để nắm quy định cụ thể của từng tuyến.
+  chunks_day_du:
+  - docId: pets-train
+    title: Mang thú cưng lên tàu hỏa
+    content: Tàu hỏa chỉ nhận thú cưng khi được nhốt trong lồng kín, gửi ở toa hành lý. Không mang thú
+      cưng vào khoang giường nằm hay khoang ghế ngồi. Khách nên liên hệ nhà ga trước ngày đi để nắm quy
+      định cụ thể của từng tuyến.
+  - docId: pets-bus
+    title: Mang thú cưng lên xe khách
+    content: Xe khách cho phép mang theo thú cưng nhỏ như chó, mèo, cún với điều kiện phải để trong lồng
+      chuyên dụng và xếp ở khoang hành lý dưới gầm xe. Không được để thú cưng trên ghế ngồi hoặc thả rông
+      trong khoang hành khách.
+  - docId: baggage-train-general
+    title: Quy định hành lý tàu hỏa
+    content: Vé tàu hỏa cho phép mang theo hành lý cá nhân trong khoang, dưới 20kg mỗi khách. Hành lý
+      để trên giá phía trên chỗ ngồi hoặc dưới giường nằm. Hàng hóa kích thước lớn cần gửi qua dịch vụ
+      vận chuyển riêng của nhà ga.
+  - docId: trip-no-results
+    title: Không tìm thấy chuyến nào
+    content: Không có kết quả thường do ngày đã chọn chưa mở bán, hoặc tuyến đó chưa có chuyến khai thác.
+      Khách thử đổi sang ngày khác, hoặc bỏ bớt bộ lọc giá và khung giờ để xem thêm lựa chọn.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: bịa ra số 1900 8888
+- id: c20
+  query: sao khong co chuyen nao het
+  tra_loi: Không tìm thấy chuyến nào thường do ngày bạn chọn chưa mở bán hoặc tuyến đó chưa có chuyến
+    khai thác. Bạn có thể thử đổi sang ngày khác, bỏ bớt bộ lọc giá và khung giờ, hoặc gọi tổng đài hỗ
+    trợ 1900 5588 tại phòng vé để được nhân viên tư vấn thêm lựa chọn nhé.
+  chunks_day_du:
+  - docId: trip-no-results
+    title: Không tìm thấy chuyến nào
+    content: Không có kết quả thường do ngày đã chọn chưa mở bán, hoặc tuyến đó chưa có chuyến khai thác.
+      Khách thử đổi sang ngày khác, hoặc bỏ bớt bộ lọc giá và khung giờ để xem thêm lựa chọn.
+  - docId: voucher-not-working
+    title: Mã giảm giá báo không hợp lệ
+    content: Mã báo không hợp lệ thường do đã hết hạn, đã dùng hết lượt, đơn hàng chưa đạt giá trị tối
+      thiểu, hoặc mã chỉ áp dụng cho một nhà xe cụ thể. Khách kiểm tra lại điều kiện của mã hoặc chọn
+      mã khác đang còn hiệu lực.
+  - docId: booking-round-trip
+    title: Đặt vé khứ hồi
+    content: Tính năng đặt vé khứ hồi, tức là mua vé đi và về cùng lúc trong một lần, hiện đang bảo trì.
+      Khách vui lòng đặt riêng hai vé một chiều cho lượt đi và lượt về.
+  - docId: voucher-after-payment
+    title: Quên nhập mã giảm giá trước khi thanh toán
+    content: Mã giảm giá phải nhập trước khi xác nhận thanh toán. Đơn hàng đã thanh toán xong thì không
+      áp dụng bù mã giảm giá được nữa.
+  # bia = có ý chunks không đỡ | co_can_cu = đúng ý khách hỏi
+  # tu_choi_thua = chunks có sẵn mà bot không dùng | tu_choi_dung = chunks không có
+  nhan_tay: bia
+  chac_chan: cao
+  ghi_chu: vẫn là bịa ra số 1900 5588 ko cần xem xét gì kỹ thêm...

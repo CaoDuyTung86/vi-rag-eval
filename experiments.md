@@ -1811,6 +1811,87 @@ chiều **siết chặt** — rubric bất đối xứng từ tuần 9.
    chỉ khách tự tra và lời bảo chờ. Để đó, đo trên bộ xác nhận 2.
 
 
+## 2026-09-17 (i) — Chấm mù lại đáp án: cây thước tự đo chính nó
+
+**Vì sao.** Mục (h) treo lại vì một nghi vấn: `x01` bị cả hai judge, qua năm phiên bản rubric, gắn
+`bia`, trong khi đáp án ghi `tu_choi_dung`. Sửa lẻ một câu sau khi đã xem judge chấm là cách tự
+lừa mình — lần sau không biết đáp án phản ánh tài liệu hay phản ánh judge. Nên chấm mù lại cả 20.
+
+**Cách làm** (`scripts/cham_lai.py`): thứ tự xáo seed 16, id đổi thành `c01..c20`, không có nhãn
+tay cũ, không có nhãn judge. Chunk in **nguyên văn ngay dưới mỗi câu** thay vì bắt tra
+`data/kb/faq-vi.yml` bằng tay — lần 1 phải tra tay, và đó là một nguồn lỗi. Thêm trường
+`chac_chan: cao/thap`. Hướng dẫn rút còn 18 dòng, bản đầy đủ tách sang `data/HUONG_DAN_CHAM.md`.
+
+**Tính mù bị thủng ở đâu, ghi cho đủ.** Bảy câu đã bị bàn nội dung trong phiên 16/09 trước khi
+chấm lại (`x01`, `x04`, `x05`, `x13`, `x15`, `x19`, `x20`). Câu `c02` được chấm sau khi Claude
+giải thích định nghĩa `tu_choi_thua`. Và khi rút gọn phiếu, Claude đẩy hai trong ba điểm định
+nghĩa mới ra khỏi tầm mắt, xuống file tham chiếu.
+
+**Kết quả lượt đầu: 17/20 trùng đáp án cũ. Ba câu lệch, và cả ba cùng một khuôn.**
+
+| Câu | Lần 1 | Lần 2 | Kiểu cài | `chac_chan` |
+|---|---|---|---|---|
+| `x05` | bia | co_can_cu | `doi_so` | cao |
+| `x09` | bia | co_can_cu | `them_quy_dinh` | cao |
+| `x14` | bia | co_can_cu | `bo_gioi_han` | cao |
+
+Cả ba đều là **câu cài bịa**, cả ba đều `bia -> co_can_cu`, và **cả ba đều bỏ sót câu bịa nằm ở
+phần CUỐI của một câu trả lời dài**. Đó là dấu vân tay của đọc lướt, không phải của bất đồng quan
+điểm. `x14` thì câu cuối ngược hẳn chunk: bot nói *"bất kỳ người dùng nào cũng có thể xem được vé
+đã đặt"*, chunk nói *"Chỉ chủ tài khoản mới xem được vé của mình"*. `x09` thêm *"bắt buộc xuất
+trình căn cước công dân gắn chip"* — đúng khẳng định mà chính người chấm đã gắn `bia` ở `c01`
+trong cùng lượt.
+
+**Trường `chac_chan` không bắt được gì.** Cả ba đều `cao`. Nó được thêm vào để bắt sự phân vân,
+nhưng kiểu hỏng này không phải *"tôi không chắc"* mà là *"tôi không thấy"* — người ta không phân
+vân về thứ mình chưa đọc tới. Muốn bắt thì phải đổi công cụ, không phải thêm một trường tự khai:
+tách `tra_loi` thành từng câu đánh số, bắt duyệt từng câu.
+
+**Cả bốn mẻ judge đều chấm `x09` và `x14` là `bia`** — máy bắt đúng hai câu người vừa bỏ sót.
+
+**Sau khi đối chiếu, cả ba trả về `bia`** (17/09, người chấm tự quyết sau khi xem lại câu cuối; lý
+do ghi trong `ghi_chu` của từng câu). Đáp án lần 2 khi đó **trùng khớp 20/20 với lần 1**.
+
+**Kết quả cuối, tính lại toàn bộ trên đáp án mới — 0 lượt API, vì `nhan_judge` không đổi:**
+
+| judge | cùng nhãn | bắt bịa | báo bịa giả |
+|---|---|---|---|
+| groq v3 | 16/20 = 80% | 7/8 | 3 |
+| groq v5 | 16/20 = 80% | 7/8 | 3 |
+| qwen v3 | 13/20 = 65% | 7/8 | 5 |
+| qwen v4 | 13/20 = 65% | 7/8 | 5 |
+| qwen v5 | 14/20 = 70% | 7/8 | 4 |
+
+Trùng từng chữ số với mục (h). **Mọi con số ở (h) đứng nguyên.**
+
+**`x01` không đổi.** Người chấm giữ `tu_choi_dung`, bác lập luận của Claude. Nên ba câu báo bịa
+giả của Groq vẫn là ba, và trần 85% đưa ra ở (h) kết luận 3 **không xảy ra**.
+
+**Kết luận.**
+
+1. **Đáp án được XÁC NHẬN, không phải được sửa.** Nhưng không phải xác nhận độc lập: ba câu chỉ
+   trở về `bia` sau khi đã thấy judge cãi. Chỗ mạnh thật nằm ở 17 câu trùng ngay lượt đầu, trong
+   đó 13 câu chưa từng bị bàn tới.
+2. **Hai trong ba chỗ lệch truy được về Claude.** `x09`: nhận xét *"thiếu sót không phải là bịa"*
+   bị đọc thành *"thừa cũng không sao"* — phải nói cả hai vế, **thiếu không phải bịa, thêm thì
+   là bịa**. `x05`: rút gọn phiếu đã đẩy luật "siết ngưỡng cũng là bịa" ra khỏi header. Lời khuyên
+   một vế và công cụ rút gọn đều là nguồn lỗi, y như tài liệu dài.
+3. **Người và máy sai theo hai kiểu khác nhau, và đó mới là lý do cần cả hai.** Người sai **ngẫu
+   nhiên, rải rác**: ba câu ở đuôi câu trả lời dài, lộ ra ngay khi chấm lại. Máy sai **hệ thống**:
+   qwen gắn `bia` cho `x15` và `x20` y hệt nhau qua v3, v4, v5 ở temperature 0 — nhất quán tuyệt
+   đối, sai tuyệt đối, và không bao giờ dao động nên không tự lộ. Nhiễu ngẫu nhiên thì chấm lại là
+   thấy; thiên lệch hệ thống thì chấm lại bao nhiêu lần cũng ra y nguyên. **Nhất quán không phải
+   là chính xác.**
+4. **Giá trị của người chấm không nằm ở độ chính xác.** Hôm nay người thua máy hai câu. Nó nằm ở
+   chỗ sai của người **không tương quan** với sai của máy — judge là LLM đọc output của LLM, điểm
+   mù của nó trùng điểm mù của model sinh. Và ở chỗ phải có điểm dừng: đo judge bằng judge thì cần
+   judge thứ ba, vô tận.
+5. **Chấm theo chỗ bất đồng là cách duy nhất mở rộng được.** Mọi thứ tìm ra trong hai ngày 16–17/09
+   — `x01`, `x13`, `x19`, rồi `x09`, `x14` — đều nổi lên từ **bất đồng** giữa judge với đáp án hoặc
+   giữa hai judge, không câu nào nổi lên từ chấm tuần tự. Với bộ lớn hơn thì chạy hai judge khác
+   nhau rồi chỉ chấm tay chỗ chúng cãi nhau, thay vì chấm đều.
+6. **Việc cần làm cho `cham_lai.py` lần sau:** tách `tra_loi` thành từng câu đánh số. Ba lỗi hôm
+   nay đều ở câu cuối.
 ---
 
 

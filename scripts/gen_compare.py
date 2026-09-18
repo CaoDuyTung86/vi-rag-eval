@@ -15,7 +15,8 @@ biến sang một biến thể prompt trong data/prompts/vigotrip_chat_<tên>.tx
 Câu hỏi, chunk, top-k giữ nguyên
 của tuần 9. `--temperature` đổi được nhiệt độ: production chạy 0.7 và bảng tuần 10 đo ở đó,
 nhưng kết luận 16/09 (e) là một mẻ ở 0.7 không xếp hạng được — chênh lệch giữa hai mẻ của
-CÙNG một cấu hình lớn hơn chênh lệch giữa hai cấu hình. So hai prompt thì chạy ở 0 — `chunks` đọc thẳng từ data/faithfulness.yml, KHÔNG chạy lại retrieval, nên lệnh `gen`
+CÙNG một cấu hình lớn hơn chênh lệch giữa hai cấu hình. So hai prompt thì chạy ở 0
+— `chunks` đọc thẳng từ data/faithfulness.yml, KHÔNG chạy lại retrieval, nên lệnh `gen`
 tốn 0 lời gọi embedding và chênh lệch giữa các model không thể do bốc tài liệu khác nhau.
 
 `--model` nhận: `gemini` (cấu hình tầng CHAT của VigoTrip, đọc cache tuần 9 nên 0 lời gọi), `groq`,
@@ -117,7 +118,9 @@ def slug(name: str) -> str:
     return name.replace(":", "-").replace("/", "-")
 
 
-def out_path(name: str, prompt: str | None = None, temperature: float = DEFAULT_TEMPERATURE) -> Path:
+def out_path(
+    name: str, prompt: str | None = None, temperature: float = DEFAULT_TEMPERATURE
+) -> Path:
     """Mỗi tổ hợp (model, prompt, nhiệt độ) một file: bảng so được, không đè nhau."""
     stem = slug(name) if prompt is None else f"{slug(name)}__{slug(prompt)}"
     if temperature != DEFAULT_TEMPERATURE:
@@ -448,7 +451,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--env-file", help="file .env chứa GEMINI_API_KEY / GROQ_API_KEY")
     parser.add_argument(
         "--prompt",
-        help="biến thể prompt trong data/prompts/vigotrip_chat_<tên>.txt; bỏ trống = bản production",
+        help=(
+            "biến thể prompt trong data/prompts/vigotrip_chat_<tên>.txt;"
+            " bỏ trống = bản production"
+        ),
     )
     parser.add_argument(
         "--judge-model",

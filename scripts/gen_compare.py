@@ -1,13 +1,21 @@
 """Tuần 10: đổi model ở tầng sinh, xem bịa thêm bao nhiêu và nhanh chậm ra sao.
 
     python scripts/gen_compare.py gen   --model qwen3.5:9b
+    python scripts/gen_compare.py gen   --model qwen3.5:9b --prompt khong_noi_manh
+    python scripts/gen_compare.py gen   --model qwen3.5:9b --prompt khong_noi_manh --temperature 0
     python scripts/gen_compare.py gen   --model gemini --env-file ../WebProject/.env
     python scripts/gen_compare.py judge --model qwen3.5:9b --env-file ../WebProject/.env
     python scripts/gen_compare.py cham  --model qwen3.5:9b
     python scripts/gen_compare.py bang
 
-Một biến duy nhất: model sinh câu trả lời. Câu hỏi, chunk, prompt, top-k, temperature giữ nguyên
-của tuần 9 — `chunks` đọc thẳng từ data/faithfulness.yml, KHÔNG chạy lại retrieval, nên lệnh `gen`
+Một biến duy nhất mỗi lần chạy. Mặc định biến ấy là model sinh câu trả lời; `--prompt <tên>` đổi
+biến sang một biến thể prompt trong data/prompts/vigotrip_chat_<tên>.txt và giữ nguyên model.
+Đừng đổi cả hai trong một lần: bảng sẽ không nói được cái nào gây ra chênh lệch.
+
+Câu hỏi, chunk, top-k giữ nguyên
+của tuần 9. `--temperature` đổi được nhiệt độ: production chạy 0.7 và bảng tuần 10 đo ở đó,
+nhưng kết luận 16/09 (e) là một mẻ ở 0.7 không xếp hạng được — chênh lệch giữa hai mẻ của
+CÙNG một cấu hình lớn hơn chênh lệch giữa hai cấu hình. So hai prompt thì chạy ở 0 — `chunks` đọc thẳng từ data/faithfulness.yml, KHÔNG chạy lại retrieval, nên lệnh `gen`
 tốn 0 lời gọi embedding và chênh lệch giữa các model không thể do bốc tài liệu khác nhau.
 
 `--model` nhận: `gemini` (cấu hình tầng CHAT của VigoTrip, đọc cache tuần 9 nên 0 lời gọi), `groq`,
@@ -44,6 +52,7 @@ from faithfulness import (  # noqa: E402
     BO,
     GEN_MODEL,
     JUDGE_MODEL,
+    judge_client,
     percentile,
     pick_dev_cases,
     read_items,
@@ -58,7 +67,7 @@ from eval.judge import (  # noqa: E402
     judge_prompt,
     parse_label,
 )
-from rag.generate import rag_context, system_prompt  # noqa: E402
+from rag.generate import prompt_file, rag_context, system_prompt  # noqa: E402
 from rag.llm import (  # noqa: E402
     DEFAULT_MIN_INTERVAL_S,
     GEMINI_BASE_URL,
@@ -71,10 +80,12 @@ from rag.llm import (  # noqa: E402
 OUT_DIR = ROOT / "data" / "gen_compare"
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1")
 OLLAMA_BIN = os.environ.get("OLLAMA_BIN", "ollama")
+# Nhiệt độ tầng CHAT của VigoTrip, cũng là nhiệt độ bảng tuần 10 đã đo.
+DEFAULT_TEMPERATURE = 0.7
 
 HEADER = """\
-# Tuần 10 — {n} câu trả lời do {model} sinh, trên ĐÚNG các chunk của data/faithfulness.yml.
-# Sinh bằng scripts/gen_compare.py. Xem experiments.md 16/09.
+# {n} câu trả lời do {model} sinh với prompt {prompt}, trên ĐÚNG các chunk của
+# data/faithfulness.yml. Sinh bằng scripts/gen_compare.py. Xem experiments.md 16/09 và 17/09.
 #
 # nhan_judge do judge v3 gắn. Judge chỉ là bộ lọc: câu nào nó gắn `bia` thì nhan_tay để trống chờ
 # bạn chấm lại (điền co_can_cu / bia / tu_choi_dung / tu_choi_thua). Câu nó KHÔNG gắn bia thì
@@ -106,8 +117,12 @@ def slug(name: str) -> str:
     return name.replace(":", "-").replace("/", "-")
 
 
-def out_path(name: str) -> Path:
-    return OUT_DIR / f"{slug(name)}.yml"
+def out_path(name: str, prompt: str | None = None, temperature: float = DEFAULT_TEMPERATURE) -> Path:
+    """Mỗi tổ hợp (model, prompt, nhiệt độ) một file: bảng so được, không đè nhau."""
+    stem = slug(name) if prompt is None else f"{slug(name)}__{slug(prompt)}"
+    if temperature != DEFAULT_TEMPERATURE:
+        stem += f"__t{temperature:g}"
+    return OUT_DIR / f"{stem}.yml"
 
 
 def ollama_ps(model: str) -> str | None:
@@ -130,7 +145,9 @@ def ollama_ps(model: str) -> str | None:
 
 def cmd_gen(args: argparse.Namespace) -> int:
     p = provider(args.model)
-    out = out_path(p.name)
+    # Dừng ngay nếu tên biến thể sai, trước khi nạp model vào VRAM.
+    prompt_path = prompt_file(args.prompt)
+    out = out_path(p.name, args.prompt, args.temperature)
     if out.exists() and not args.force:
         print(f"{out} đã có — thêm --force nếu muốn sinh lại.", file=sys.stderr)
         return 2
@@ -165,7 +182,7 @@ def cmd_gen(args: argparse.Namespace) -> int:
         model=p.model,
         base_url=p.base_url,
         max_tokens=800,
-        temperature=0.7,
+        temperature=args.temperature,
         # Model local họ Qwen3.5 mặc định BẬT suy nghĩ: nó tiêu hết max_tokens cho phần `reasoning`
         # rồi trả `content` rỗng. Gemini tuần 9 chạy không có ngân sách suy nghĩ, nên muốn giữ đúng
         # một biến thì phải tắt. `reasoning_effort: none` là khoá duy nhất Ollama nhận ở đường /v1
@@ -186,7 +203,9 @@ def cmd_gen(args: argparse.Namespace) -> int:
         chunks = [by_id[doc_id] for doc_id in src_item["chunks"]]
         lang = cases[src_item["id"]]["lang"]
         try:
-            reply = chat.complete(system_prompt(chunks, lang), src_item["query"])
+            reply = chat.complete(
+                system_prompt(chunks, lang, variant=args.prompt), src_item["query"]
+            )
         except LlmError as error:
             print(f"{src_item['id']}: {error}", file=sys.stderr)
             return 1
@@ -224,6 +243,8 @@ def cmd_gen(args: argparse.Namespace) -> int:
 
     meta = {
         "model": p.model,
+        "prompt": prompt_path.name,
+        "temperature": args.temperature,
         "base_url": p.base_url,
         "suy_nghi": "tat" if p.local else None,
         "goi_that": chat.api_calls,
@@ -234,7 +255,11 @@ def cmd_gen(args: argparse.Namespace) -> int:
         "tokens_per_s_trung_vi": round(percentile(speeds, 0.5), 1) if speeds else None,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    write_items(out, [{"_meta": meta}, *items], HEADER.format(n=len(items), model=p.model))
+    write_items(
+        out,
+        [{"_meta": meta}, *items],
+        HEADER.format(n=len(items), model=p.model, prompt=prompt_path.name),
+    )
     print(f"\nĐã ghi {out.relative_to(ROOT)}: {len(items)} câu, {chat.api_calls} lời gọi thật.")
     for key, value in meta.items():
         if key not in ("model", "base_url"):
@@ -254,7 +279,7 @@ def split_meta(rows: list[dict]) -> tuple[dict, list[dict]]:
 
 
 def cmd_judge(args: argparse.Namespace) -> int:
-    path = out_path(args.model)
+    path = out_path(args.model, args.prompt, args.temperature)
     if not path.exists():
         print(f"Chưa có {path} — chạy gen --model {args.model} trước.", file=sys.stderr)
         return 2
@@ -269,19 +294,19 @@ def cmd_judge(args: argparse.Namespace) -> int:
             src = w9[item["id"]]
             for key in ("nhan_judge", "ly_do_judge", "nhan_tay", "rubric"):
                 item[key] = src.get(key, "")
-        write_items(path, [{"_meta": meta}, *items], HEADER.format(n=len(items), model=args.model))
+        write_items(
+            path,
+            [{"_meta": meta}, *items],
+            HEADER.format(n=len(items), model=args.model, prompt=meta.get("prompt", "?")),
+        )
         print(f"{args.model}: trùng nguyên văn tuần 9 — chép nhãn sẵn có, 0 lời gọi Groq.")
         return 0
 
     by_id = {chunk.doc_id: chunk for chunk in load_kb()}
-    judge = ChatClient(
-        os.environ.get("GROQ_API_KEY"),
-        model=JUDGE_MODEL,
-        base_url=GROQ_BASE_URL,
-        max_tokens=4000,
-        temperature=0,
-        extra_body={"reasoning_effort": "medium", "response_format": {"type": "json_object"}},
-    )
+    # Judge mặc định vẫn là Groq. Tên khác được hiểu là tag Ollama, tức judge chạy trên máy
+    # mình: 0 lượt API, đổi lại nó yếu hơn (16/09 (f): qwen cùng nhãn 65–70% so với Groq 80%,
+    # báo bịa giả 5 so với 3). Judge nào cũng chỉ là BỘ LỌC, nhãn tay mới là thước.
+    judge = judge_client(args.judge_model)
     for item in items:
         context = rag_context([by_id[doc_id] for doc_id in item["chunks"]])
         try:
@@ -297,9 +322,14 @@ def cmd_judge(args: argparse.Namespace) -> int:
         elif item["nhan_tay"] not in LABELS:
             item["nhan_tay"] = ""
 
-    write_items(path, [{"_meta": meta}, *items], HEADER.format(n=len(items), model=args.model))
+    write_items(
+        path,
+        [{"_meta": meta}, *items],
+        HEADER.format(n=len(items), model=args.model, prompt=meta.get("prompt", "?")),
+    )
     cho_cham = [i["id"] for i in items if not i["nhan_tay"]]
-    print(f"\n{args.model}: judge v3 xong, {judge.api_calls} lời gọi Groq.")
+    print(f"\n{args.model}: judge {RUBRIC_VERSION} ({args.judge_model}) xong, "
+          f"{judge.api_calls} lời gọi.")
     print(f"  judge gắn bịa    {sum(i['nhan_judge'] == 'bia' for i in items)} câu")
     print(f"  chờ bạn chấm     {len(cho_cham)} câu: {cho_cham}")
     for item in items:
@@ -314,7 +344,7 @@ def cmd_judge(args: argparse.Namespace) -> int:
 
 def cmd_cham(args: argparse.Namespace) -> int:
     """In các câu judge gắn bịa kèm đúng chunk nó đọc, để người chấm không phải mở file."""
-    path = out_path(args.model)
+    path = out_path(args.model, args.prompt, args.temperature)
     if not path.exists():
         print(f"Chưa có {path}.", file=sys.stderr)
         return 2
@@ -358,6 +388,8 @@ def cmd_bang(args: argparse.Namespace) -> int:
 
     head = [
         "model",
+        "prompt",
+        "t",
         "bia(judge)",
         "bia(tay)",
         "tu_choi_thua",
@@ -371,8 +403,12 @@ def cmd_bang(args: argparse.Namespace) -> int:
     for path in paths:
         meta, items = split_meta(read_items(path))
         judged = [i for i in items if i.get("nhan_judge")]
+        prompt_name = str(meta.get("prompt") or "vigotrip_chat.txt").removeprefix(
+            "vigotrip_chat"
+        ).removesuffix(".txt").lstrip("_") or "production"
+        temp = f'{meta.get("temperature", DEFAULT_TEMPERATURE):g}'
         if not judged:
-            rows.append([path.stem, "chưa judge", "", "", "", "", "", "", ""])
+            rows.append([path.stem, prompt_name, temp, "chưa judge", "", "", "", "", "", "", ""])
             continue
         bia_judge = [i for i in judged if i["nhan_judge"] == "bia"]
         cho = sum(1 for i in bia_judge if not i["nhan_tay"])
@@ -381,6 +417,8 @@ def cmd_bang(args: argparse.Namespace) -> int:
         rows.append(
             [
                 str(meta.get("model") or path.stem),
+                prompt_name,
+                temp,
                 f"{len(bia_judge)}/{len(judged)}",
                 str(bia_tay) + (f" (+{cho} chưa chấm)" if cho else ""),
                 str(sum(1 for i in judged if i["nhan_tay"] == "tu_choi_thua")),
@@ -408,6 +446,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("command", choices=("gen", "judge", "cham", "bang"))
     parser.add_argument("--model", help="gemini | groq | tag Ollama, ví dụ qwen3.5:9b")
     parser.add_argument("--env-file", help="file .env chứa GEMINI_API_KEY / GROQ_API_KEY")
+    parser.add_argument(
+        "--prompt",
+        help="biến thể prompt trong data/prompts/vigotrip_chat_<tên>.txt; bỏ trống = bản production",
+    )
+    parser.add_argument(
+        "--judge-model",
+        default="groq",
+        help="groq (mặc định) hoặc một tag Ollama để chấm trên máy mình, ví dụ qwen3.5:9b",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=DEFAULT_TEMPERATURE,
+        help="nhiệt độ tầng sinh; mặc định 0.7 như production, dùng 0 khi so hai prompt",
+    )
     parser.add_argument("--force", action="store_true", help="gen: ghi đè file đã có")
     args = parser.parse_args(argv)
     if args.env_file:

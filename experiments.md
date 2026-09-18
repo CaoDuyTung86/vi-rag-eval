@@ -1895,6 +1895,128 @@ giả của Groq vẫn là ba, và trần 85% đưa ra ở (h) kết luận 3 **
 ---
 
 
+## 2026-09-17 (j) — Prompt: cấm nói mạnh hơn tài liệu
+
+**Vì sao.** Cùng một kiểu bịa đã gặp ba lần, và cả ba lần câu trả lời đều đứng trên tài liệu có
+thật — nó chỉ nói *mạnh hơn* tài liệu:
+
+| Nơi gặp | Câu bot nói | Tài liệu nói | Kiểu |
+|---|---|---|---|
+| `g09` (qwen, 16/09) | trẻ 2 đến dưới 5 tuổi được miễn vé | dưới 2 tuổi miễn vé; 2–12 tuổi 75% vé | ghép ngưỡng của hai chunk thành mốc mới |
+| `g10` (qwen, 16/09) | **bắt buộc phải** đăng ký trước | khách **nên** đăng ký; không có thì khó khăn hơn | nâng mức chắc chắn |
+| `x09` (bộ xác nhận, cài tay) | **bắt buộc** xuất trình căn cước công dân gắn chip | không nêu giấy tờ nào | thêm một quy định |
+
+Prompt hiện tại chỉ cấm *lấy ở đâu ra*: "chỉ nói điều có căn cứ", "không dùng hiểu biết chung
+ngoài đời". Không dòng nào cấm *nói quá lên từ chính căn cứ ấy*. Với một model đọc xong bốn chunk
+rồi viết dưới 100 chữ, nén là việc nó phải làm, và nén thì mất đúng những chữ giữ cho câu đúng:
+"nên", "dưới 2 tuổi", "chỉ chủ tài khoản".
+
+**Giả thuyết.** Thêm một khối luật cấm nói mạnh hơn tài liệu — giữ nguyên mức chắc chắn, giữ
+nguyên con số, giữ nguyên giới hạn — sẽ bỏ được cả hai câu bịa của qwen mà không đẩy model sang
+từ chối nhiều hơn, vì khối ấy nói rõ cả vế ngược: **nói ít hơn tài liệu thì không sao**.
+
+**Thay đổi.** Một biến: prompt tầng sinh. `data/prompts/vigotrip_chat_khong_noi_manh.txt` = bản
+production cộng bốn dòng, chèn ngay sau luật "không có căn cứ thì nói thẳng". Model
+(`qwen3.5:9b` Q4_K_M qua Ollama, `reasoning_effort: none`), 30 câu bộ dev, chunk đọc thẳng từ
+`data/faithfulness.yml`, top-4, temperature 0.7, max 800 token — tất cả giữ nguyên của 16/09.
+Không chạy lại retrieval, nên 0 lời gọi embedding.
+
+`scripts/gen_compare.py` nhận thêm `--prompt <tên>`; mỗi tổ hợp (model, prompt) ghi ra một file
+riêng trong `data/gen_compare/`, bảng có thêm cột `prompt`. Bản production trong
+`data/prompts/vigotrip_chat.txt` KHÔNG đổi — nó còn phải trùng từng dòng với `ChatService.java`,
+và chỉ chép sang đó khi biến thể đã thắng.
+
+**Chỗ bộ dev không nói được, ghi trước cho khỏi tự lừa mình.** Hai trong ba kiểu lỗi (`g09`,
+`g10`) rút ra từ CHÍNH 30 câu sắp dùng để chấm. Luật viết ở mức luật chứ không chép đáp án vào
+prompt — không có con số tuổi nào, không có chữ "đăng ký" nào trong prompt mới — nhưng kiểu lỗi
+thì vẫn là kiểu lỗi lấy từ bộ này. Nên nếu `g09` và `g10` xanh lên, đó là bằng chứng *yếu*: nó
+nói luật diễn đạt đủ rõ để model theo, chứ chưa nói luật đỡ được kiểu lỗi này trên câu chưa gặp.
+Muốn biết điều sau thì cần bộ câu hỏi tầng sinh mới — chưa có, và đó là việc riêng.
+
+**Sẽ bỏ nếu.** `tu_choi_thua` tăng, hoặc `co_can_cu` tụt: khi đó model mua độ trung thực bằng
+cách từ chối nhiều hơn, mà một trợ lý từ chối nhiều thì không dùng được. Đổi hai câu bịa lấy ba
+câu từ chối thừa là lỗ.
+
+**Đã chạy — 180 lời gọi Ollama, 0 lượt API.** Ba prompt (production, `khong_noi_manh`,
+`khong_noi_manh2`) × hai nhiệt độ (0.7 như production, 0 để so) × 30 câu.
+
+Biến thể 2 viết sau khi đọc biến thể 1. v1 có câu "nói ÍT hơn tài liệu thì không sao", và ở 0.7
+model có vẻ đọc câu ấy thành "được phép cắt bớt chữ trong một ý": `g13` mất chữ *"số lượng lớn"*
+(tài liệu cấm **bật lửa số lượng lớn**, bot nói cấm **bật lửa**), `g12` mọc thêm *"vệ sinh cá
+nhân, trang phục lịch sự"* và đổi *"giấy tờ tùy thân"* thành *"CMND/CCCD"*. v2 tách hai vế: bỏ
+hẳn một ý thì được, cắt chữ thu hẹp bên trong một ý thì không.
+
+**Rồi chạy ở temperature 0, và cái tìm được không nằm ở bảng điểm.** Prompt production KHÔNG mắc
+hai lỗi mà mục 16/09 gán cho nó:
+
+| Ca | Tài liệu nói | production @0.7 (16/09) | production @0 | v1 @0 | v2 @0 |
+|---|---|---|---|---|---|
+| `g09` trẻ 5 tuổi | 2–12 tuổi: 75% vé | *2 đến dưới 5 tuổi được miễn vé* — **bịa** | chưa có thông tin, mời xem trang chuyến | **75% giá người lớn** — đúng | chưa có thông tin |
+| `g10` không đăng ký | khách **nên** đăng ký | *bắt buộc phải đăng ký* — **bịa** | *bạn **nên** đăng ký trước* — đúng | đúng | đúng |
+| `g13` bật lửa | cấm **bật lửa số lượng lớn** | giữ đúng "số lượng lớn" | giữ đúng | giữ đúng | giữ đúng |
+
+Nghĩa là hai câu bịa của tuần 10 là hai LẦN RÚT ở nhiệt độ 0.7, không phải hành vi cố định của
+prompt. Và hai chỗ tưởng là "biến thể mới làm hỏng thêm" (`g12`, `g13` ở 0.7) cũng biến mất khi
+hạ nhiệt độ — chúng cũng chỉ là lần rút. Đây đúng chuyện mục (e) đã chốt cho bộ tool-eval, lần
+này rơi vào tầng sinh: **một mẻ ở 0.7 không nói được cấu hình nào tốt hơn.**
+
+Prompt có đổi thật, không phải không tác dụng: ở temperature 0, production khác v1 ở 27/30 câu và
+khác v2 ở 30/30 câu, độ dài trung vị gần như không đổi (227 / 238 / 226 ký tự). Nên bảng ở
+nhiệt độ 0 là bảng SO ĐƯỢC — chỉ là chưa ai chấm.
+
+| Cấu hình | bia (judge) | bia (tay) | tu_choi_thua | co_can_cu | tok/s |
+|---|---|---|---|---|---|
+| qwen3.5:9b · production · t=0.7 (16/09, judge v3) | 8/30 | 2 | 0 | 15 | 30.7 |
+| qwen3.5:9b · **production · t=0** (judge v5) | **5/30** | chờ chấm 5 | **1** | **15** | 27.0 |
+| qwen3.5:9b · **khong_noi_manh2 · t=0** (judge v5) | **5/30** | chờ chấm 5 | **1** | **15** | 24.8 |
+| qwen3.5:9b · khong_noi_manh · t=0.7 / t=0 | không chấm | | | | 26.5 / 25.9 |
+| qwen3.5:9b · khong_noi_manh2 · t=0.7 | không chấm | | | | 29.4 |
+
+Hai dòng t=0 **trùng nhau ở mọi cột đếm được**: 5/30 câu bị gắn bịa, 1 câu `tu_choi_thua`, 15 câu
+`co_can_cu`. Chỉ TẬP câu bị gắn là khác:
+
+| | judge gắn bịa |
+|---|---|
+| production · t=0 | `g10` `u04` `u05` `u06` `u09` |
+| khong_noi_manh2 · t=0 | `g10` `g15` `u04` `u05` `u10` |
+
+Bốn trong năm câu mỗi bên là `u*` — câu ngoài phạm vi mà bot từ chối đúng rồi thêm một câu chỉ
+đường chung chung ("xem trong email xác nhận", "truy cập trang chủ"). Đúng họ báo bịa giả mà tuần
+9 đã đo (judge v3: 3/20 ở bộ xác nhận). Chấm tay 10 câu này là việc còn lại; nhãn tay chỉ có thể
+KÉO hai con số 5/30 xuống, không đẩy lên.
+
+**Kết luận tạm — chưa đủ để giữ hay bỏ prompt nào.**
+
+1. **Bằng chứng cho chính BÀI TOÁN thì yếu hơn tracker đang ghi.** "qwen bịa 2/30, cả hai đều là
+   nói mạnh hơn tài liệu" đúng như một quan sát, nhưng nó là 2 lần rút trên 30 câu ở 0.7. Ở nhiệt
+   độ 0 thì cùng prompt ấy trả lời đúng cả hai. Chưa có TỈ LỆ cho kiểu lỗi này, nên cũng chưa đo
+   được cái gì làm nó giảm.
+2. **Đọc tay từng câu là cái bẫy ở đây.** Lượt đầu đọc diff ở 0.7, ba ca (`g09`, `g12`, `g13`)
+   trông như bằng chứng rõ ràng — hai ca "biến thể làm hỏng thêm", một ca "không sửa được". Hạ
+   nhiệt độ xuống 0 thì cả ba biến mất. Người đọc diff giữa hai lần rút sẽ luôn tìm ra câu
+   chuyện, vì hai lần rút thì bao giờ cũng khác nhau.
+3. **Đã chấm bảng nhiệt độ 0 (2 × 30 lượt Groq) và nó KHÔNG phân biệt được hai prompt.** Cùng
+   5/30 bị gắn bịa, cùng 1 `tu_choi_thua`, cùng 15 `co_can_cu`. Prompt đổi 30/30 câu trả lời mà
+   không đổi một con số nào trên bảng — nghĩa là 30 câu bộ dev không đủ phân giải cho một thay
+   đổi cỡ này. Với tỉ lệ nền khoảng 2/30, muốn thấy chênh lệch một câu thì cần bộ lớn hơn nhiều,
+   hoặc nhiều mẻ.
+4. **Đường còn lại nếu muốn đi tiếp:** chạy N mẻ ở 0.7 rồi lấy tỉ lệ kèm khoảng, như mục (e). Phải
+   phá cache của `ChatClient` trước — cùng body thì nó trả lại câu cũ, nên N mẻ hiện giờ ra N bản
+   y hệt; thêm `seed` vào body là xong. Nhưng trước khi làm, hãy hỏi: 5 mẻ × 30 câu × 2 prompt =
+   300 câu phải chấm, mà tỉ lệ nền là 2/30. Cái thiếu ở đây là BỘ ĐO, không phải số mẻ.
+5. **Chưa chép gì sang WebProject, và theo số hiện có thì KHÔNG nên chép.** Luật của repo là
+   "cái nào thắng ở vi-rag-eval mới port sang Java". Biến thể này không thắng — nó hoà. Một khối
+   prompt dài thêm khoảng 200 token mỗi lượt chat, đổi lấy không con số nào tốt lên, là lỗ.
+   `data/prompts/vigotrip_chat.txt` và `ChatService.java` vẫn là bản production, test đối chiếu
+   từng dòng vẫn xanh.
+
+**Việc harness đã làm trong mục này.** `gen_compare.py` nhận thêm `--prompt` (biến thể prompt),
+`--temperature` và `--judge-model` (tên khác `groq` là judge chạy trên máy mình). Mỗi tổ hợp
+(model, prompt, nhiệt độ) ghi ra một file riêng, bảng có thêm cột `prompt` và `t`.
+
+---
+
+
 ## Mẫu
 
 ### YYYY-MM-DD — tên ngắn gọn

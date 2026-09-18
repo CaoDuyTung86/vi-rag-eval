@@ -19,7 +19,8 @@ from pathlib import Path
 
 from rag.types import Chunk
 
-PROMPT_PATH = Path(__file__).resolve().parent.parent / "data" / "prompts" / "vigotrip_chat.txt"
+PROMPTS_DIR = Path(__file__).resolve().parent.parent / "data" / "prompts"
+PROMPT_PATH = PROMPTS_DIR / "vigotrip_chat.txt"
 
 # Production chèn giờ thật. Cố định ở đây để prompt không đổi mỗi phút — đổi là trượt cache.
 FIXED_NOW = "09:00 ngày 14/09/2026"
@@ -37,8 +38,28 @@ def rag_context(chunks: Sequence[Chunk]) -> str:
     return "".join(lines)
 
 
-def system_prompt(chunks: Sequence[Chunk], lang: str | None = "vi", now: str = FIXED_NOW) -> str:
-    template = PROMPT_PATH.read_text(encoding="utf-8").rstrip("\n")
+def prompt_file(variant: str | None) -> Path:
+    """Biến thể prompt -> file. None là bản production, tức bản phải trùng ChatService.java.
+
+    Có để thử prompt mà không đụng vào bản production: đổi thẳng vigotrip_chat.txt là bộ đo
+    hết so được với mọi bảng đã chạy, và test đối chiếu từng dòng với ChatService.java sẽ đỏ
+    trong suốt thời gian còn đang thử. Biến thể nào thắng thì mới chép vào cả hai chỗ.
+    """
+    if variant is None:
+        return PROMPT_PATH
+    path = PROMPTS_DIR / f"vigotrip_chat_{variant}.txt"
+    if not path.exists():
+        raise FileNotFoundError(f"Không có biến thể prompt {variant}: {path}")
+    return path
+
+
+def system_prompt(
+    chunks: Sequence[Chunk],
+    lang: str | None = "vi",
+    now: str = FIXED_NOW,
+    variant: str | None = None,
+) -> str:
+    template = prompt_file(variant).read_text(encoding="utf-8").rstrip("\n")
     return (
         template.replace("{{now}}", now)
         .replace("{{lang}}", lang or "vi")
